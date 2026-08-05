@@ -171,8 +171,22 @@
 
         .hud-element {
             position: absolute;
-            z-index: 100;
+            z-index: 500;
             touch-action: none;
+        }
+
+        #game-hud-wrapper {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 500;
+        }
+
+        #game-hud-wrapper .hud-element {
+            pointer-events: auto;
         }
 
         #menu-toggle-btn {
@@ -373,9 +387,9 @@
 <body>
 
     <div id="server-notification"></div>
-    
 
-        <!-- SẢNH CHỜ LOBBY -->
+
+    <!-- SẢNH CHỜ LOBBY -->
     <div id="lobby-overlay">
         <div class="lobby-content-wrapper">
             <div class="lobby-card">
@@ -397,18 +411,19 @@
                     <div class="map-card-btn" id="lobby-map-map4" onclick="selectMap('map4')"><span>Tuyết</span></div>
                 </div>
 
-                
-                <!-- NÚT ĐĂNG NHẬP DISCORD ĐÃ ĐƯỢC THÊM LINK chuẩn -->
-    <div id="auth-btn-group">
-    <button class="btn btn-discord" onclick="loginWithDiscord()">Đăng nhập bằng Discord</button>
-</div>
+                <div id="auth-btn-group">
+                    <button class="btn btn-discord" onclick="loginWithDiscord()">Đăng nhập bằng Discord</button>
+                </div>
 
-<div id="in-game-btn-group" style="display:none;">
-    <button class="btn btn-play" onclick="enterGame()">VÀO GAME</button>
-    <button class="btn btn-logout" onclick="logout()">Đăng Xuất</button>
-</div>
+                <div id="in-game-btn-group" style="display:none;">
+                    <button class="btn btn-play" onclick="enterGame()">VÀO GAME</button>
+                    <button class="btn btn-logout" onclick="logout()">Đăng Xuất</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-    <!-- HUD TRONG GAME -->
+    <!-- HUD TRONG GAME (NGOÀI lobby) -->
     <div id="game-hud-wrapper" style="display: none;">
         <button id="menu-toggle-btn" class="hud-element" onclick="openMenu()">⚙️</button>
         <button id="chat-toggle-btn" class="hud-element" onclick="toggleChatContainer()">Chat</button>
@@ -533,48 +548,52 @@
         };
 
         function checkDiscordAuth() {
-    const hash = window.location.hash.substring(1);
-    const params = new URLSearchParams(hash);
-    const accessToken = params.get('access_token');
-    const error = params.get('error');
+            const hash = window.location.hash.substring(1);
+            const params = new URLSearchParams(hash);
+            const accessToken = params.get('access_token');
+            const error = params.get('error');
 
-    // Nếu gặp lỗi đăng nhập hoặc từ chối cấp quyền
-    if (error) {
-        window.history.replaceState(null, null, window.location.pathname);
-        showLoginRequired();
-        return;
-    }
+            if (error) {
+                window.history.replaceState(null, null, window.location.pathname);
+                showLoginRequired();
+                return;
+            }
 
-    if (accessToken) {
-        window.history.replaceState(null, null, window.location.pathname);
-        fetch('https://discord.com/api/users/@me', {
-            headers: { authorization: `Bearer ${accessToken}` }
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.id) {
-                discordUser = {
-                    id: data.id,
-                    username: data.global_name || data.username,
-                    avatarUrl: data.avatar 
-                        ? `https://cdn.discordapp.com/avatars/${data.id}/${data.avatar}.png`
-                        : `https://cdn.discordapp.com/embed/avatars/0.png`
-                };
-                updateLobbyUI();
-            } else { showLoginRequired(); }
-        })
-        .catch(() => showLoginRequired());
-    } else {
-        const saved = localStorage.getItem('vmi_discord_user');
-        if (saved) { 
-            try {
-                discordUser = JSON.parse(saved); 
-                updateLobbyUI(); 
-            } catch(e) { showLoginRequired(); }
-        } else { showLoginRequired(); }
-    }
-                     }
-            
+            if (accessToken) {
+                window.history.replaceState(null, null, window.location.pathname);
+                fetch('https://discord.com/api/users/@me', {
+                    headers: { authorization: `Bearer ${accessToken}` }
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.id) {
+                        discordUser = {
+                            id: data.id,
+                            username: data.global_name || data.username,
+                            avatarUrl: data.avatar 
+                                ? `https://cdn.discordapp.com/avatars/\( {data.id}/ \){data.avatar}.png`
+                                : `https://cdn.discordapp.com/embed/avatars/0.png`
+                        };
+                        updateLobbyUI();
+                    } else { 
+                        showLoginRequired(); 
+                    }
+                })
+                .catch(() => showLoginRequired());
+            } else {
+                const saved = localStorage.getItem('vmi_discord_user');
+                if (saved) { 
+                    try {
+                        discordUser = JSON.parse(saved); 
+                        updateLobbyUI(); 
+                    } catch(e) { 
+                        showLoginRequired(); 
+                    }
+                } else { 
+                    showLoginRequired(); 
+                }
+            }
+        }
 
         function showLoginRequired() {
             discordUser = null;
@@ -597,12 +616,8 @@
         }
 
         function loginWithDiscord() {
-    window.location.href = "https://discord.com/api/oauth2/authorize?client_id=1534238453871673414&redirect_uri=https%3A%2F%2Fvmimap.github.io%2FVMI-MAP-SITE%2F&response_type=token&scope=identify";
+            window.location.href = "https://discord.com/api/oauth2/authorize?client_id=1534238453871673414&redirect_uri=https%3A%2F%2Fvmimap.github.io%2FVMI-MAP-SITE%2F&response_type=token&scope=identify";
         }
-        
-
-        
-        
 
         function logout() {
             localStorage.removeItem('vmi_discord_user');
@@ -624,7 +639,10 @@
             selectMap(mapKey);
             closeSubModal('map-modal');
             closeMenu();
-            if (gameInstance) { gameInstance.destroy(true); initPhaserGame(); }
+            if (gameInstance) { 
+                gameInstance.destroy(true); 
+                initPhaserGame(); 
+            }
         }
 
         function showServerNotification(message) {
@@ -635,7 +653,10 @@
         }
 
         function enterGame() {
-            if (!discordUser) { alert("Bạn phải đăng nhập Discord!"); return; }
+            if (!discordUser) { 
+                alert("Bạn phải đăng nhập Discord!"); 
+                return; 
+            }
             document.getElementById('lobby-overlay').style.display = 'none';
             document.getElementById('game-hud-wrapper').style.display = 'block';
             
@@ -646,16 +667,24 @@
                 avatarImageObj = new Image();
                 avatarImageObj.crossOrigin = "Anonymous";
                 avatarImageObj.onload = function() { initPhaserGame(); };
-                avatarImageObj.onerror = function() { avatarImageObj = null; initPhaserGame(); };
+                avatarImageObj.onerror = function() { 
+                    avatarImageObj = null; 
+                    initPhaserGame(); 
+                };
                 avatarImageObj.src = discordUser.avatarUrl;
-            } else { initPhaserGame(); }
+            } else { 
+                initPhaserGame(); 
+            }
             setupDraggableHUD();
         }
 
         function backToLobby() {
             closeMenu();
             document.getElementById('game-hud-wrapper').style.display = 'none';
-            if (gameInstance) { gameInstance.destroy(true); gameInstance = null; }
+            if (gameInstance) { 
+                gameInstance.destroy(true); 
+                gameInstance = null; 
+            }
             document.getElementById('lobby-overlay').style.display = 'flex';
         }
 
@@ -681,10 +710,20 @@
             input.value = '';
         }
 
-        function openMenu() { if (!isCustomHUDMode) document.getElementById('roblox-main-modal').style.display = 'flex'; }
-        function closeMenu() { document.getElementById('roblox-main-modal').style.display = 'none'; }
-        function openSubModal(id) { closeMenu(); document.getElementById(id).style.display = 'flex'; }
-        function closeSubModal(id) { document.getElementById(id).style.display = 'none'; openMenu(); }
+        function openMenu() { 
+            if (!isCustomHUDMode) document.getElementById('roblox-main-modal').style.display = 'flex'; 
+        }
+        function closeMenu() { 
+            document.getElementById('roblox-main-modal').style.display = 'none'; 
+        }
+        function openSubModal(id) { 
+            closeMenu(); 
+            document.getElementById(id).style.display = 'flex'; 
+        }
+        function closeSubModal(id) { 
+            document.getElementById(id).style.display = 'none'; 
+            openMenu(); 
+        }
 
         function updateCameraZoom(val) {
             cameraZoom = parseFloat(val);
@@ -699,7 +738,10 @@
         function updateFontResolution(val) {
             fontResolutionScale = parseInt(val);
             document.getElementById('font-res-val').innerText = val + 'K';
-            if (gameInstance) { gameInstance.destroy(true); initPhaserGame(); }
+            if (gameInstance) { 
+                gameInstance.destroy(true); 
+                initPhaserGame(); 
+            }
         }
 
         function toggleCustomHUD() {
@@ -723,7 +765,10 @@
                 selectHudElement(document.getElementById('menu-toggle-btn'), 'Nút Menu');
             } else {
                 document.body.classList.remove('is-editing-hud');
-                hudElems.forEach(el => { el.classList.remove('hud-dragging'); el.style.outline = 'none'; });
+                hudElems.forEach(el => { 
+                    el.classList.remove('hud-dragging'); 
+                    el.style.outline = 'none'; 
+                });
                 editPanel.style.display = 'none';
                 selectedHudEl = null;
             }
@@ -799,7 +844,8 @@
                 document.addEventListener("pointerup", () => { active = false; });
                 document.addEventListener("pointermove", e => {
                     if (active && isCustomHUDMode) {
-                        e.preventDefault(); e.stopPropagation();
+                        e.preventDefault(); 
+                        e.stopPropagation();
                         const dx = e.clientX - startX;
                         const dy = e.clientY - startY;
                         
@@ -834,8 +880,14 @@
 
             const graphics = mainScene.add.graphics();
             graphics.lineStyle(1, mapConf.grid, mapConf.gridAlpha);
-            for (let x = 0; x < 3000; x += 50) { graphics.moveTo(x, 0); graphics.lineTo(x, 3000); }
-            for (let y = 0; y < 3000; y += 50) { graphics.moveTo(0, y); graphics.lineTo(3000, y); }
+            for (let x = 0; x < 3000; x += 50) { 
+                graphics.moveTo(x, 0); 
+                graphics.lineTo(x, 3000); 
+            }
+            for (let y = 0; y < 3000; y += 50) { 
+                graphics.moveTo(0, y); 
+                graphics.lineTo(3000, y); 
+            }
             graphics.strokePath();
 
             const avatarRadius = 28;
@@ -843,14 +895,20 @@
             const canvas = mainScene.textures.createCanvas(canvasTextureKey, avatarRadius * 2, avatarRadius * 2);
             const ctx = canvas.context;
 
-            ctx.beginPath(); ctx.arc(avatarRadius, avatarRadius, avatarRadius, 0, Math.PI * 2); ctx.closePath(); ctx.clip();
+            ctx.beginPath(); 
+            ctx.arc(avatarRadius, avatarRadius, avatarRadius, 0, Math.PI * 2); 
+            ctx.closePath(); 
+            ctx.clip();
 
             if (avatarImageObj && avatarImageObj.complete && avatarImageObj.naturalWidth !== 0) {
                 ctx.drawImage(avatarImageObj, 0, 0, avatarRadius * 2, avatarRadius * 2);
             } else {
-                ctx.fillStyle = "#ffcc00"; ctx.fillRect(0, 0, avatarRadius * 2, avatarRadius * 2);
-                ctx.fillStyle = "#000000"; ctx.font = "bold 22px sans-serif";
-                ctx.textAlign = "center"; ctx.textBaseline = "middle";
+                ctx.fillStyle = "#ffcc00"; 
+                ctx.fillRect(0, 0, avatarRadius * 2, avatarRadius * 2);
+                ctx.fillStyle = "#000000"; 
+                ctx.font = "bold 22px sans-serif";
+                ctx.textAlign = "center"; 
+                ctx.textBaseline = "middle";
                 ctx.fillText((discordUser ? discordUser.username : 'V').charAt(0).toUpperCase(), avatarRadius, avatarRadius);
             }
             canvas.refresh();
@@ -862,13 +920,20 @@
 
             const nameLabel = discordUser ? discordUser.username : 'Player';
             const nameTextTemp = mainScene.add.text(0, avatarRadius + 16, nameLabel, {
-                fontSize: '14px', fontStyle: 'bold', fontFamily: 'sans-serif', fill: '#ffffff',
-                stroke: '#000000', strokeThickness: 3
+                fontSize: '14px', 
+                fontStyle: 'bold', 
+                fontFamily: 'sans-serif', 
+                fill: '#ffffff',
+                stroke: '#000000', 
+                strokeThickness: 3
             }).setOrigin(0.5);
 
             const chatBubbleBg = mainScene.add.graphics();
             const chatBubbleText = mainScene.add.text(0, 0, '', {
-                fontSize: '12px', fill: '#000000', align: 'center', wordWrap: { width: 140 }
+                fontSize: '12px', 
+                fill: '#000000', 
+                align: 'center', 
+                wordWrap: { width: 140 }
             }).setOrigin(0.5);
             const chatContainer = mainScene.add.container(0, -52, [chatBubbleBg, chatBubbleText]).setVisible(false);
 
@@ -881,9 +946,17 @@
             let chatTimer = null;
             showChatBubbleCallback = function(text) {
                 chatBubbleText.setText(text);
-                const bounds = chatBubbleText.getBounds(); const padding = 8;
-                chatBubbleBg.clear(); chatBubbleBg.fillStyle(0xffffff, 0.95);
-                chatBubbleBg.fillRoundedRect(-bounds.width / 2 - padding, -bounds.height / 2 - padding, bounds.width + padding * 2, bounds.height + padding * 2, 6);
+                const bounds = chatBubbleText.getBounds(); 
+                const padding = 8;
+                chatBubbleBg.clear(); 
+                chatBubbleBg.fillStyle(0xffffff, 0.95);
+                chatBubbleBg.fillRoundedRect(
+                    -bounds.width / 2 - padding, 
+                    -bounds.height / 2 - padding, 
+                    bounds.width + padding * 2, 
+                    bounds.height + padding * 2, 
+                    6
+                );
                 chatContainer.setVisible(true);
                 if (chatTimer) clearTimeout(chatTimer);
                 chatTimer = setTimeout(() => { chatContainer.setVisible(false); }, 5000);
@@ -941,4 +1014,4 @@
     </script>
 </body>
 </html>
-
+                
