@@ -390,17 +390,18 @@
                     <div class="map-card-btn" id="lobby-map-map4" onclick="selectMap('map4')"><span>Tuyết</span></div>
                 </div>
 
+                
+                <!-- NÚT ĐĂNG NHẬP DISCORD ĐÃ ĐƯỢC THÊM LINK chuẩn -->
                 <div id="auth-btn-group">
-                    <button class="btn btn-discord" onclick="loginWithDiscord()">Đăng Nhập Discord</button>
-                </div>
+    <a href="https://discord.com/oauth2/authorize?client_id=CLIENT_ID_CUA_BAN&response_type=code&redirect_uri=https%3A%2F%2Fvmimap.github.io%2FVMI-MAP-SITE%2F&scope=identify">
+        <button class="btn btn-discord">Đăng nhập bằng Discord</button>
+    </a>
+</div>
 
-                <div id="in-game-btn-group" style="display: none;">
-                    <button class="btn btn-play" onclick="enterGame()">VÀO GAME</button>
-                    <button class="btn btn-logout" onclick="logout()">Đăng Xuất</button>
-                </div>
-            </div>
-        </div>
-    </div>
+<div id="in-game-btn-group" style="display:none;">
+    <button class="btn btn-play" onclick="enterGame()">VÀO GAME</button>
+    <button class="btn btn-logout" onclick="logout()">Đăng Xuất</button>
+</div>
 
     <!-- HUD TRONG GAME -->
     <div id="game-hud-wrapper" style="display: none;">
@@ -416,7 +417,7 @@
         </div>
 
         <div id="joystick-zone" class="hud-element"></div>
-        <div id="fps-counter" class="hud-element">FPS: 60</div>
+        <div id="fps-counter" class="hud-element">FPS: 450</div>
     </div>
 
     <div id="hud-edit-panel">
