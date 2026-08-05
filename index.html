@@ -576,11 +576,12 @@
         }
 
         function loginWithDiscord() {
-            const CLIENT_ID = '1534238453871673414'; 
-            const REDIRECT_URI = encodeURIComponent(window.location.origin + window.location.pathname);
-            const oauthUrl = `https://discord.com/api/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=token&scope=identify&prompt=consent`;
+            const CLIENT_ID = '1482367871270129794';
+            const REDIRECT_URI = encodeURIComponent(window.location.origin + '/auth/discord/callback'); // hoặc link callback của bạn
+            const oauthUrl = `https://discord.com/api/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=identify`;
             window.location.href = oauthUrl;
         }
+        
 
         function logout() {
             localStorage.removeItem('vmi_discord_user');
