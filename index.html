@@ -561,38 +561,55 @@ function checkDiscordAuth() {
 
     if (accessToken) {
         window.history.replaceState(null, null, window.location.pathname);
+
         fetch('https://discord.com/api/users/@me', {
-            headers: { authorization: `Bearer ${accessToken}` }
+            headers: {
+                authorization: `Bearer ${accessToken}`
+            }
         })
         .then(res => res.json())
         .then(data => {
+
             if (data.id) {
+
+                const avatarUrl = data.avatar
+                    ? `https://cdn.discordapp.com/avatars/${data.id}/${data.avatar}.png?size=128&t=${Date.now()}`
+                    : `https://cdn.discordapp.com/embed/avatars/0.png`;
+
                 discordUser = {
                     id: data.id,
                     username: data.global_name || data.username,
-                    avatarUrl: data.avatar 
-                        ? `https://cdn.discordapp.com/avatars/${data.id}/${data.avatar}.png?size=128`
-                        : `https://cdn.discordapp.com/embed/avatars/0.png`
+                    avatarUrl: avatarUrl
                 };
 
-                localStorage.setItem('vmi_discord_user', JSON.stringify(discordUser));
+                localStorage.setItem(
+                    'vmi_discord_user',
+                    JSON.stringify(discordUser)
+                );
+
                 updateLobbyUI();
-            } else { 
-                showLoginRequired(); 
+
+            } else {
+                showLoginRequired();
             }
+
         })
         .catch(() => showLoginRequired());
+
     } else {
+
         const saved = localStorage.getItem('vmi_discord_user');
-        if (saved) { 
+
+        if (saved) {
             try {
-                discordUser = JSON.parse(saved); 
-                updateLobbyUI(); 
-            } catch(e) { 
-                showLoginRequired(); 
+                discordUser = JSON.parse(saved);
+                updateLobbyUI();
+            } catch (e) {
+                localStorage.removeItem('vmi_discord_user');
+                showLoginRequired();
             }
-        } else { 
-            showLoginRequired(); 
+        } else {
+            showLoginRequired();
         }
     }
 }
