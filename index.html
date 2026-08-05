@@ -1932,10 +1932,28 @@ async function loadMemberData(){
             }
             graphics.strokePath();
 
-            const avatarRadius = 28;
-            const canvasTextureKey = 'user-avatar-texture-' + Date.now();
-            const canvas = mainScene.textures.createCanvas(canvasTextureKey, avatarRadius * 2, avatarRadius * 2);
-            const ctx = canvas.context;
+            try {
+    if (avatarImageObj && avatarImageObj.complete && avatarImageObj.naturalWidth !== 0) {
+        ctx.drawImage(avatarImageObj, 0, 0, avatarRadius * 2, avatarRadius * 2);
+    } else {
+        throw new Error('no avatar image');
+    }
+} catch (e) {
+    ctx.clearRect(0, 0, avatarRadius * 2, avatarRadius * 2);
+    ctx.fillStyle = "#ffcc00"; 
+    ctx.fillRect(0, 0, avatarRadius * 2, avatarRadius * 2);
+    ctx.fillStyle = "#000000"; 
+    ctx.font = "bold 22px sans-serif";
+    ctx.textAlign = "center"; 
+    ctx.textBaseline = "middle";
+    ctx.fillText((discordUser ? discordUser.username : 'V').charAt(0).toUpperCase(), avatarRadius, avatarRadius);
+}
+
+try {
+    canvas.refresh();
+} catch (e) {
+    console.warn('Avatar canvas refresh failed (likely CORS-tainted image), continuing without avatar image:', e);
+    }
 
             ctx.beginPath(); 
             ctx.arc(avatarRadius, avatarRadius, avatarRadius, 0, Math.PI * 2); 
