@@ -575,11 +575,9 @@
         }
 
         function loginWithDiscord() {
-    const CLIENT_ID = '1534238453871673414';
-    const REDIRECT_URI = encodeURIComponent('https://vmimap.github.io/VMI-MAP-SITE/');
-    const oauthUrl = `https://discord.com/api/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=token&scope=identify`;
-    window.location.href = oauthUrl;
-}
+    window.location.href = "https://discord.com/api/oauth2/authorize?client_id=1534238453871673414&redirect_uri=https%3A%2F%2Fvmimap.github.io%2FVMI-MAP-SITE%2F&response_type=token&scope=identify";
+        }
+        
 
         
         
