@@ -576,11 +576,12 @@
         }
 
         function loginWithDiscord() {
-            const CLIENT_ID = '1482367871270129794';
-            const REDIRECT_URI = encodeURIComponent(window.location.origin + '/auth/discord/callback'); // hoặc link callback của bạn
-            const oauthUrl = `https://discord.com/api/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=identify`;
-            window.location.href = oauthUrl;
+    const CLIENT_ID = '1482367871270129794';
+    const REDIRECT_URI = encodeURIComponent('https://young-ears-share.loca.lt/auth/discord/callback');
+    const oauthUrl = `https://discord.com/api/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=identify`;
+    window.location.href = oauthUrl;
         }
+        
         
 
         function logout() {
