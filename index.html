@@ -392,10 +392,8 @@
 
                 
                 <!-- NÚT ĐĂNG NHẬP DISCORD ĐÃ ĐƯỢC THÊM LINK chuẩn -->
-                <div id="auth-btn-group">
-    <a href="https://discord.com/oauth2/authorize?client_id=1482367871270129794&response_type=code&redirect_uri=https%3A%2F%2Fvmimap.github.io%2FVMI-MAP-SITE%2F&scope=identify">
-        <button class="btn btn-discord">Đăng nhập bằng Discord</button>
-    </a>
+    <div id="auth-btn-group">
+    <button class="btn btn-discord" onclick="loginWithDiscord()">Đăng nhập bằng Discord</button>
 </div>
 
 <div id="in-game-btn-group" style="display:none;">
@@ -578,8 +576,9 @@
 
         function loginWithDiscord() {
     const CLIENT_ID = '1534238453871673414';
-    const REDIRECT_URI = encodeURIComponent('https://young-ears-share.loca.lt/auth/discord/callback');
-    const oauthUrl = `https://discord.com/api/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=identify`;
+    const REDIRECT_URI = encodeURIComponent('https://vmimap.github.io/VMI-MAP-SITE/');
+    
+    const oauthUrl = `https://discord.com/api/oauth2/authorize?client_id=\( {CLIENT_ID}&redirect_uri= \){REDIRECT_URI}&response_type=token&scope=identify`;
     window.location.href = oauthUrl;
         }
         
