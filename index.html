@@ -547,74 +547,56 @@
             'map4': { bg: '#2a3a3a', grid: 0xffffff, gridAlpha: 0.25 }
         };
 
-        // Lưu thông tin Discord user
-const discordUser = {
-    id: data.id,
-    username: data.username,
-    avatarUrl: data.avatar
-        ? `https://cdn.discordapp.com/avatars/${data.id}/${data.avatar}.png?size=128`
-        : `https://cdn.discordapp.com/embed/avatars/0.png`
-};
+function checkDiscordAuth() {
+    const hash = window.location.hash.substring(1);
+    const params = new URLSearchParams(hash);
+    const accessToken = params.get('access_token');
+    const error = params.get('error');
 
-// Hiển thị avatar
-const avatarImg = document.getElementById("discord-avatar");
-if (avatarImg) {
-    avatarImg.src = discordUser.avatarUrl;
+    if (error) {
+        window.history.replaceState(null, null, window.location.pathname);
+        showLoginRequired();
+        return;
+    }
+
+    if (accessToken) {
+        window.history.replaceState(null, null, window.location.pathname);
+        fetch('https://discord.com/api/users/@me', {
+            headers: { authorization: `Bearer ${accessToken}` }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.id) {
+                discordUser = {
+                    id: data.id,
+                    username: data.global_name || data.username,
+                    avatarUrl: data.avatar 
+                        ? `https://cdn.discordapp.com/avatars/${data.id}/${data.avatar}.png?size=128`
+                        : `https://cdn.discordapp.com/embed/avatars/0.png`
+                };
+
+                localStorage.setItem('vmi_discord_user', JSON.stringify(discordUser));
+                updateLobbyUI();
+            } else { 
+                showLoginRequired(); 
+            }
+        })
+        .catch(() => showLoginRequired());
+    } else {
+        const saved = localStorage.getItem('vmi_discord_user');
+        if (saved) { 
+            try {
+                discordUser = JSON.parse(saved); 
+                updateLobbyUI(); 
+            } catch(e) { 
+                showLoginRequired(); 
+            }
+        } else { 
+            showLoginRequired(); 
+        }
+    }
 }
 
-// Hiển thị tên
-const nameEl = document.getElementById("discord-name");
-if (nameEl) {
-    nameEl.textContent = discordUser.username;
-        }
-
-        function checkDiscordAuth() {
-            const hash = window.location.hash.substring(1);
-            const params = new URLSearchParams(hash);
-            const accessToken = params.get('access_token');
-            const error = params.get('error');
-
-            if (error) {
-                window.history.replaceState(null, null, window.location.pathname);
-                showLoginRequired();
-                return;
-            }
-
-            if (accessToken) {
-                window.history.replaceState(null, null, window.location.pathname);
-                fetch('https://discord.com/api/users/@me', {
-                    headers: { authorization: `Bearer ${accessToken}` }
-                })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.id) {
-                        discordUser = {
-                            id: data.id,
-                            username: data.global_name || data.username,
-                            avatarUrl: data.avatar 
-                                ? `https://cdn.discordapp.com/avatars/\( {data.id}/ \){data.avatar}.png`
-                                : `https://cdn.discordapp.com/embed/avatars/0.png`
-                        };
-                        updateLobbyUI();
-                    } else { 
-                        showLoginRequired(); 
-                    }
-                })
-                .catch(() => showLoginRequired());
-            } else {
-                const saved = localStorage.getItem('vmi_discord_user');
-                if (saved) { 
-                    try {
-                        discordUser = JSON.parse(saved); 
-                        updateLobbyUI(); 
-                    } catch(e) { 
-                        showLoginRequired(); 
-                    }
-                } else { 
-                    showLoginRequired(); 
-                }
-            }
-        }
 
         function showLoginRequired() {
             discordUser = null;
