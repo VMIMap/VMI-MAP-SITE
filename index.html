@@ -534,17 +534,16 @@
     <!-- JAVASCRIPT LOGIC -->
       <script>
         let discordUser = null;
-        let gameInstance = null;
-        let mainScene = null;
-        let cameraZoom = 0.8; 
-        let selectedMap = 'map1';
-        let avatarImageObj = null;
-        let joystickManager = null;
-        let isCustomHUDMode = false;
-        let selectedHudEl = null;
-        let showChatBubbleCallback = null;
-        let fontResolutionScale = 1;
-        let permissions = {};   // thêm dòng này
+let gameInstance = null;
+let mainScene = null;
+let cameraZoom = 0.8; 
+let selectedMap = 'map1';
+let avatarImageObj = null;
+let joystickManager = null;
+let isCustomHUDMode = false;
+let selectedHudEl = null;
+let showChatBubbleCallback = null;
+let fontResolutionScale = 1;
 
         const mapConfigs = {
             'map1': { bg: '#1a3a2a', grid: 0xffffff, gridAlpha: 0.12 },
@@ -601,7 +600,6 @@
         }
 
         function checkDiscordAuth() {
-    const OWNER_ID = "1064908467476905987";
 
     const hash = window.location.hash.substring(1);
     const params = new URLSearchParams(hash);
@@ -615,6 +613,7 @@
     }
 
     if (accessToken) {
+
         window.history.replaceState(null, null, window.location.pathname);
 
         fetch('https://discord.com/api/users/@me', {
@@ -637,11 +636,6 @@
                     avatarUrl: avatarUrl
                 };
 
-                // Quyền owner
-                if (discordUser.id === OWNER_ID) {
-                    permissions[discordUser.id] = "owner";
-                }
-
                 localStorage.setItem(
                     'vmi_discord_user',
                     JSON.stringify(discordUser)
@@ -654,8 +648,7 @@
             }
 
         })
-        .catch(err => {
-            console.error("Discord login error:", err);
+        .catch(() => {
             showLoginRequired();
         });
 
@@ -664,29 +657,26 @@
         const saved = localStorage.getItem('vmi_discord_user');
 
         if (saved) {
+
             try {
 
                 discordUser = JSON.parse(saved);
-
-                if (discordUser.id === OWNER_ID) {
-                    permissions[discordUser.id] = "owner";
-                }
-
                 updateLobbyUI();
 
             } catch (e) {
 
-                console.error("Save user lỗi:", e);
                 localStorage.removeItem('vmi_discord_user');
                 showLoginRequired();
 
             }
 
         } else {
+
             showLoginRequired();
+
         }
     }
-        }
+    }
         
 
         function showLoginRequired() {
