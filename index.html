@@ -56,6 +56,45 @@
             width: 100%;
         }
 
+
+
+        #mod-command{
+    width:100%;
+    padding:10px;
+    margin-top:8px;
+    border:none;
+    border-radius:6px;
+    background:#222;
+    color:white;
+    font-size:14px;
+}
+
+.menu-btn{
+    width:100%;
+    padding:10px;
+    margin-top:8px;
+    background:#333;
+    color:white;
+    border:none;
+    border-radius:6px;
+}
+
+.submenu{
+    display:none;
+    margin-left:10px;
+}
+
+.submenu button{
+    width:100%;
+    margin-top:5px;
+    background:#444;
+    color:white;
+    border:none;
+    border-radius:6px;
+    padding:8px;
+}
+
+        
         .lobby-card {
             background: rgba(20, 15, 15, 0.95);
             border: 2px solid #ffcc00;
@@ -538,83 +577,54 @@
     </div>
 
     <div id="mod-content">
-        <button>View Member</button>
-        <button>Bring</button>
-        <button>To Player</button>
-        <button>Kick</button>
-        <button>Ban</button>
-        <button>Give Item</button>
+
+        <input
+            id="mod-command"
+            type="text"
+            placeholder="Nhập lệnh..."
+            onkeydown="if(event.key==='Enter') executeModCommand()">
+
+        <button onclick="executeModCommand()">Run Command</button>
+
+        <hr>
+
+        <button class="menu-btn" onclick="toggleMenu('team-list')">
+            Team
+        </button>
+
+        <div id="team-list" class="submenu">
+            <button>Red Team</button>
+            <button>Blue Team</button>
+            <button>Green Team</button>
+            <button>Yellow Team</button>
+        </div>
+
+        <button class="menu-btn" onclick="toggleMenu('member-list')">
+            Member
+        </button>
+
+        <div id="member-list" class="submenu">
+            <button>Player 1</button>
+            <button>Player 2</button>
+            <button>Player 3</button>
+        </div>
+
+        <button class="menu-btn" onclick="toggleMenu('admin-list')">
+            Admin
+        </button>
+
+        <div id="admin-list" class="submenu">
+            <button>Kick</button>
+            <button>Ban</button>
+            <button>Bring</button>
+            <button>Teleport</button>
+            <button>Heal</button>
+            <button>Give Item</button>
+        </div>
+
     </div>
-</div>
-
-<style>
-#mod-panel {
-    position: fixed;
-    top: 80px;
-    right: 20px;
-    width: 320px;
-    background: rgba(20,20,20,0.95);
-    color: white;
-    border-radius: 12px;
-    padding: 10px;
-    z-index: 9999;
-    font-family: sans-serif;
-}
-
-.hidden {
-    display: none;
-}
-
-.mod-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.mod-header button {
-    width: 35px;
-    height: 30px;
-    margin-left: 5px;
-}
-
-#mod-content button {
-    width: 100%;
-    margin-top: 8px;
-    padding: 10px;
-    background: #333;
-    color: white;
-    border: none;
-    border-radius: 6px;
-}
-</style>
-
-<script>
-function openMod() {
-    document.getElementById("mod-panel").classList.remove("hidden");
-}
-
-function closeMod() {
-    document.getElementById("mod-panel").classList.add("hidden");
-}
-
-function minimizeMod() {
-    const content = document.getElementById("mod-content");
-
-    if (content.style.display === "none") {
-        content.style.display = "block";
-    } else {
-        content.style.display = "none";
-    }
-}
-
-// Lệnh mở bảng
-function handleCommand(message) {
-    if (message === "!mod") {
-        openMod();
-    }
-}
-</script>
-
+    </div>
+    
     <!-- JAVASCRIPT LOGIC -->
     <script>
         let discordUser = null;
@@ -636,7 +646,9 @@ function handleCommand(message) {
             'map4': { bg: '#2a3a3a', grid: 0xffffff, gridAlpha: 0.25 }
         };
 
-function checkDiscordAuth() {
+        function checkDiscordAuth() {
+    const OWNER_ID = "1064908467476905987"; // Thay bằng Discord ID của m
+
     const hash = window.location.hash.substring(1);
     const params = new URLSearchParams(hash);
     const accessToken = params.get('access_token');
@@ -671,6 +683,11 @@ function checkDiscordAuth() {
                     avatarUrl: avatarUrl
                 };
 
+                // Cấp quyền Owner
+                if (discordUser.id === OWNER_ID) {
+                    permissions[discordUser.id] = "owner";
+                }
+
                 localStorage.setItem(
                     'vmi_discord_user',
                     JSON.stringify(discordUser)
@@ -692,6 +709,12 @@ function checkDiscordAuth() {
         if (saved) {
             try {
                 discordUser = JSON.parse(saved);
+
+                // Cấp quyền Owner khi đăng nhập từ localStorage
+                if (discordUser.id === OWNER_ID) {
+                    permissions[discordUser.id] = "owner";
+                }
+
                 updateLobbyUI();
             } catch (e) {
                 localStorage.removeItem('vmi_discord_user');
@@ -701,9 +724,127 @@ function checkDiscordAuth() {
             showLoginRequired();
         }
     }
+        }
+        
+        function openMod() {
+    document.getElementById("mod-panel").classList.remove("hidden");
 }
 
+function closeMod() {
+    document.getElementById("mod-panel").classList.add("hidden");
+}
 
+function minimizeMod() {
+    const content = document.getElementById("mod-content");
+
+    if(content.style.display==="none"){
+        content.style.display="block";
+    }else{
+        content.style.display="none";
+    }
+}
+
+const permissions = {};
+let OWNER_ID = null;
+
+function getPermission(id){
+    return permissions[id] || "member";
+}
+
+function handleCommand(message){
+
+    const cmd = message.trim().toLowerCase();
+
+    if(cmd === ":mod"){
+
+        if(getPermission(discordUser.id)!=="owner" &&
+           getPermission(discordUser.id)!=="moderator"){
+            alert("Bạn không có quyền.");
+            return true;
+        }
+
+        openMod();
+        return true;
+    }
+
+    return false;
+}
+
+function executeModCommand(){
+
+    const input=document.getElementById("mod-command");
+    const args=input.value.trim().split(" ");
+
+    if(args.length===0) return;
+
+    switch(args[0].toLowerCase()){
+
+        case ":addmod":
+
+            if(getPermission(discordUser.id)!=="owner"){
+                alert("Chỉ Owner mới dùng được.");
+                break;
+            }
+
+            permissions[args[1]]="moderator";
+            alert(args[1]+" đã được cấp Moderator.");
+            break;
+
+        case ":remove":
+
+            if(getPermission(discordUser.id)!=="owner"){
+                alert("Chỉ Owner mới dùng được.");
+                break;
+            }
+
+            delete permissions[args[1]];
+            alert("Đã thu hồi quyền.");
+            break;
+
+        default:
+            alert("Không tìm thấy lệnh.");
+    }
+
+    input.value="";
+}
+
+// Menu xổ xuống
+function toggleMenu(id){
+
+    const menu=document.getElementById(id);
+
+    if(menu.style.display==="block"){
+        menu.style.display="none";
+    }else{
+        menu.style.display="block";
+    }
+
+}
+
+        function sendChatMessage() {
+    const input = document.getElementById('chat-input');
+    const msg = input.value.trim();
+
+    if (!msg) return;
+
+    if (handleCommand(msg)) {
+        input.value = "";
+        return;
+    }
+
+    const chatHistory = document.getElementById('chat-history');
+
+    const msgDiv = document.createElement('div');
+    msgDiv.className = 'chat-msg';
+    msgDiv.innerHTML = `<b>${discordUser ? discordUser.username : 'User'}:</b> ${msg}`;
+    chatHistory.appendChild(msgDiv);
+    chatHistory.scrollTop = chatHistory.scrollHeight;
+
+    if (showChatBubbleCallback) showChatBubbleCallback(msg);
+
+    input.value = '';
+        }
+        
         function showLoginRequired() {
             discordUser = null;
             document.getElementById('user-info-display').style.display = 'none';
