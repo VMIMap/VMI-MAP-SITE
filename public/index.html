@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+    <title>VMI Game Client</title>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.10.1/nipplejs.min.js"></script>
+    
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #0b0c10;
+            color: #fff;
+        }
+
+        body.is-editing-hud .hud-element * {
+            pointer-events: none !important;
+        }
+
+        #lobby-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: radial-gradient(circle, #2a0808 0%, #0b0505 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .lobby-content-wrapper {
+            transform: scale(0.75);
+            transform-origin: center center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .lobby-card {
+            background: rgba(20, 15, 15, 0.95);
+            border: 2px solid #ffcc00;
+            border-radius: 16px;
+            padding: 20px 24px;
+            width: 420px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+        }
+
+        .lobby-title {
+            color: #ffcc00;
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 12px;
+            text-shadow: 0 0 8px rgba(255,204,0,0.4);
+            letter-spacing: 1px;
+        }
+
+        .user-info-box {
+            background: rgba(40, 30, 30, 0.8);
+            border: 1px solid #443322;
+            border-radius: 12px;
+            padding: 10px 15px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+
+        .user-avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            border: 2px solid #ffcc00;
+            object-fit: cover;
+        }
+
+        .user-details {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            overflow: hidden;
+        }
+
+        .user-label {
+            font-size: 10px;
+            color: #aaa;
+            text-transform: uppercase;
+        }
+
+        .user-name {
+            font-size: 14px;
+            font-weight: bold;
+            color: #fff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 260px;
+        }
+
+        .map-selector-horizontal {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-top: 8px;
+            margin-bottom: 15px;
+            width: 100%;
+        }
+
+        .map-card-btn {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid #555;
+            border-radius: 8px;
+            padding: 10px 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            font-size: 11px;
+            font-weight: bold;
+            color: #fff;
+        }
+
+        .map-card-btn.active {
+            border-color: #ffcc00;
+            background: rgba(255, 204, 0, 0.2);
+            box-shadow: 0 0 10px rgba(255,204,0,0.3);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: none;
+            font-weight: bold;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-play { background: linear-gradient(135deg, #ffcc00, #ff8800); color: #000; }
+        .btn-logout { background: #4a1515; color: #ff8888; border: 1px solid #772222; }
+        .btn-discord { background: #5865F2; color: #fff; }
+
+        .hud-element {
+            position: absolute;
+            z-index: 100;
+            touch-action: none;
+        }
+
+        #menu-toggle-btn {
+            top: 15px;
+            left: 15px;
+            width: 42px;
+            height: 42px;
+            cursor: pointer;
+            background: rgba(0,0,0,0.6);
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.2);
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #chat-toggle-btn {
+            top: 15px;
+            left: 68px;
+            background: rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        #roblox-chat-container {
+            top: 65px;
+            left: 15px;
+            width: 210px;
+            height: 140px;
+            background: rgba(0, 0, 0, 0.65);
+            border-radius: 8px;
+            display: none;
+            flex-direction: column;
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 6px;
+        }
+
+        #chat-history {
+            flex: 1;
+            overflow-y: auto;
+            font-size: 11px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .chat-msg {
+            background: rgba(255,255,255,0.1);
+            padding: 4px 6px;
+            border-radius: 4px;
+            word-break: break-word;
+        }
+
+        #chat-input-zone {
+            display: flex;
+            gap: 4px;
+            margin-top: 4px;
+        }
+
+        #chat-input {
+            flex: 1;
+            background: rgba(0,0,0,0.5);
+            border: 1px solid #555;
+            color: white;
+            padding: 4px 6px;
+            border-radius: 4px;
+            outline: none;
+            font-size: 11px;
+        }
+
+        #chat-send-btn {
+            background: #ffcc00;
+            border: none;
+            color: black;
+            font-weight: bold;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+        }
+
+        #joystick-zone {
+            bottom: 30px;
+            left: 30px;
+            width: 140px;
+            height: 140px;
+        }
+
+        #fps-counter {
+            top: 15px;
+            right: 15px;
+            background: rgba(0,0,0,0.5);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #00ffcc;
+        }
+
+        #server-notification {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-50px);
+            background: rgba(0, 0, 0, 0.85);
+            border: 1px solid #ffcc00;
+            color: #ffcc00;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: bold;
+            z-index: 3000;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            transition: transform 0.3s ease, opacity 0.3s ease;
+            opacity: 0;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+        #server-notification.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        .modal {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: #1e1e24;
+            border: 1px solid #444;
+            border-radius: 12px;
+            width: 440px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .modal-header {
+            font-weight: bold;
+            font-size: 18px;
+            color: #ffcc00;
+            text-align: center;
+            margin-bottom: 4px;
+        }
+
+        .menu-btn-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 5px;
+        }
+
+        .settings-grid-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.08);
+            padding: 10px;
+            border-radius: 8px;
+            align-items: center;
+            font-size: 12px;
+        }
+
+        .hud-dragging {
+            outline: 2px dashed #ffcc00 !important;
+            background: rgba(255, 204, 0, 0.1) !important;
+        }
+
+        #hud-edit-panel {
+            position: fixed;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.85);
+            border: 1px solid #ffcc00;
+            padding: 10px 15px;
+            border-radius: 10px;
+            z-index: 2000;
+            display: none;
+            gap: 10px;
+            align-items: center;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="server-notification"></div>
+
+    <!-- SẢNH CHỜ LOBBY -->
+    <div id="lobby-overlay">
+        <div class="lobby-content-wrapper">
+            <div class="lobby-card">
+                <div class="lobby-title">SẢNH CHỜ VMI</div>
+
+                <div id="user-info-display" class="user-info-box" style="display: none;">
+                    <img id="lobby-user-avatar" class="user-avatar" src="" alt="Avatar">
+                    <div class="user-details">
+                        <span class="user-label">Tài Khoản</span>
+                        <span id="lobby-user-name" class="user-name">Loading...</span>
+                    </div>
+                </div>
+
+                <div style="text-align: left; font-size: 12px; color: #ccc; margin-top: 5px;">Bản Đồ Thi Đấu:</div>
+                <div class="map-selector-horizontal">
+                    <div class="map-card-btn active" id="lobby-map-map1" onclick="selectMap('map1')"><span>Đồng Cỏ</span></div>
+                    <div class="map-card-btn" id="lobby-map-map2" onclick="selectMap('map2')"><span>Sa Mạc</span></div>
+                    <div class="map-card-btn" id="lobby-map-map3" onclick="selectMap('map3')"><span>Vũ Trụ</span></div>
+                    <div class="map-card-btn" id="lobby-map-map4" onclick="selectMap('map4')"><span>Tuyết</span></div>
+                </div>
+
+                <div id="auth-btn-group">
+                    <button class="btn btn-discord" onclick="loginWithDiscord()">Đăng Nhập Discord</button>
+                </div>
+
+                <div id="in-game-btn-group" style="display: none;">
+                    <button class="btn btn-play" onclick="enterGame()">VÀO GAME</button>
+                    <button class="btn btn-logout" onclick="logout()">Đăng Xuất</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- HUD TRONG GAME -->
+    <div id="game-hud-wrapper" style="display: none;">
+        <button id="menu-toggle-btn" class="hud-element" onclick="openMenu()">⚙️</button>
+        <button id="chat-toggle-btn" class="hud-element" onclick="toggleChatContainer()">Chat</button>
+        
+        <div id="roblox-chat-container" class="hud-element">
+            <div id="chat-history"></div>
+            <div id="chat-input-zone">
+                <input type="text" id="chat-input" placeholder="Nhập tin nhắn..." onkeydown="if(event.key==='Enter') sendChatMessage()">
+                <button id="chat-send-btn" onclick="sendChatMessage()">Gửi</button>
+            </div>
+        </div>
+
+        <div id="joystick-zone" class="hud-element"></div>
+        <div id="fps-counter" class="hud-element">FPS: 60</div>
+    </div>
+
+    <div id="hud-edit-panel">
+        <span>Đang chọn: <b id="selected-hud-name" style="color:#ffcc00">Chưa chọn</b></span>
+        <label>Size: <input type="range" id="hud-scale-slider" min="0.6" max="1.6" step="0.1" value="1"></label>
+        <label>Độ mờ: <input type="range" id="hud-opacity-slider" min="0.2" max="1" step="0.1" value="1"></label>
+        <button onclick="toggleCustomHUD()" style="background:#00a2ff; border:none; color:white; padding:4px 8px; border-radius:4px; font-weight:bold;">Lưu Lại</button>
+    </div>
+
+    <!-- MODALS -->
+    <div id="roblox-main-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">MENU VMI</div>
+            <button class="btn btn-play" onclick="closeMenu()">Tiếp Tục Chơi</button>
+            
+            <div class="menu-btn-grid">
+                <button class="btn" style="background:#333;" onclick="closeMenu(); toggleCustomHUD()">Chỉnh HUD</button>
+                <button class="btn" style="background:#333;" onclick="openSubModal('settings-modal')">Độ Hoạ</button>
+                <button class="btn" style="background:#333;" onclick="openSubModal('audio-modal')">Âm thanh</button>
+                <button class="btn" style="background:#333;" onclick="openSubModal('members-modal')">Thành viên</button>
+            </div>
+
+            <button class="btn btn-logout" onclick="backToLobby()" style="margin-top: 10px;">Rời Trận Về Sảnh</button>
+        </div>
+    </div>
+
+    <div id="map-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">CHỌN BẢN ĐỒ</div>
+            <div class="map-selector-horizontal">
+                <div class="map-card-btn" id="in-game-map-map1" onclick="changeMapInGame('map1')"><span>Đồng Cỏ</span></div>
+                <div class="map-card-btn" id="in-game-map-map2" onclick="changeMapInGame('map2')"><span>Sa Mạc</span></div>
+                <div class="map-card-btn" id="in-game-map-map3" onclick="changeMapInGame('map3')"><span>Vũ Trụ</span></div>
+                <div class="map-card-btn" id="in-game-map-map4" onclick="changeMapInGame('map4')"><span>Tuyết</span></div>
+            </div>
+            <button class="btn btn-logout" onclick="closeSubModal('map-modal')">Đóng</button>
+        </div>
+    </div>
+
+    <div id="settings-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">CÀI ĐẶT ĐỘ HOẠ</div>
+            
+            <div class="settings-grid-row">
+                <div>Thu Phóng Zoom: <b id="zoom-val">0.8x</b></div>
+                <input type="range" id="zoom-slider" min="0.3" max="1.5" step="0.05" value="0.8" style="width:100%;" oninput="updateCameraZoom(this.value)">
+            </div>
+
+            <div class="settings-grid-row">
+                <div>Độ Mờ HUD Chung</div>
+                <input type="range" min="0.2" max="1" step="0.1" value="1" style="width:100%;" oninput="changeOverallHUDOpacity(this.value)">
+            </div>
+
+            <div class="settings-grid-row">
+                <div>Độ Nét Phông Chữ: <b id="font-res-val">1k</b></div>
+                <select id="font-res-select" style="width:100%; background:#111; color:#fff; border:1px solid #555; padding:4px; border-radius:4px;" onchange="updateFontResolution(this.value)">
+                    <option value="1">1K (Chuẩn)</option>
+                    <option value="2">2K (Nét)</option>
+                    <option value="3">3K (Rất Nét)</option>
+                    <option value="4">4K (Siêu Nét)</option>
+                </select>
+            </div>
+
+            <button class="btn btn-play" onclick="closeSubModal('settings-modal')">Lưu & Đóng</button>
+        </div>
+    </div>
+
+    <div id="audio-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">ÂM THANH</div>
+            <div class="settings-grid-row">
+                <div>Âm lượng game</div>
+                <input type="range" min="0" max="1" step="0.1" value="0.8" style="width:100%;">
+            </div>
+            <button class="btn btn-play" onclick="closeSubModal('audio-modal')">Đóng</button>
+        </div>
+    </div>
+
+    <div id="members-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">THÀNH VIÊN TRONG PHÒNG</div>
+            <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:8px; font-size:12px; min-height:80px; max-height:150px; overflow-y:auto;">
+                - <span id="member-list-name">Người chơi hiện tại</span> (Host)
+            </div>
+            <button class="btn btn-play" onclick="closeSubModal('members-modal')">Đóng</button>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        let discordUser = null;
+        let gameInstance = null;
+        let mainScene = null;
+        let cameraZoom = 0.8; 
+        let selectedMap = 'map1';
+        let avatarImageObj = null;
+        let joystickManager = null;
+        let isCustomHUDMode = false;
+        let selectedHudEl = null;
+        let showChatBubbleCallback = null;
+        let fontResolutionScale = 1;
+
+        const mapConfigs = {
+            'map1': { bg: '#1a3a2a', grid: 0xffffff, gridAlpha: 0.12 },
+            'map2': { bg: '#3a2a1a', grid: 0xffaa00, gridAlpha: 0.15 },
+            'map3': { bg: '#08081a', grid: 0x00a2ff, gridAlpha: 0.20 },
+            'map4': { bg: '#2a3a3a', grid: 0xffffff, gridAlpha: 0.25 }
+        };
+
+        function checkDiscordAuth() {
+            const hash = window.location.hash.substring(1);
+            const params = new URLSearchParams(hash);
+            const accessToken = params.get('access_token');
+
+            if (accessToken) {
+                fetch('https://discord.com/api/users/@me', {
+                    headers: { authorization: `Bearer ${accessToken}` }
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.id) {
+                        discordUser = {
+                            username: data.global_name || data.username,
+                            avatarUrl: data.avatar 
+                                ? `https://cdn.discordapp.com/avatars/${data.id}/${data.avatar}.png`
+                                : `https://cdn.discordapp.com/embed/avatars/0.png`
+                        };
+                        updateLobbyUI();
+                    } else { showLoginRequired(); }
+                })
+                .catch(() => showLoginRequired());
+            } else {
+                const saved = localStorage.getItem('vmi_discord_user');
+                if (saved) { discordUser = JSON.parse(saved); updateLobbyUI(); } 
+                else { showLoginRequired(); }
+            }
+        }
+
+        function showLoginRequired() {
+            discordUser = null;
+            document.getElementById('user-info-display').style.display = 'none';
+            document.getElementById('auth-btn-group').style.display = 'block';
+            document.getElementById('in-game-btn-group').style.display = 'none';
+        }
+
+        function updateLobbyUI() {
+            if (discordUser) {
+                localStorage.setItem('vmi_discord_user', JSON.stringify(discordUser));
+                document.getElementById('lobby-user-avatar').src = discordUser.avatarUrl;
+                document.getElementById('lobby-user-name').innerText = discordUser.username;
+                document.getElementById('member-list-name').innerText = discordUser.username;
+                
+                document.getElementById('user-info-display').style.display = 'flex';
+                document.getElementById('auth-btn-group').style.display = 'none';
+                document.getElementById('in-game-btn-group').style.display = 'block';
+            }
+        }
+
+        function loginWithDiscord() {
+            const CLIENT_ID = '1534238453871673414'; 
+            const REDIRECT_URI = encodeURIComponent(window.location.origin + window.location.pathname);
+            const oauthUrl = `https://discord.com/api/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=token&scope=identify&prompt=consent`;
+            window.location.href = oauthUrl;
+        }
+
+        function logout() {
+            localStorage.removeItem('vmi_discord_user');
+            discordUser = null;
+            window.location.hash = '';
+            showLoginRequired();
+        }
+
+        function selectMap(mapKey) {
+            selectedMap = mapKey;
+            document.querySelectorAll('.map-card-btn').forEach(btn => btn.classList.remove('active'));
+            const activeLobbyBtn = document.getElementById('lobby-map-' + mapKey);
+            if(activeLobbyBtn) activeLobbyBtn.classList.add('active');
+            const activeInGameBtn = document.getElementById('in-game-map-' + mapKey);
+            if(activeInGameBtn) activeInGameBtn.classList.add('active');
+        }
+
+        function changeMapInGame(mapKey) {
+            selectMap(mapKey);
+            closeSubModal('map-modal');
+            closeMenu();
+            if (gameInstance) { gameInstance.destroy(true); initPhaserGame(); }
+        }
+
+        function showServerNotification(message) {
+            const notif = document.getElementById('server-notification');
+            notif.innerText = message;
+            notif.classList.add('show');
+            setTimeout(() => { notif.classList.remove('show'); }, 4000);
+        }
+
+        function enterGame() {
+            if (!discordUser) { alert("Bạn phải đăng nhập Discord!"); return; }
+            document.getElementById('lobby-overlay').style.display = 'none';
+            document.getElementById('game-hud-wrapper').style.display = 'block';
+            
+            const username = discordUser ? discordUser.username : 'Người chơi';
+            showServerNotification(`${username} đã vào server.`);
+
+            if (discordUser && discordUser.avatarUrl) {
+                avatarImageObj = new Image();
+                avatarImageObj.crossOrigin = "Anonymous";
+                avatarImageObj.onload = function() { initPhaserGame(); };
+                avatarImageObj.onerror = function() { avatarImageObj = null; initPhaserGame(); };
+                avatarImageObj.src = discordUser.avatarUrl;
+            } else { initPhaserGame(); }
+            setupDraggableHUD();
+        }
+
+        function backToLobby() {
+            closeMenu();
+            document.getElementById('game-hud-wrapper').style.display = 'none';
+            if (gameInstance) { gameInstance.destroy(true); gameInstance = null; }
+            document.getElementById('lobby-overlay').style.display = 'flex';
+        }
+
+        function toggleChatContainer() {
+            if (isCustomHUDMode) return;
+            const chatBox = document.getElementById('roblox-chat-container');
+            chatBox.style.display = (chatBox.style.display === 'flex') ? 'none' : 'flex';
+        }
+
+        function sendChatMessage() {
+            const input = document.getElementById('chat-input');
+            const msg = input.value.trim();
+            if (!msg) return;
+
+            const chatHistory = document.getElementById('chat-history');
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'chat-msg';
+            msgDiv.innerHTML = `<b>${discordUser ? discordUser.username : 'User'}:</b> ${msg}`;
+            chatHistory.appendChild(msgDiv);
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+
+            if (showChatBubbleCallback) showChatBubbleCallback(msg);
+            input.value = '';
+        }
+
+        function openMenu() { if (!isCustomHUDMode) document.getElementById('roblox-main-modal').style.display = 'flex'; }
+        function closeMenu() { document.getElementById('roblox-main-modal').style.display = 'none'; }
+        function openSubModal(id) { closeMenu(); document.getElementById(id).style.display = 'flex'; }
+        function closeSubModal(id) { document.getElementById(id).style.display = 'none'; openMenu(); }
+
+        function updateCameraZoom(val) {
+            cameraZoom = parseFloat(val);
+            document.getElementById('zoom-val').innerText = cameraZoom + 'x';
+            if (mainScene && mainScene.cameras.main) mainScene.cameras.main.setZoom(cameraZoom);
+        }
+
+        function changeOverallHUDOpacity(val) {
+            document.querySelectorAll('.hud-element').forEach(el => el.style.opacity = val);
+        }
+
+        function updateFontResolution(val) {
+            fontResolutionScale = parseInt(val);
+            document.getElementById('font-res-val').innerText = val + 'K';
+            if (gameInstance) { gameInstance.destroy(true); initPhaserGame(); }
+        }
+
+        function toggleCustomHUD() {
+            isCustomHUDMode = !isCustomHUDMode;
+            const hudElems = document.querySelectorAll('.hud-element');
+            const editPanel = document.getElementById('hud-edit-panel');
+
+            if (isCustomHUDMode) {
+                document.body.classList.add('is-editing-hud');
+                hudElems.forEach(el => {
+                    el.classList.add('hud-dragging');
+                    if (!el.style.left || el.style.left === '') {
+                        el.style.left = el.offsetLeft + 'px';
+                        el.style.top = el.offsetTop + 'px';
+                        el.style.bottom = 'auto';
+                        el.style.right = 'auto';
+                    }
+                });
+                document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
+                editPanel.style.display = 'flex';
+                selectHudElement(document.getElementById('menu-toggle-btn'), 'Nút Menu');
+            } else {
+                document.body.classList.remove('is-editing-hud');
+                hudElems.forEach(el => { el.classList.remove('hud-dragging'); el.style.outline = 'none'; });
+                editPanel.style.display = 'none';
+                selectedHudEl = null;
+            }
+        }
+
+        function selectHudElement(el, name) {
+            if (!isCustomHUDMode || !el) return;
+            document.querySelectorAll('.hud-element').forEach(item => item.style.outline = 'none');
+            selectedHudEl = el;
+            selectedHudEl.style.outline = '2px solid #00a2ff';
+            document.getElementById('selected-hud-name').innerText = name;
+            
+            const currentScale = selectedHudEl.getAttribute('data-scale') || '1';
+            document.getElementById('hud-scale-slider').value = currentScale;
+            document.getElementById('hud-opacity-slider').value = window.getComputedStyle(selectedHudEl).opacity;
+        }
+
+        function setupDraggableHUD() {
+            const hudElems = document.querySelectorAll('.hud-element');
+            const editPanel = document.getElementById('hud-edit-panel');
+
+            editPanel.addEventListener('pointerdown', e => e.stopPropagation());
+            
+            document.getElementById('hud-scale-slider').oninput = (e) => {
+                if (selectedHudEl) {
+                    const scale = e.target.value;
+                    selectedHudEl.setAttribute('data-scale', scale);
+                    if (selectedHudEl.id === 'joystick-zone') {
+                        selectedHudEl.style.width = (140 * scale) + 'px';
+                        selectedHudEl.style.height = (140 * scale) + 'px';
+                    } else if (selectedHudEl.id === 'menu-toggle-btn') {
+                        selectedHudEl.style.width = (42 * scale) + 'px';
+                        selectedHudEl.style.height = (42 * scale) + 'px';
+                    } else {
+                        selectedHudEl.style.transform = `scale(${scale})`;
+                        selectedHudEl.style.transformOrigin = 'top left';
+                    }
+                }
+            };
+
+            document.getElementById('hud-opacity-slider').oninput = (e) => {
+                if (selectedHudEl) selectedHudEl.style.opacity = e.target.value;
+            };
+
+            const hudNames = {
+                'menu-toggle-btn': 'Nút Menu',
+                'chat-toggle-btn': 'Nút Bật Chat',
+                'roblox-chat-container': 'Khung Chat',
+                'joystick-zone': 'Cần Di Chuyển',
+                'fps-counter': 'Khung FPS'
+            };
+
+            hudElems.forEach(el => {
+                let active = false, startX, startY, startLeft, startTop;
+
+                el.addEventListener("pointerdown", e => {
+                    if (!isCustomHUDMode) return;
+                    e.stopPropagation();
+                    selectHudElement(el, hudNames[el.id] || 'Phần tử UI');
+                    
+                    startX = e.clientX;
+                    startY = e.clientY;
+                    
+                    el.style.bottom = 'auto';
+                    el.style.right = 'auto';
+                    
+                    startLeft = el.offsetLeft;
+                    startTop = el.offsetTop;
+
+                    if (e.target === el || el.contains(e.target)) active = true;
+                });
+
+                document.addEventListener("pointerup", () => { active = false; });
+                document.addEventListener("pointermove", e => {
+                    if (active && isCustomHUDMode) {
+                        e.preventDefault(); e.stopPropagation();
+                        const dx = e.clientX - startX;
+                        const dy = e.clientY - startY;
+                        
+                        el.style.left = (startLeft + dx) + 'px';
+                        el.style.top = (startTop + dy) + 'px';
+                    }
+                });
+            });
+        }
+
+        function initPhaserGame() {
+            const mapConf = mapConfigs[selectedMap] || mapConfigs['map1'];
+            
+            const config = {
+                type: Phaser.CANVAS,
+                parent: document.body,
+                width: window.innerWidth,
+                height: window.innerHeight,
+                resolution: fontResolutionScale,
+                antialias: true,
+                backgroundColor: mapConf.bg,
+                physics: { default: 'arcade', arcade: { debug: false } },
+                scene: { create: create, update: update }
+            };
+
+            gameInstance = new Phaser.Game(config);
+        }
+
+        function create() {
+            mainScene = this;
+            const mapConf = mapConfigs[selectedMap] || mapConfigs['map1'];
+
+            const graphics = mainScene.add.graphics();
+            graphics.lineStyle(1, mapConf.grid, mapConf.gridAlpha);
+            for (let x = 0; x < 3000; x += 50) { graphics.moveTo(x, 0); graphics.lineTo(x, 3000); }
+            for (let y = 0; y < 3000; y += 50) { graphics.moveTo(0, y); graphics.lineTo(3000, y); }
+            graphics.strokePath();
+
+            const avatarRadius = 28;
+            const canvasTextureKey = 'user-avatar-texture-' + Date.now();
+            const canvas = mainScene.textures.createCanvas(canvasTextureKey, avatarRadius * 2, avatarRadius * 2);
+            const ctx = canvas.context;
+
+            ctx.beginPath(); ctx.arc(avatarRadius, avatarRadius, avatarRadius, 0, Math.PI * 2); ctx.closePath(); ctx.clip();
+
+            if (avatarImageObj && avatarImageObj.complete && avatarImageObj.naturalWidth !== 0) {
+                ctx.drawImage(avatarImageObj, 0, 0, avatarRadius * 2, avatarRadius * 2);
+            } else {
+                ctx.fillStyle = "#ffcc00"; ctx.fillRect(0, 0, avatarRadius * 2, avatarRadius * 2);
+                ctx.fillStyle = "#000000"; ctx.font = "bold 22px sans-serif";
+                ctx.textAlign = "center"; ctx.textBaseline = "middle";
+                ctx.fillText((discordUser ? discordUser.username : 'V').charAt(0).toUpperCase(), avatarRadius, avatarRadius);
+            }
+            canvas.refresh();
+
+            const avatarSprite = mainScene.add.image(0, 0, canvasTextureKey);
+            const avatarGlow = mainScene.add.graphics();
+            avatarGlow.lineStyle(3, 0xffcc00, 1);
+            avatarGlow.strokeCircle(0, 0, avatarRadius + 2);
+
+            const nameLabel = discordUser ? discordUser.username : 'Player';
+            const nameTextTemp = mainScene.add.text(0, avatarRadius + 16, nameLabel, {
+                fontSize: '14px', fontStyle: 'bold', fontFamily: 'sans-serif', fill: '#ffffff',
+                stroke: '#000000', strokeThickness: 3
+            }).setOrigin(0.5);
+
+            const chatBubbleBg = mainScene.add.graphics();
+            const chatBubbleText = mainScene.add.text(0, 0, '', {
+                fontSize: '12px', fill: '#000000', align: 'center', wordWrap: { width: 140 }
+            }).setOrigin(0.5);
+            const chatContainer = mainScene.add.container(0, -52, [chatBubbleBg, chatBubbleText]).setVisible(false);
+
+            const playerContainer = mainScene.add.container(1500, 1500, [ avatarGlow, avatarSprite, nameTextTemp, chatContainer ]);
+
+            mainScene.physics.world.enable(playerContainer);
+            playerContainer.body.setCollideWorldBounds(true);
+            playerContainer.body.setSize(50, 50).setOffset(-25, -25);
+
+            let chatTimer = null;
+            showChatBubbleCallback = function(text) {
+                chatBubbleText.setText(text);
+                const bounds = chatBubbleText.getBounds(); const padding = 8;
+                chatBubbleBg.clear(); chatBubbleBg.fillStyle(0xffffff, 0.95);
+                chatBubbleBg.fillRoundedRect(-bounds.width / 2 - padding, -bounds.height / 2 - padding, bounds.width + padding * 2, bounds.height + padding * 2, 6);
+                chatContainer.setVisible(true);
+                if (chatTimer) clearTimeout(chatTimer);
+                chatTimer = setTimeout(() => { chatContainer.setVisible(false); }, 5000);
+            };
+
+            const camera = mainScene.cameras.main;
+            camera.startFollow(playerContainer, true, 0.1, 0.1);
+            camera.setBounds(0, 0, 3000, 3000);
+            camera.setZoom(cameraZoom); 
+
+            initJoystick(100);
+            mainScene.playerContainer = playerContainer;
+        }
+
+        function initJoystick(size) {
+            const zoneContainer = document.getElementById('joystick-zone');
+            zoneContainer.innerHTML = '';
+            if (joystickManager) joystickManager.destroy();
+
+            joystickManager = nipplejs.create({
+                zone: zoneContainer, 
+                mode: 'static',
+                position: { left: '50%', top: '50%' },
+                color: 'white', 
+                size: size, 
+                restJoystick: true
+            });
+
+            joystickManager.on('move', (evt, data) => {
+                if (isCustomHUDMode) return;
+                if (data && data.vector && mainScene && mainScene.playerContainer) {
+                    const vx = data.vector.x * 240;
+                    const vy = -data.vector.y * 240;
+                    mainScene.playerContainer.body.setVelocity(vx, vy);
+                }
+            });
+
+            joystickManager.on('end', () => {
+                if (mainScene && mainScene.playerContainer) {
+                    mainScene.playerContainer.body.setVelocity(0, 0);
+                }
+            });
+        }
+
+        function update() {
+            if (gameInstance) {
+                document.getElementById('fps-counter').innerText = `FPS: ${Math.round(gameInstance.loop.actualFps)}`;
+            }
+        }
+
+        window.onload = () => {
+            selectMap('map1');
+            checkDiscordAuth();
+        };
+    </script>
+</body>
+</html>
+
