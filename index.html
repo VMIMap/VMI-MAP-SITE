@@ -577,7 +577,6 @@
         function loginWithDiscord() {
     const CLIENT_ID = '1534238453871673414';
     const REDIRECT_URI = encodeURIComponent('https://vmimap.github.io/VMI-MAP-SITE/');
-    
     const oauthUrl = `https://discord.com/api/oauth2/authorize?client_id=\( {CLIENT_ID}&redirect_uri= \){REDIRECT_URI}&response_type=token&scope=identify`;
     window.location.href = oauthUrl;
         }
