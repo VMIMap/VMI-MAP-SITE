@@ -601,68 +601,93 @@
         }
 
         function checkDiscordAuth() {
-            const OWNER_ID = "1064908467476905987";
+    const OWNER_ID = "1064908467476905987";
 
-            const hash = window.location.hash.substring(1);
-            const params = new URLSearchParams(hash);
-            const accessToken = params.get('access_token');
-            const error = params.get('error');
+    const hash = window.location.hash.substring(1);
+    const params = new URLSearchParams(hash);
+    const accessToken = params.get('access_token');
+    const error = params.get('error');
 
-            if (error) {
-                window.history.replaceState(null, null, window.location.pathname);
-                showLoginRequired();
-                return;
+    if (error) {
+        window.history.replaceState(null, null, window.location.pathname);
+        showLoginRequired();
+        return;
+    }
+
+    if (accessToken) {
+        window.history.replaceState(null, null, window.location.pathname);
+
+        fetch('https://discord.com/api/users/@me', {
+            headers: {
+                authorization: `Bearer ${accessToken}`
             }
+        })
+        .then(res => res.json())
+        .then(data => {
 
-            if (accessToken) {
-                window.history.replaceState(null, null, window.location.pathname);
+            if (data.id) {
 
-                fetch('https://discord.com/api/users/@me', {
-                    headers: { authorization: `Bearer ${accessToken}` }
-                })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.id) {
-                        const avatarUrl = data.avatar
-                            ? `https://cdn.discordapp.com/avatars/\( {data.id}/ \){data.avatar}.png?size=128&t=${Date.now()}`
-                            : `https://cdn.discordapp.com/embed/avatars/0.png`;
+                const avatarUrl = data.avatar
+                    ? `https://cdn.discordapp.com/avatars/${data.id}/${data.avatar}.png?size=128&t=${Date.now()}`
+                    : `https://cdn.discordapp.com/embed/avatars/0.png`;
 
-                        discordUser = {
-                            id: data.id,
-                            username: data.global_name || data.username,
-                            avatarUrl: avatarUrl
-                        };
+                discordUser = {
+                    id: data.id,
+                    username: data.global_name || data.username,
+                    avatarUrl: avatarUrl
+                };
 
-                        if (discordUser.id === OWNER_ID) {
-                            permissions[discordUser.id] = "owner";
-                        }
+                // Quyền owner
+                if (discordUser.id === OWNER_ID) {
+                    permissions[discordUser.id] = "owner";
+                }
 
-                        localStorage.setItem('vmi_discord_user', JSON.stringify(discordUser));
-                        updateLobbyUI();
-                    } else {
-                        showLoginRequired();
-                    }
-                })
-                .catch(() => showLoginRequired());
+                localStorage.setItem(
+                    'vmi_discord_user',
+                    JSON.stringify(discordUser)
+                );
+
+                updateLobbyUI();
 
             } else {
-                const saved = localStorage.getItem('vmi_discord_user');
-                if (saved) {
-                    try {
-                        discordUser = JSON.parse(saved);
-                        if (discordUser.id === OWNER_ID) {
-                            permissions[discordUser.id] = "owner";
-                        }
-                        updateLobbyUI();
-                    } catch (e) {
-                        localStorage.removeItem('vmi_discord_user');
-                        showLoginRequired();
-                    }
-                } else {
-                    showLoginRequired();
-                }
+                showLoginRequired();
             }
+
+        })
+        .catch(err => {
+            console.error("Discord login error:", err);
+            showLoginRequired();
+        });
+
+    } else {
+
+        const saved = localStorage.getItem('vmi_discord_user');
+
+        if (saved) {
+            try {
+
+                discordUser = JSON.parse(saved);
+
+                if (discordUser.id === OWNER_ID) {
+                    permissions[discordUser.id] = "owner";
+                }
+
+                updateLobbyUI();
+
+            } catch (e) {
+
+                console.error("Save user lỗi:", e);
+                localStorage.removeItem('vmi_discord_user');
+                showLoginRequired();
+
+            }
+
+        } else {
+            showLoginRequired();
         }
+    }
+        }
+        
 
         function showLoginRequired() {
             discordUser = null;
