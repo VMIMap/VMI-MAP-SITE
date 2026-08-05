@@ -366,41 +366,47 @@
 </head>
 <body>
 
-    <div id="server-notification"></div>
-
+    <div id="server-notification"></div>                          
     <!-- SẢNH CHỜ LOBBY -->
     <div id="lobby-overlay">
         <div class="lobby-content-wrapper">
             <div class="lobby-card">
                 <div class="lobby-title">SẢNH CHỜ VMI</div>
 
-                <div id="user-info-display" class="user-info-box" style="display: none;">
+                <div id="user-info-display" class="user-info-box">
                     <img id="lobby-user-avatar" class="user-avatar" src="" alt="Avatar">
                     <div class="user-details">
                         <span class="user-label">Tài Khoản</span>
-                        <span id="lobby-user-name" class="user-name">Loading...</span>
+                        <span id="lobby-user-name" class="user-name">Chưa đăng nhập</span>
                     </div>
                 </div>
 
-                <div style="text-align: left; font-size: 12px; color: #ccc; margin-top: 5px;">Bản Đồ Thi Đấu:</div>
-                <div class="map-selector-horizontal">
-                    <div class="map-card-btn active" id="lobby-map-map1" onclick="selectMap('map1')"><span>Đồng Cỏ</span></div>
-                    <div class="map-card-btn" id="lobby-map-map2" onclick="selectMap('map2')"><span>Sa Mạc</span></div>
-                    <div class="map-card-btn" id="lobby-map-map3" onclick="selectMap('map3')"><span>Vũ Trụ</span></div>
-                    <div class="map-card-btn" id="lobby-map-map4" onclick="selectMap('map4')"><span>Tuyết</span></div>
+                <div style="text-align: left; font-size: 12px; color: #ccc;">
+                    <!-- Chọn bản đồ -->
                 </div>
 
-                <div id="auth-btn-group">
-                    <button class="btn btn-discord" onclick="loginWithDiscord()">Đăng Nhập Discord</button>
+                <div class="map-selector-horizontal">
+                    <div class="map-card-btn active" id="lobby-map-map1">Bản đồ 1</div>
+                    <div class="map-card-btn" id="lobby-map-map2">Bản đồ 2</div>
+                    <div class="map-card-btn" id="lobby-map-map3">Bản đồ 3</div>
+                    <div class="map-card-btn" id="lobby-map-map4">Bản đồ 4</div>
                 </div>
+
+                <!-- NÚT ĐĂNG NHẬP DISCORD ĐÃ ĐƯỢC THÊM LINK chuẩn -->
+                <div id="auth-btn-group">
+                    <a href="https://discord.com/api/oauth2/authorize?client_id=1482367871270129794&redirect_uri=https%3A%2F%2Fyoung-ears-share.loca.lt%2Fauth%2Fdiscord%2Fcallback&response_type=code&scope=identify" style="text-decoration: none;">
+                        <button class="btn btn-discord">Đăng nhập bằng Discord</button>
+                    </a>
+                </div>                                            
 
                 <div id="in-game-btn-group" style="display: none;">
-                    <button class="btn btn-play" onclick="enterGame()">VÀO GAME</button>
+                    <button class="btn btn-play" onclick="enterGame()">Vào Trò Chơi</button>
                     <button class="btn btn-logout" onclick="logout()">Đăng Xuất</button>
                 </div>
             </div>
         </div>
     </div>
+
 
     <!-- HUD TRONG GAME -->
     <div id="game-hud-wrapper" style="display: none;">
