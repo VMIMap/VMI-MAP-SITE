@@ -1257,52 +1257,291 @@ let fontResolutionScale = 1;
             'map4': { bg: '#2a3a3a', grid: 0xffffff, gridAlpha: 0.25 }
         };
 
+        const JSONBIN_ID = "6a734e9bf5f4af5e29eed0a7";
+        const JSONBIN_KEY = "$2a$10$cTU1AqSFnUIwtZNzWGHbR.vmYvxd2u4v/3c5Pjx7ft.b0Fy.A3cKG";
+
+        const JSONBIN_URL = 
+        `https://api.jsonbin.io/v3/b/${JSONBIN_ID}`;
+        
         // ==================== HỆ THỐNG LƯU SETTING ====================
         const DEFAULT_SETTINGS = {
-            cameraZoom: 0.8,
-            fontResolution: 1,
-            selectedMap: 'map1',
-            hudOpacity: 1
+    cameraZoom: 0.8,
+    fontResolution: 1,
+    selectedMap: 'map1',
+    hudOpacity: 1
+};
+
+
+function loadSettings() {
+    try {
+        const saved = localStorage.getItem('vmi_settings');
+
+        if (saved)
+            return { ...DEFAULT_SETTINGS, ...JSON.parse(saved) };
+
+    } catch(e){}
+
+    return { ...DEFAULT_SETTINGS };
+}
+
+
+
+function saveSettings(partial) {
+
+    try {
+
+        const current = loadSettings();
+
+        const updated = {
+            ...current,
+            ...partial
         };
 
-        function loadSettings() {
-            try {
-                const saved = localStorage.getItem('vmi_settings');
-                if (saved) return { ...DEFAULT_SETTINGS, ...JSON.parse(saved) };
-            } catch (e) {}
-            return { ...DEFAULT_SETTINGS };
+
+        localStorage.setItem(
+            'vmi_settings',
+            JSON.stringify(updated)
+        );
+
+
+        // lưu lên database
+        saveMemberData();
+
+
+    } catch(e){}
+
+}
+
+
+
+function applySettings() {
+
+    const s = loadSettings();
+
+
+    cameraZoom = s.cameraZoom;
+
+    fontResolutionScale = s.fontResolution;
+
+    selectedMap = s.selectedMap;
+
+
+
+    const zoomSlider =
+    document.getElementById('zoom-slider');
+
+
+    if(zoomSlider){
+
+        zoomSlider.value = s.cameraZoom;
+
+        document.getElementById('zoom-val').innerText =
+        s.cameraZoom + 'x';
+
+    }
+
+
+
+    const fontSelect =
+    document.getElementById('font-res-select');
+
+
+    if(fontSelect){
+
+        fontSelect.value = s.fontResolution;
+
+        document.getElementById('font-res-val').innerText =
+        s.fontResolution + 'K';
+
+    }
+
+
+
+    document.querySelectorAll('.hud-element')
+    .forEach(el=>{
+
+        el.style.opacity = s.hudOpacity;
+
+    });
+
+}
+
+
+
+
+
+// ================= MEMBER DATABASE =================
+
+
+async function saveMemberData(){
+
+    if(!discordUser) return;
+
+
+    try {
+
+
+        let res = await fetch(JSONBIN_URL);
+
+        let data = await res.json();
+
+
+        let db = data.record;
+
+
+        if(!db.members)
+            db.members = {};
+
+
+
+        db.members[discordUser.id] = {
+
+
+            username: discordUser.username,
+
+            avatar: discordUser.avatarUrl,
+
+
+
+            settings:{
+
+
+                cameraZoom: cameraZoom,
+
+
+                fontResolution:
+                fontResolutionScale,
+
+
+                selectedMap:selectedMap,
+
+
+                hudOpacity:
+                loadSettings().hudOpacity
+
+            },
+
+
+
+            lastLogin: Date.now()
+
+
+        };
+
+
+
+        await fetch(JSONBIN_URL,{
+
+
+            method:"PUT",
+
+
+            headers:{
+
+
+                "Content-Type":"application/json",
+
+
+                "X-Master-Key":JSONBIN_KEY
+
+
+            },
+
+
+            body:JSON.stringify(db)
+
+
+
+        });
+
+
+
+    }catch(e){
+
+
+        console.log(
+            "Lỗi lưu member:",
+            e
+        );
+
+
+    }
+
+}
+
+
+
+
+
+async function loadMemberData(){
+
+
+    if(!discordUser) return;
+
+
+
+    try{
+
+
+        let res =
+        await fetch(JSONBIN_URL);
+
+
+        let data =
+        await res.json();
+
+
+
+        let member =
+        data.record.members?.[discordUser.id];
+
+
+
+        if(member && member.settings){
+
+
+
+            localStorage.setItem(
+
+                "vmi_settings",
+
+                JSON.stringify(
+                    member.settings
+                )
+
+            );
+
+
+
+            applySettings();
+
+
+
         }
 
-        function saveSettings(partial) {
-            try {
-                const current = loadSettings();
-                const updated = { ...current, ...partial };
-                localStorage.setItem('vmi_settings', JSON.stringify(updated));
-            } catch (e) {}
+        else{
+
+
+            saveMemberData();
+
+
         }
 
-        function applySettings() {
-            const s = loadSettings();
-            cameraZoom = s.cameraZoom;
-            fontResolutionScale = s.fontResolution;
-            selectedMap = s.selectedMap;
 
-            const zoomSlider = document.getElementById('zoom-slider');
-            if (zoomSlider) {
-                zoomSlider.value = s.cameraZoom;
-                document.getElementById('zoom-val').innerText = s.cameraZoom + 'x';
-            }
 
-            const fontSelect = document.getElementById('font-res-select');
-            if (fontSelect) {
-                fontSelect.value = s.fontResolution;
-                document.getElementById('font-res-val').innerText = s.fontResolution + 'K';
-            }
+    }catch(e){
 
-            document.querySelectorAll('.hud-element').forEach(el => {
-                el.style.opacity = s.hudOpacity;
-            });
-        }
+
+        console.log(
+            "Lỗi load member:",
+            e
+        );
+
+
+    }
+
+
+          }
 
         function checkDiscordAuth() {
 
@@ -1392,16 +1631,26 @@ let fontResolutionScale = 1;
         }
 
         function updateLobbyUI() {
-            if (discordUser) {
-                localStorage.setItem('vmi_discord_user', JSON.stringify(discordUser));
-                document.getElementById('lobby-user-avatar').src = discordUser.avatarUrl;
-                document.getElementById('lobby-user-name').innerText = discordUser.username;
-                document.getElementById('member-list-name').innerText = discordUser.username;
-                
-                document.getElementById('user-info-display').style.display = 'flex';
-                document.getElementById('auth-btn-group').style.display = 'none';
-                document.getElementById('in-game-btn-group').style.display = 'block';
-            }
+    if (discordUser) {
+
+        localStorage.setItem(
+            'vmi_discord_user',
+            JSON.stringify(discordUser)
+        );
+
+        document.getElementById('lobby-user-avatar').src = discordUser.avatarUrl;
+        document.getElementById('lobby-user-name').innerText = discordUser.username;
+        document.getElementById('member-list-name').innerText = discordUser.username;
+
+        document.getElementById('user-info-display').style.display = 'flex';
+        document.getElementById('auth-btn-group').style.display = 'none';
+        document.getElementById('in-game-btn-group').style.display = 'block';
+
+
+        // Load dữ liệu member từ JSONBin
+        loadMemberData();
+
+    }
         }
 
         function loginWithDiscord() {
