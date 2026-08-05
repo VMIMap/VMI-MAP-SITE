@@ -386,6 +386,7 @@
 </head>
 <body>
 
+
     <div id="server-notification"></div>
 
 
@@ -525,6 +526,94 @@
             <button class="btn btn-play" onclick="closeSubModal('members-modal')">Đóng</button>
         </div>
     </div>
+
+    <!-- LỆNH -->
+    <div id="mod-panel" class="hidden">
+    <div class="mod-header">
+        <b>MOD PANEL</b>
+        <div>
+            <button onclick="minimizeMod()">-</button>
+            <button onclick="closeMod()">X</button>
+        </div>
+    </div>
+
+    <div id="mod-content">
+        <button>View Member</button>
+        <button>Bring</button>
+        <button>To Player</button>
+        <button>Kick</button>
+        <button>Ban</button>
+        <button>Give Item</button>
+    </div>
+</div>
+
+<style>
+#mod-panel {
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    width: 320px;
+    background: rgba(20,20,20,0.95);
+    color: white;
+    border-radius: 12px;
+    padding: 10px;
+    z-index: 9999;
+    font-family: sans-serif;
+}
+
+.hidden {
+    display: none;
+}
+
+.mod-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.mod-header button {
+    width: 35px;
+    height: 30px;
+    margin-left: 5px;
+}
+
+#mod-content button {
+    width: 100%;
+    margin-top: 8px;
+    padding: 10px;
+    background: #333;
+    color: white;
+    border: none;
+    border-radius: 6px;
+}
+</style>
+
+<script>
+function openMod() {
+    document.getElementById("mod-panel").classList.remove("hidden");
+}
+
+function closeMod() {
+    document.getElementById("mod-panel").classList.add("hidden");
+}
+
+function minimizeMod() {
+    const content = document.getElementById("mod-content");
+
+    if (content.style.display === "none") {
+        content.style.display = "block";
+    } else {
+        content.style.display = "none";
+    }
+}
+
+// Lệnh mở bảng
+function handleCommand(message) {
+    if (message === "!mod") {
+        openMod();
+    }
+}
+</script>
 
     <!-- JAVASCRIPT LOGIC -->
     <script>
