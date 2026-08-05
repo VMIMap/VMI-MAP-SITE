@@ -529,13 +529,10 @@
     </div>
 
     <!-- LỆNH -->
-    <div id="mod-panel" class="hidden">
-    <div class="mod-header">
-        <b>MOD PANEL</b>
     
     
     <!-- JAVASCRIPT LOGIC -->
-    <script>
+      <script>
         let discordUser = null;
         let gameInstance = null;
         let mainScene = null;
@@ -547,6 +544,7 @@
         let selectedHudEl = null;
         let showChatBubbleCallback = null;
         let fontResolutionScale = 1;
+        let permissions = {};   // thêm dòng này
 
         const mapConfigs = {
             'map1': { bg: '#1a3a2a', grid: 0xffffff, gridAlpha: 0.12 },
@@ -555,88 +553,117 @@
             'map4': { bg: '#2a3a3a', grid: 0xffffff, gridAlpha: 0.25 }
         };
 
-        function checkDiscordAuth() {
-    const OWNER_ID = "1064908467476905987"; // Thay bằng Discord ID của m
+        // ==================== HỆ THỐNG LƯU SETTING ====================
+        const DEFAULT_SETTINGS = {
+            cameraZoom: 0.8,
+            fontResolution: 1,
+            selectedMap: 'map1',
+            hudOpacity: 1
+        };
 
-    const hash = window.location.hash.substring(1);
-    const params = new URLSearchParams(hash);
-    const accessToken = params.get('access_token');
-    const error = params.get('error');
+        function loadSettings() {
+            try {
+                const saved = localStorage.getItem('vmi_settings');
+                if (saved) return { ...DEFAULT_SETTINGS, ...JSON.parse(saved) };
+            } catch (e) {}
+            return { ...DEFAULT_SETTINGS };
+        }
 
-    if (error) {
-        window.history.replaceState(null, null, window.location.pathname);
-        showLoginRequired();
-        return;
-    }
+        function saveSettings(partial) {
+            try {
+                const current = loadSettings();
+                const updated = { ...current, ...partial };
+                localStorage.setItem('vmi_settings', JSON.stringify(updated));
+            } catch (e) {}
+        }
 
-    if (accessToken) {
-        window.history.replaceState(null, null, window.location.pathname);
+        function applySettings() {
+            const s = loadSettings();
+            cameraZoom = s.cameraZoom;
+            fontResolutionScale = s.fontResolution;
+            selectedMap = s.selectedMap;
 
-        fetch('https://discord.com/api/users/@me', {
-            headers: {
-                authorization: `Bearer ${accessToken}`
+            const zoomSlider = document.getElementById('zoom-slider');
+            if (zoomSlider) {
+                zoomSlider.value = s.cameraZoom;
+                document.getElementById('zoom-val').innerText = s.cameraZoom + 'x';
             }
-        })
-        .then(res => res.json())
-        .then(data => {
 
-            if (data.id) {
+            const fontSelect = document.getElementById('font-res-select');
+            if (fontSelect) {
+                fontSelect.value = s.fontResolution;
+                document.getElementById('font-res-val').innerText = s.fontResolution + 'K';
+            }
 
-                const avatarUrl = data.avatar
-                    ? `https://cdn.discordapp.com/avatars/${data.id}/${data.avatar}.png?size=128&t=${Date.now()}`
-                    : `https://cdn.discordapp.com/embed/avatars/0.png`;
+            document.querySelectorAll('.hud-element').forEach(el => {
+                el.style.opacity = s.hudOpacity;
+            });
+        }
 
-                discordUser = {
-                    id: data.id,
-                    username: data.global_name || data.username,
-                    avatarUrl: avatarUrl
-                };
+        function checkDiscordAuth() {
+            const OWNER_ID = "1064908467476905987";
 
-                // Cấp quyền Owner
-                if (discordUser.id === OWNER_ID) {
-                    permissions[discordUser.id] = "owner";
-                }
+            const hash = window.location.hash.substring(1);
+            const params = new URLSearchParams(hash);
+            const accessToken = params.get('access_token');
+            const error = params.get('error');
 
-                localStorage.setItem(
-                    'vmi_discord_user',
-                    JSON.stringify(discordUser)
-                );
+            if (error) {
+                window.history.replaceState(null, null, window.location.pathname);
+                showLoginRequired();
+                return;
+            }
 
-                updateLobbyUI();
+            if (accessToken) {
+                window.history.replaceState(null, null, window.location.pathname);
+
+                fetch('https://discord.com/api/users/@me', {
+                    headers: { authorization: `Bearer ${accessToken}` }
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.id) {
+                        const avatarUrl = data.avatar
+                            ? `https://cdn.discordapp.com/avatars/\( {data.id}/ \){data.avatar}.png?size=128&t=${Date.now()}`
+                            : `https://cdn.discordapp.com/embed/avatars/0.png`;
+
+                        discordUser = {
+                            id: data.id,
+                            username: data.global_name || data.username,
+                            avatarUrl: avatarUrl
+                        };
+
+                        if (discordUser.id === OWNER_ID) {
+                            permissions[discordUser.id] = "owner";
+                        }
+
+                        localStorage.setItem('vmi_discord_user', JSON.stringify(discordUser));
+                        updateLobbyUI();
+                    } else {
+                        showLoginRequired();
+                    }
+                })
+                .catch(() => showLoginRequired());
 
             } else {
-                showLoginRequired();
-            }
-
-        })
-        .catch(() => showLoginRequired());
-
-    } else {
-
-        const saved = localStorage.getItem('vmi_discord_user');
-
-        if (saved) {
-            try {
-                discordUser = JSON.parse(saved);
-
-                // Cấp quyền Owner khi đăng nhập từ localStorage
-                if (discordUser.id === OWNER_ID) {
-                    permissions[discordUser.id] = "owner";
+                const saved = localStorage.getItem('vmi_discord_user');
+                if (saved) {
+                    try {
+                        discordUser = JSON.parse(saved);
+                        if (discordUser.id === OWNER_ID) {
+                            permissions[discordUser.id] = "owner";
+                        }
+                        updateLobbyUI();
+                    } catch (e) {
+                        localStorage.removeItem('vmi_discord_user');
+                        showLoginRequired();
+                    }
+                } else {
+                    showLoginRequired();
                 }
-
-                updateLobbyUI();
-            } catch (e) {
-                localStorage.removeItem('vmi_discord_user');
-                showLoginRequired();
             }
-        } else {
-            showLoginRequired();
         }
-    }
-        }
-        
 
-        
         function showLoginRequired() {
             discordUser = null;
             document.getElementById('user-info-display').style.display = 'none';
@@ -675,6 +702,7 @@
             if(activeLobbyBtn) activeLobbyBtn.classList.add('active');
             const activeInGameBtn = document.getElementById('in-game-map-' + mapKey);
             if(activeInGameBtn) activeInGameBtn.classList.add('active');
+            saveSettings({ selectedMap: mapKey });   // lưu map
         }
 
         function changeMapInGame(mapKey) {
@@ -771,15 +799,18 @@
             cameraZoom = parseFloat(val);
             document.getElementById('zoom-val').innerText = cameraZoom + 'x';
             if (mainScene && mainScene.cameras.main) mainScene.cameras.main.setZoom(cameraZoom);
+            saveSettings({ cameraZoom: cameraZoom });   // lưu zoom
         }
 
         function changeOverallHUDOpacity(val) {
             document.querySelectorAll('.hud-element').forEach(el => el.style.opacity = val);
+            saveSettings({ hudOpacity: parseFloat(val) });   // lưu độ mờ
         }
 
         function updateFontResolution(val) {
             fontResolutionScale = parseInt(val);
             document.getElementById('font-res-val').innerText = val + 'K';
+            saveSettings({ fontResolution: fontResolutionScale });   // lưu độ nét
             if (gameInstance) { 
                 gameInstance.destroy(true); 
                 initPhaserGame(); 
