@@ -547,6 +547,27 @@
             'map4': { bg: '#2a3a3a', grid: 0xffffff, gridAlpha: 0.25 }
         };
 
+        // Lưu thông tin Discord user
+const discordUser = {
+    id: data.id,
+    username: data.username,
+    avatarUrl: data.avatar
+        ? `https://cdn.discordapp.com/avatars/${data.id}/${data.avatar}.png?size=128`
+        : `https://cdn.discordapp.com/embed/avatars/0.png`
+};
+
+// Hiển thị avatar
+const avatarImg = document.getElementById("discord-avatar");
+if (avatarImg) {
+    avatarImg.src = discordUser.avatarUrl;
+}
+
+// Hiển thị tên
+const nameEl = document.getElementById("discord-name");
+if (nameEl) {
+    nameEl.textContent = discordUser.username;
+        }
+
         function checkDiscordAuth() {
             const hash = window.location.hash.substring(1);
             const params = new URLSearchParams(hash);
