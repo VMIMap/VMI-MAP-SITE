@@ -382,16 +382,22 @@
             pointer-events: auto;
         }
         .hud-top {
-            top: 16px;
-            left: 16px;
-            right: 16px;
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-        }
-        .hud-top>* {
-            pointer-events: auto;
-        }
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    right: 16px;
+
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+
+    z-index: 100;
+    pointer-events: none;
+}
+
+.hud-top > * {
+    pointer-events: auto;
+}
 
         .map-label {
             padding: 8px 16px;
@@ -438,26 +444,26 @@
             z-index: 25;
         }
 
-        #chatPanel {
-    position: absolute;
-    bottom: 20px;
-    right: 20px;      /* Đặt sát mép phải */
-    width: 260px;
-    max-height: 260px;
+        #chatPanel{
+    position:absolute;
+    top:70px;
+    left:20px;
 
-    display: flex;
-    flex-direction: column;
+    width:340px;
+    height:240px;
 
-    background: var(--panel);
-    border: 1px solid var(--line);
-    backdrop-filter: blur(8px);
+    z-index:30;
 
-    overflow: hidden;
-    z-index: 20;
+    display:flex;
+    flex-direction:column;
 
-    resize: both;
-    min-width: 180px;
-    min-height: 100px;
+    transform:scale(var(--ui-scale));
+    transform-origin:top left;
+
+    opacity:var(--ui-opacity);
+
+    right:auto;
+    bottom:auto;
         }
         
         #chatPanel.collapsed {
@@ -748,88 +754,8 @@
 </style>
 </head>
 <body>
-    <div id="app">
-        <div class="grid-bg"></div>
-        <div class="glow-orb" style="top:-120px;left:-80px;background:var(--cyan);"></div>
-        <div class="glow-orb" style="bottom:-140px;right:-100px;background:var(--gold);"></div>
-        <div class="scanline"></div>
-        <div class="vignette"></div>
-        <div class="toast" id="toast"></div>
-
-        <!-- MENU -->
-        <div id="screen-menu">
-            <div class="menu-wrap">
-                <div class="menu-title">
-                    <div class="t1">VMI QUÂN ĐỘI</div>
-                    <div class="t2">TACTICAL NETWORK</div>
-                </div>
-                <div class="online-badge">
-                    <span class="online-dot"></span>
-                    <span id="onlineLabel">Đang kết nối...</span>
-                </div>
-
-                <div class="panel profile-card">
-                    <div class="avatar" id="avatarEl">?</div>
-                    <div class="player-name" id="playerNameEl">Chưa đăng nhập</div>
-                    <div class="player-rank" id="playerRankEl" style="display:none;"></div>
-                    <button class="discord-btn" id="btnLogin">
-                        <span>⬡</span> ĐĂNG NHẬP DISCORD
-                    </button>
-                    <button class="btn danger" id="btnLogout" style="display:none;">ĐĂNG XUẤT</button>
-                </div>
-
-                <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);letter-spacing:1px;padding:0 4px;">CHỌN BẢN ĐỒ</div>
-                <div class="map-grid" id="mapGrid"></div>
-
-                <button class="btn gold" id="btnEnterGame" disabled>🚀 VÀO GAME</button>
-
-                <!-- Nút Cài đặt nổi bật -->
-                <button class="btn" id="btnSettingsMenu" style="border-color:var(--gold);color:var(--gold-soft);background:rgba(232,184,75,0.08);">⚙ CÀI ĐẶT</button>
-
-                <div class="footer-hint">
-                    Đăng nhập Discord để lưu dữ liệu · Kéo thả HUD khi chỉnh sửa
-                </div>
-            </div>
-        </div>
-
-        <!-- GAME -->
-        <div id="screen-game">
-            <canvas id="gameCanvas"></canvas>
-            <div class="hud-top">
-                <div class="panel map-label hud-el" id="mapLabel" style="position:relative;top:0;left:0;">
-                    <span id="currentMapName">KHU HUẤN LUYỆN</span>
-                    <span class="online" id="onlineInMap">● 1 người</span>
-                </div>
-                <div class="icon-row">
-                    <div class="panel icon-btn hud-el" id="btnChatToggle" title="Chat">💬</div>
-                    <div class="panel icon-btn hud-el" id="btnSettingsGame" title="Cài đặt">⚙</div>
-                    <div class="panel icon-btn hud-el" id="btnExitGame" title="Về sảnh">✕</div>
-                </div>
-            </div>
-            <div class="panel hud-el" id="fps-counter">FPS: 60</div>
-            <div class="hud-el" id="joystick-zone"></div>
-            <div class="hud-el" id="chatPanel">
-                <div class="chat-header" id="chatHeader">
-                    <span>Trò Chuyện</span>
-                    <span id="chatCollapseBtn">▁</span>
-                </div>
-                <div class="chat-body" id="chatBody"></div>
-                <div class="chat-input-row">
-                    <input id="chatInput" placeholder="Nhắn tin..." maxlength="200" />
-                    <button id="chatSendBtn">GỬI</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- SETTINGS OVERLAY -->
-        <div class="overlay" id="settingsOverlay">
-            <div class="panel overlay-panel">
-                <div class="overlay-head">
-                    <span class="title">⚙ CÀI ĐẶT</span>
-                    <div class="overlay-close" id="closeSettings">✕</div>
-                </div>
-
-                <div class="overlay" id="settingsOverlay">
+    <!-- SETTINGS OVERLAY -->
+<div class="overlay" id="settingsOverlay">
     <div class="panel overlay-panel">
 
         <div class="overlay-head">
@@ -842,7 +768,7 @@
             <select id="graphicsSelect">
                 <option value="low">Thấp</option>
                 <option value="medium">Trung bình</option>
-                <option value="high">Cao</option>
+                <option value="high" selected>Cao</option>
             </select>
         </div>
 
@@ -852,8 +778,8 @@
         </div>
 
         <div class="setting-row">
-            <label>Độ thu phóng <span id="zoomVal">0.75x</span></label>
-            <input type="range" id="zoomRange" min="0.4" max="1.4" step="0.05" value="0.75">
+            <label>Độ thu phóng <span id="zoomVal">0.70x</span></label>
+            <input type="range" id="zoomRange" min="0.4" max="1.4" step="0.05" value="0.70">
         </div>
 
         <div class="setting-row">
@@ -867,19 +793,19 @@
         </div>
 
         <div class="setting-row">
-            <label>Chỉnh HUD</label>
+            <label>Chỉnh sửa HUD</label>
             <div class="hud-edit-row">
                 <button class="btn small" id="hudEditToggle">BẬT</button>
                 <button class="btn small danger" id="hudResetBtn">ĐẶT LẠI</button>
             </div>
         </div>
 
-        <button class="btn gold" id="settingsCloseBtn">ĐÓNG</button>
+        <button class="btn gold" id="settingsCloseBtn">
+            ĐÓNG
+        </button>
 
     </div>
-                </div>
-                
-
+</div>
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
             const CLIENT_ID = '1534238453871673414';
@@ -1064,7 +990,7 @@
             function initGame() {
                 if (game) { game.destroy(true);
                     game = null; }
-                const mapConf = { bg: '#060a12', grid: 0x00e5ff, alpha: 0.08 };
+                const mapConf = { bg: '#87CEEB', grid: 0xffffff, alpha: 0.15 };
                 const config = {
                     type: Phaser.CANVAS,
                     canvas: canvas,
@@ -1175,11 +1101,8 @@ function updateScene() {
     let vy = 0;
 
     if (joystick && joystick.vector) {
-        const { x, y } = joystick.vector;
-
-        // Sửa đảo chiều joystick Y
-        vx = x * speed;
-        vy = -y * speed;
+    vx = joystick.vector.x * speed;
+    vy = -joystick.vector.y * speed;
     }
 
     playerContainer.body.setVelocity(vx, vy);
@@ -1193,7 +1116,7 @@ function updateScene() {
         frameCount = 0;
         lastTime = now;
 
-        const fpsEl = document.getElementById('fps-counter');
+        const fpsEl = document.getElementById("fps-counter");
         if (fpsEl) {
             fpsEl.textContent = `FPS: ${fpsVal}`;
         }
@@ -1216,47 +1139,14 @@ function initJoystick() {
         restOpacity: 0.7
     });
 
-    joystick.on('move', (_, d) => {
-        joystick.direction = d.direction;
+    joystick.on("move", (_, d) => {
+    joystick.vector = d.vector;
+});
 
-        joystick.vector = {
-            x: d.vector.x,
-            y: -d.vector.y
-        };
-    });
+joystick.on("end", () => {
+    joystick.vector = { x: 0, y: 0 };
+});
 
-    joystick.on('end', () => {
-        joystick.direction = null;
-        joystick.vector = {
-            x: 0,
-            y: 0
-        };
-    });
-        }
-
-function initJoystick() {
-    if (joystick) return;
-    joystick = nipplejs.create({
-        zone: document.getElementById('joystick-zone'),
-        mode: 'static',
-        position: { left: '65px', top: '65px' },
-        size: 110,
-        color: '#00e5ff',
-        restOpacity: 0.7
-    });
-    joystick.on('move', (_, d) => { joystick.direction = d.direction;
-        joystick.vector = d.vector; })
-        .on('end', () => { delete joystick.direction;
-            delete joystick.vector; });
-}
-
-const chatBody = document.getElementById('chatBody'),
-    chatInput = document.getElementById('chatInput');
-const chatSendBtn = document.getElementById('chatSendBtn'),
-    chatPanel = document.getElementById('chatPanel');
-const chatCollapseBtn = document.getElementById('chatCollapseBtn'),
-    btnChatToggle = document.getElementById('btnChatToggle');
-let isChatCollapsed = false;
 
 function addMessage(text, type = 'normal') {
     const div = document.createElement('div');
