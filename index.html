@@ -1918,24 +1918,128 @@ async function loadMemberData(){
 
     const graphics = mainScene.add.graphics();
     graphics.lineStyle(1, mapConf.grid, mapConf.gridAlpha);
-    for (let x = 0; x < 3000; x += 50) { 
-        graphics.moveTo(x, 0); 
-        graphics.lineTo(x, 3000); 
+
+    for (let x = 0; x < 3000; x += 50) {
+        graphics.moveTo(x, 0);
+        graphics.lineTo(x, 3000);
     }
-    for (let y = 0; y < 3000; y += 50) { 
-        graphics.moveTo(0, y); 
-        graphics.lineTo(3000, y); 
+
+    for (let y = 0; y < 3000; y += 50) {
+        graphics.moveTo(0, y);
+        graphics.lineTo(3000, y);
     }
+
     graphics.strokePath();
 
     const avatarRadius = 28;
 
-const avatarSprite = mainScene.add.circle(
-    0,
-    0,
-    avatarRadius,
-    0xffcc00
-);
+    const avatarSprite = mainScene.add.circle(
+        0,
+        0,
+        avatarRadius,
+        0xffcc00
+    );
+
+    const avatarGlow = mainScene.add.graphics();
+    avatarGlow.lineStyle(3, 0xffcc00, 1);
+    avatarGlow.strokeCircle(0, 0, avatarRadius + 2);
+
+    const nameLabel = discordUser ? discordUser.username : "Player";
+
+    const nameTextTemp = mainScene.add.text(
+        0,
+        avatarRadius + 16,
+        nameLabel,
+        {
+            fontSize: "14px",
+            fontStyle: "bold",
+            fontFamily: "sans-serif",
+            fill: "#ffffff",
+            stroke: "#000000",
+            strokeThickness: 3
+        }
+    ).setOrigin(0.5);
+
+    const chatBubbleBg = mainScene.add.graphics();
+
+    const chatBubbleText = mainScene.add.text(
+        0,
+        0,
+        "",
+        {
+            fontSize: "12px",
+            fill: "#000000",
+            align: "center",
+            wordWrap: { width: 140 }
+        }
+    ).setOrigin(0.5);
+
+    const chatContainer = mainScene.add.container(
+        0,
+        -52,
+        [
+            chatBubbleBg,
+            chatBubbleText
+        ]
+    ).setVisible(false);
+
+    const playerContainer = mainScene.add.container(
+        1500,
+        1500,
+        [
+            avatarGlow,
+            avatarSprite,
+            nameTextTemp,
+            chatContainer
+        ]
+    );
+
+    mainScene.physics.world.enable(playerContainer);
+
+    playerContainer.body.setCollideWorldBounds(true);
+    playerContainer.body.setSize(50, 50);
+    playerContainer.body.setOffset(-25, -25);
+
+    let chatTimer = null;
+
+    showChatBubbleCallback = function(text) {
+
+        chatBubbleText.setText(text);
+
+        const bounds = chatBubbleText.getBounds();
+        const padding = 8;
+
+        chatBubbleBg.clear();
+        chatBubbleBg.fillStyle(0xffffff, 0.95);
+        chatBubbleBg.fillRoundedRect(
+            -bounds.width / 2 - padding,
+            -bounds.height / 2 - padding,
+            bounds.width + padding * 2,
+            bounds.height + padding * 2,
+            6
+        );
+
+        chatContainer.setVisible(true);
+
+        if (chatTimer) {
+            clearTimeout(chatTimer);
+        }
+
+        chatTimer = setTimeout(() => {
+            chatContainer.setVisible(false);
+        }, 5000);
+    };
+
+    const camera = mainScene.cameras.main;
+
+    camera.startFollow(playerContainer, true, 0.1, 0.1);
+    camera.setBounds(0, 0, 3000, 3000);
+    camera.setZoom(cameraZoom);
+
+    initJoystick(100);
+
+    mainScene.playerContainer = playerContainer;
+                       }
 
         function initJoystick(size) {
             const zoneContainer = document.getElementById('joystick-zone');
