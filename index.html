@@ -41,99 +41,35 @@
         .btn-admin { background: #ff3333; color: white; border: 1px solid #ffaaaa; }
         .btn-close { background: #333; color: white; }
         
-        /* ================= LOBBY (SẢNH CHỜ) ================= */
-        #lobby-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 100000;
-            display: flex; justify-content: center; align-items: center; pointer-events: auto;
-            background: radial-gradient(circle at center, #1a1a2e 0%, #0f0f13 100%);
-        }
-        .lobby-box { width: 90%; max-width: 400px; padding: 30px; text-align: center; }
-        .avatar-box img { width: 80px; height: 80px; border-radius: 50%; border: 2px solid #ffd700; margin-bottom: 10px; }
-        
-        /* Thẻ Map */
-        .map-selector { display: flex; gap: 10px; margin-top: 20px; justify-content: center; }
-        .map-card {
-            padding: 15px; border-radius: 12px; background: rgba(255,255,255,0.05); border: 2px solid transparent;
-            cursor: pointer; transition: 0.3s; flex: 1; pointer-events: auto;
-        }
-        .map-card.active { border-color: #ffd700; background: rgba(255, 215, 0, 0.1); }
 
-        /* ================= IN-GAME HUD ================= */
-        #game-hud { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; }
-        
-        /* Joystick & Nút */
-        #joystick-zone { position: absolute; bottom: 30px; left: 30px; width: 120px; height: 120px; pointer-events: auto; }
-        .top-right-menu { position: absolute; top: 15px; right: 15px; display: flex; gap: 10px; pointer-events: auto; }
-        .icon-btn { width: 45px; height: 45px; border-radius: 50%; border: none; background: rgba(0,0,0,0.5); color: #ffd700; font-size: 20px; cursor: pointer; border: 1px solid #ffd700; backdrop-filter: blur(5px); }
-        
-        /* Chat Box */
-        #chat-container {
-            position: absolute; bottom: 20px; right: 20px; width: 300px; max-height: 200px;
-            display: flex; flex-direction: column; pointer-events: auto; padding: 10px;
-        }
-        #chat-history { flex: 1; overflow-y: auto; font-size: 13px; margin-bottom: 5px; text-shadow: 1px 1px 2px #000; pointer-events: auto; }
-        .chat-input-box { display: flex; gap: 5px; }
-        .chat-input-box input { flex: 1; padding: 8px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.6); color: white; outline: none; }
-        .chat-input-box button { padding: 8px 12px; border-radius: 8px; background: #ffd700; border: none; color: black; font-weight: bold; }
-
-        /* ================= MODALS (CÀI ĐẶT & ADMIN) ================= */
-        .modal {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.7); z-index: 200000; justify-content: center; align-items: center; pointer-events: auto;
-        }
-        .modal-content { width: 90%; max-width: 500px; padding: 25px; position: relative; }
-        .modal-header { font-size: 20px; font-weight: bold; margin-bottom: 20px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;}
-        
-        /* Grid Admin Buttons */
-        .admin-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px; }
-        .admin-btn { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 10px; border-radius: 8px; font-size: 12px; cursor: pointer; text-align: center; }
-        .admin-btn:hover, .admin-btn:active { background: rgba(255, 215, 0, 0.3); border-color: #ffd700; }
-        .admin-input-group { display: flex; gap: 5px; margin-bottom: 15px; }
-        .admin-input { flex: 1; padding: 10px; border-radius: 8px; background: rgba(0,0,0,0.5); border: 1px solid #555; color: white; }
-
-        /* Sliders */
-        .setting-group { margin-bottom: 15px; }
-        .setting-group label { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 5px; }
-        input[type=range] { width: 100%; accent-color: #ffd700; }
-
-        /* Notification */
-        #notification {
-            position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
-            background: rgba(0,0,0,0.8); border: 1px solid #ffd700; padding: 10px 20px;
-            border-radius: 20px; color: #ffd700; font-weight: bold; z-index: 999999;
-            display: none; transition: 0.3s;
-        }
-    </style>
-</head>
-<body>
-
-    <!-- THÔNG BÁO -->
-    <div id="notification">Thông báo hệ thống</div>
-
-    <!-- SẢNH CHỜ LOBBY -->
-    <div id="lobby-overlay">
+             <div id="lobby-overlay">
         <div class="glass-panel lobby-box gold-border">
             <h2 class="gold-text" style="margin-bottom: 20px; font-size: 26px;">VMI MAP VIP</h2>
             
             <div id="auth-section">
                 <p style="margin-bottom: 15px; color: #ccc; font-size: 14px;">Đăng nhập để vào Server</p>
-                <button class="btn btn-discord" onclick="loginWithDiscord(event)">ĐĂNG NHẬP DISCORD</button>
+                <a id="btn-discord-link" 
+                   href="https://discord.com/api/oauth2/authorize?client_id=1534238453871673414&redirect_uri=https%3A%2F%2Fvmimap.github.io%2FVMI-MAP-SITE%2F&response_type=token&scope=identify" 
+                   class="btn btn-discord" 
+                   style="display: block; text-decoration: none; text-align: center;">
+                   ĐĂNG NHẬP DISCORD
+                </a>
             </div>
 
             <div id="user-section" style="display: none;">
                 <div class="avatar-box">
-                    <img id="lobby-avatar" src="https://cdn.discordapp.com/embed/avatars/0.png">
+                    <img id="lobby-avatar" src="https://cdn.discordapp.com/embed/avatars/0.png" alt="Avatar">
                     <h3 id="lobby-name" style="margin-bottom: 5px;">Player</h3>
                     <span id="lobby-role" style="font-size: 12px; color: #ffaa00; background: rgba(255,170,0,0.2); padding: 2px 8px; border-radius: 10px;">Thành viên</span>
                 </div>
 
                 <div class="map-selector">
-                    <div id="map-1" class="map-card active" onclick="selectMap(1)">Bản đồ 1</div>
-                    <div id="map-2" class="map-card" onclick="selectMap(2)">Bản đồ 2</div>
+                    <button type="button" id="map-1" class="map-card active" onclick="selectMap(1)">Bản đồ 1</button>
+                    <button type="button" id="map-2" class="map-card" onclick="selectMap(2)">Bản đồ 2</button>
                 </div>
 
-                <button class="btn btn-play" onclick="enterGame()">VÀO GAME</button>
-                <button class="btn" style="background: transparent; border: 1px solid #555; color: #aaa; margin-top: 10px; width: 100%;" onclick="logout()">Đăng xuất</button>
+                <button type="button" class="btn btn-play" onclick="enterGame()">VÀO GAME</button>
+                <button type="button" class="btn" style="background: transparent; border: 1px solid #555; color: #aaa; margin-top: 10px; width: 100%;" onclick="logout()">Đăng xuất</button>
             </div>
         </div>
     </div>
@@ -143,16 +79,16 @@
         <div id="joystick-zone"></div>
         
         <div class="top-right-menu">
-            <button class="icon-btn" onclick="openModal('admin-modal')" id="btn-admin-hud" style="display: none; color: #ff3333; border-color: #ff3333;">⚙️</button>
-            <button class="icon-btn" onclick="openModal('settings-modal')">🔧</button>
-            <button class="icon-btn" onclick="exitGame()">🚪</button>
+            <button type="button" class="icon-btn" onclick="openModal('admin-modal')" id="btn-admin-hud" style="display: none; color: #ff3333; border-color: #ff3333;">⚙️</button>
+            <button type="button" class="icon-btn" onclick="openModal('settings-modal')">🔧</button>
+            <button type="button" class="icon-btn" onclick="exitGame()">🚪</button>
         </div>
 
         <div id="chat-container" class="glass-panel">
             <div id="chat-history"></div>
             <div class="chat-input-box">
                 <input type="text" id="chat-input" placeholder="Nhập tin nhắn hoặc lệnh (/...)" onkeypress="if(event.key === 'Enter') sendChat()">
-                <button onclick="sendChat()">Gửi</button>
+                <button type="button" onclick="sendChat()">Gửi</button>
             </div>
         </div>
     </div>
@@ -173,7 +109,7 @@
             </div>
             
             <div style="display: flex; gap: 10px; margin-top: 20px;">
-                <button class="btn btn-close" style="flex: 1;" onclick="closeModal('settings-modal')">Đóng</button>
+                <button type="button" class="btn btn-close" style="flex: 1;" onclick="closeModal('settings-modal')">Đóng</button>
             </div>
         </div>
     </div>
@@ -188,18 +124,18 @@
             </div>
 
             <div class="admin-grid">
-                <div class="admin-btn" onclick="adminAction('color')">Đổi Màu Tên (Hex)</div>
-                <div class="admin-btn" onclick="adminAction('tp')">TP (x,y)</div>
-                <div class="admin-btn" onclick="adminAction('to')">TP Tới (To)</div>
-                <div class="admin-btn" onclick="adminAction('bring')">Bring (Kéo về)</div>
-                <div class="admin-btn" onclick="adminAction('kick')">Kick</div>
-                <div class="admin-btn" onclick="adminAction('ban')">Ban</div>
-                <div class="admin-btn" onclick="adminAction('view')">View (Spectate)</div>
-                <div class="admin-btn" onclick="adminAction('giveperm')">Give Perm</div>
-                <div class="admin-btn" onclick="adminAction('givemod')">Temp Mod (1D)</div>
+                <button type="button" class="admin-btn" onclick="adminAction('color')">Đổi Màu Tên (Hex)</button>
+                <button type="button" class="admin-btn" onclick="adminAction('tp')">TP (x,y)</button>
+                <button type="button" class="admin-btn" onclick="adminAction('to')">TP Tới (To)</button>
+                <button type="button" class="admin-btn" onclick="adminAction('bring')">Bring (Kéo về)</button>
+                <button type="button" class="admin-btn" onclick="adminAction('kick')">Kick</button>
+                <button type="button" class="admin-btn" onclick="adminAction('ban')">Ban</button>
+                <button type="button" class="admin-btn" onclick="adminAction('view')">View (Spectate)</button>
+                <button type="button" class="admin-btn" onclick="adminAction('giveperm')">Give Perm</button>
+                <button type="button" class="admin-btn" onclick="adminAction('givemod')">Temp Mod (1D)</button>
             </div>
 
-            <button class="btn btn-close" style="width: 100%;" onclick="closeModal('admin-modal')">Đóng Panel</button>
+            <button type="button" class="btn btn-close" style="width: 100%;" onclick="closeModal('admin-modal')">Đóng Panel</button>
         </div>
     </div>
 
@@ -244,12 +180,6 @@
             }
         }
 
-        function loginWithDiscord(e) {
-            if(e) { e.preventDefault(); e.stopPropagation(); }
-            const authUrl = "https://discord.com/api/oauth2/authorize?client_id=1534238453871673414&redirect_uri=https%3A%2F%2Fvmimap.github.io%2FVMI-MAP-SITE%2F&response_type=token&scope=identify";
-            window.location.href = authUrl;
-        }
-
         function logout() {
             user = null; isAdmin = false;
             localStorage.removeItem('vmi_user');
@@ -260,15 +190,13 @@
 
         // --- HỆ THỐNG ADMIN / TEMP MOD ---
         function checkAdminStatus() {
-            // Mặc định cho phép người đăng nhập test admin để trải nghiệm UI
             isAdmin = true; 
             
-            // Kiểm tra Temp Mod (1 Ngày)
             let tempModExpiry = localStorage.getItem('vmi_temp_mod');
             if (tempModExpiry && Date.now() < parseInt(tempModExpiry)) {
                 isAdmin = true;
             } else if (tempModExpiry) {
-                localStorage.removeItem('vmi_temp_mod'); // Hết hạn
+                localStorage.removeItem('vmi_temp_mod');
             }
 
             if (isAdmin) {
@@ -291,9 +219,17 @@
 
         function selectMap(id) {
             selectedMapID = id;
-            document.querySelectorAll('.map-card').forEach(c => c.classList.remove('active'));
-            document.getElementById(`map-${id}`).classList.add('active');
-            if (scene) { scene.changeMap(id); }
+            const btn1 = document.getElementById('map-1');
+            const btn2 = document.getElementById('map-2');
+            if (btn1 && btn2) {
+                btn1.classList.remove('active');
+                btn2.classList.remove('active');
+                document.getElementById(`map-${id}`).classList.add('active');
+            }
+            if (scene && typeof scene.changeMap === 'function') {
+                scene.changeMap(id);
+            }
+            showNotif(`Đã chọn Bản đồ ${id}`);
         }
 
         function openModal(id) { document.getElementById(id).style.display = 'flex'; }
@@ -306,7 +242,6 @@
             setTimeout(() => { n.style.display = 'none'; }, 3000);
         }
 
-        // Cài đặt thông số (Mặc định 0.75)
         function updateSettings() {
             const zoom = document.getElementById('slider-zoom').value;
             const opacity = document.getElementById('slider-opacity').value;
@@ -318,17 +253,17 @@
             if(scene) scene.cameras.main.setZoom(parseFloat(zoom));
         }
 
-        // --- ADMIN ACTIONS (UI & Giả lập logic) ---
+        // --- ADMIN ACTIONS ---
         function adminAction(action) {
             const target = document.getElementById('admin-target').value.trim();
             if (!target && action !== 'tp') { showNotif("Vui lòng nhập mục tiêu/thông số!"); return; }
 
             switch(action) {
-                case 'color': // /color #ff0000
+                case 'color':
                     if (scene) scene.nameText.setColor(target);
                     showNotif(`Đã đổi màu tên thành: ${target}`);
                     break;
-                case 'tp': // /tp x y
+                case 'tp':
                     if(scene) {
                         let coords = target.split(' ');
                         let tx = coords[0] ? parseInt(coords[0]) : Math.random() * 2000;
@@ -344,7 +279,6 @@
                 case 'view': showNotif(`Đang theo dõi góc nhìn của: ${target}`); break;
                 case 'giveperm': showNotif(`Đã cấp quyền vĩnh viễn cho: ${target}`); break;
                 case 'givemod': 
-                    // Cấp Temp Mod 1 ngày (24h * 60m * 60s * 1000ms)
                     let expiry = Date.now() + (24 * 60 * 60 * 1000);
                     localStorage.setItem('vmi_temp_mod', expiry.toString());
                     showNotif(`Đã cấp Temp Mod (1 Ngày) cho: ${target}`);
@@ -359,7 +293,6 @@
             let text = input.value.trim();
             if(!text) return;
             
-            // Xử lý lệnh Admin nếu gõ từ khung chat
             if (text.startsWith('/')) {
                 if (!isAdmin) { showNotif("Bạn không có quyền dùng lệnh!"); return; }
                 let args = text.split(' ');
@@ -374,13 +307,11 @@
                     showNotif("Thực thi lệnh: " + cmd);
                 }
             } else {
-                // Chat bình thường
                 const history = document.getElementById('chat-history');
                 let colorHex = scene ? scene.nameText.style.color : "#fff";
                 history.innerHTML += `<div><b style="color:${colorHex}">${user ? user.name : 'Khách'}:</b> ${text}</div>`;
                 history.scrollTop = history.scrollHeight;
                 
-                                // Hiển thị bong bóng chat trên đầu nhân vật
                 if (scene) scene.showChatBubble(text);
             }
             input.value = '';
@@ -391,7 +322,6 @@
             document.getElementById('lobby-overlay').style.display = 'none';
             document.getElementById('game-hud').style.display = 'block';
             
-            // Áp dụng cài đặt mặc định
             updateSettings();
 
             if (!game) initPhaser();
@@ -428,7 +358,6 @@
         function createGame() {
             scene = this;
             
-            // Vẽ Map Grid
             this.grid = this.add.graphics();
             this.changeMap = function(id) {
                 this.grid.clear();
@@ -443,7 +372,6 @@
             this.changeMap(selectedMapID);
             this.physics.world.setBounds(0, 0, 2000, 2000);
 
-            // Nhân vật
             this.player = this.add.container(1000, 1000);
             this.physics.world.enable(this.player);
             this.player.body.setCollideWorldBounds(true);
@@ -452,13 +380,11 @@
             let body = this.add.circle(0, 0, 20, 0xffd700).setStrokeStyle(2, 0xffffff);
             this.player.add(body);
 
-            // Tên Nhân vật
             this.nameText = this.add.text(0, -35, user ? user.name : "Player", {
                 font: 'bold 16px Arial', fill: '#ffffff', stroke: '#000000', strokeThickness: 4
             }).setOrigin(0.5);
             this.player.add(this.nameText);
 
-            // Bong bóng Chat
             this.chatBubble = this.add.text(0, -60, "", {
                 font: '14px Arial', fill: '#000', backgroundColor: '#fff', padding: { x: 5, y: 3 }
             }).setOrigin(0.5).setVisible(false);
@@ -471,7 +397,6 @@
                 bubbleTimer = setTimeout(() => this.chatBubble.setVisible(false), 4000);
             }
 
-            // Camera follow (Cài đặt Zoom mặc định từ thanh trượt)
             this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
             let defaultZoom = parseFloat(document.getElementById('slider-zoom').value);
             this.cameras.main.setZoom(defaultZoom);
@@ -494,17 +419,23 @@
 
             if (moveVector.x !== 0 || moveVector.y !== 0) { vx = moveVector.x; vy = moveVector.y; }
 
-            // Normalize vector để không chạy chéo quá nhanh
             let length = Math.sqrt(vx*vx + vy*vy);
             if(length > 0) { vx /= length; vy /= length; }
 
             scene.player.body.setVelocity(vx * speed, vy * speed);
         }
 
-        // Bắt đầu
-        window.addEventListener('DOMContentLoaded', checkAuth);
+        window.addEventListener('DOMContentLoaded', () => {
+            checkAuth();
+            const discordBtn = document.getElementById('btn-discord-link');
+            if (discordBtn) {
+                discordBtn.addEventListener('touchend', () => {
+                    window.location.href = discordBtn.href;
+                });
+            }
+        });
     </script>
 </body>
 </html>
-
+        
       
