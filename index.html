@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>VMI MAP</title>
+    <title>SEVER GAME VMI</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800&family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js">
     </script>
@@ -439,22 +439,27 @@
         }
 
         #chatPanel {
-            bottom: 30px;
-            left: 180px;
-            width: 260px;
-            max-height: 260px;
-            display: flex;
-            flex-direction: column;
-            background: var(--panel);
-            border: 1px solid var(--line);
-            clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
-            backdrop-filter: blur(8px);
-            overflow: hidden;
-            z-index: 20;
-            resize: both;
-            min-width: 180px;
-            min-height: 100px;
+    position: absolute;
+    bottom: 20px;
+    right: 20px;      /* Đặt sát mép phải */
+    width: 260px;
+    max-height: 260px;
+
+    display: flex;
+    flex-direction: column;
+
+    background: var(--panel);
+    border: 1px solid var(--line);
+    backdrop-filter: blur(8px);
+
+    overflow: hidden;
+    z-index: 20;
+
+    resize: both;
+    min-width: 180px;
+    min-height: 100px;
         }
+        
         #chatPanel.collapsed {
             max-height: 44px;
             min-height: 44px;
@@ -805,7 +810,7 @@
             <div class="hud-el" id="joystick-zone"></div>
             <div class="hud-el" id="chatPanel">
                 <div class="chat-header" id="chatHeader">
-                    <span>💬 CHIẾN THUẬT</span>
+                    <span>Trò Chuyện</span>
                     <span id="chatCollapseBtn">▁</span>
                 </div>
                 <div class="chat-body" id="chatBody"></div>
@@ -824,57 +829,56 @@
                     <div class="overlay-close" id="closeSettings">✕</div>
                 </div>
 
-                <!-- Đồ họa -->
-                <div class="setting-row">
-                    <label>Đồ họa (độ nét) <span id="graphicsVal">Cao</span></label>
-                    <select id="graphicsSelect">
-                        <option value="low">Thấp</option>
-                        <option value="medium">Trung bình</option>
-                        <option value="high" selected>Cao</option>
-                    </select>
-                </div>
+                <div class="overlay" id="settingsOverlay">
+    <div class="panel overlay-panel">
 
-                <!-- Âm thanh -->
-                <div class="setting-row">
-                    <label>Âm thanh <span id="soundVal">100%</span></label>
-                    <input type="range" id="soundRange" min="0" max="100" step="1" value="80" />
-                </div>
+        <div class="overlay-head">
+            <span class="title">⚙ CÀI ĐẶT</span>
+            <div class="overlay-close" id="closeSettings">✕</div>
+        </div>
 
-                <hr class="settings-divider" />
+        <div class="setting-row">
+            <label>Đồ họa <span id="graphicsVal">Cao</span></label>
+            <select id="graphicsSelect">
+                <option value="low">Thấp</option>
+                <option value="medium">Trung bình</option>
+                <option value="high">Cao</option>
+            </select>
+        </div>
 
-                <!-- Zoom -->
-                <div class="setting-row">
-                    <label>Độ thu rộng <span id="zoomVal">0.70x</span></label>
-                    <input type="range" id="zoomRange" min="0.40" max="1.40" step="0.05" value="0.70" />
-                </div>
+        <div class="setting-row">
+            <label>Âm thanh <span id="soundVal">80%</span></label>
+            <input type="range" id="soundRange" min="0" max="100" value="80">
+        </div>
 
-                <!-- HUD Opacity -->
-                <div class="setting-row">
-                    <label>Độ mờ HUD <span id="hudOpacityVal">90%</span></label>
-                    <input type="range" id="hudOpacityRange" min="0.20" max="1.00" step="0.05" value="0.90" />
-                </div>
+        <div class="setting-row">
+            <label>Độ thu phóng <span id="zoomVal">0.75x</span></label>
+            <input type="range" id="zoomRange" min="0.4" max="1.4" step="0.05" value="0.75">
+        </div>
 
-                <!-- HUD Scale -->
-                <div class="setting-row">
-                    <label>Kích thước HUD <span id="hudScaleVal">100%</span></label>
-                    <input type="range" id="hudScaleRange" min="0.50" max="1.50" step="0.05" value="1.00" />
-                </div>
+        <div class="setting-row">
+            <label>Độ mờ HUD <span id="hudOpacityVal">90%</span></label>
+            <input type="range" id="hudOpacityRange" min="0.2" max="1" step="0.05" value="0.9">
+        </div>
 
-                <!-- HUD Edit -->
-                <div class="setting-row">
-                    <label style="margin-bottom:4px;">🖱 Chỉnh sửa HUD (kéo thả)</label>
-                    <div class="hud-edit-row">
-                        <button class="btn small" id="hudEditToggle">BẬT</button>
-                        <button class="btn small danger" id="hudResetBtn">ĐẶT LẠI</button>
-                    </div>
-                </div>
+        <div class="setting-row">
+            <label>Kích thước HUD <span id="hudScaleVal">100%</span></label>
+            <input type="range" id="hudScaleRange" min="0.5" max="1.5" step="0.05" value="1">
+        </div>
 
-                <hr class="settings-divider" />
-
-                <button class="btn gold" id="settingsCloseBtn">ĐÓNG</button>
+        <div class="setting-row">
+            <label>Chỉnh HUD</label>
+            <div class="hud-edit-row">
+                <button class="btn small" id="hudEditToggle">BẬT</button>
+                <button class="btn small danger" id="hudResetBtn">ĐẶT LẠI</button>
             </div>
         </div>
+
+        <button class="btn gold" id="settingsCloseBtn">ĐÓNG</button>
+
     </div>
+                </div>
+                
 
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
@@ -1165,26 +1169,70 @@
 
 function updateScene() {
     if (!playerContainer) return;
+
     const speed = 180;
-    let vx = 0,
-        vy = 0;
-    if (joystick && joystick.direction) {
+    let vx = 0;
+    let vy = 0;
+
+    if (joystick && joystick.vector) {
         const { x, y } = joystick.vector;
+
+        // Sửa đảo chiều joystick Y
         vx = x * speed;
-        vy = y * speed;
+        vy = -y * speed;
     }
+
     playerContainer.body.setVelocity(vx, vy);
 
-    // Đã bỏ hiển thị tọa độ X:Y
+    // FPS counter
     frameCount++;
     const now = performance.now();
+
     if (now - lastTime >= 1000) {
         fpsVal = frameCount;
         frameCount = 0;
         lastTime = now;
-        document.getElementById('fps-counter').textContent = `FPS: ${fpsVal}`;
+
+        const fpsEl = document.getElementById('fps-counter');
+        if (fpsEl) {
+            fpsEl.textContent = `FPS: ${fpsVal}`;
+        }
     }
 }
+
+
+function initJoystick() {
+    if (joystick) return;
+
+    joystick = nipplejs.create({
+        zone: document.getElementById('joystick-zone'),
+        mode: 'static',
+        position: {
+            left: '65px',
+            top: '65px'
+        },
+        size: 110,
+        color: '#00e5ff',
+        restOpacity: 0.7
+    });
+
+    joystick.on('move', (_, d) => {
+        joystick.direction = d.direction;
+
+        joystick.vector = {
+            x: d.vector.x,
+            y: -d.vector.y
+        };
+    });
+
+    joystick.on('end', () => {
+        joystick.direction = null;
+        joystick.vector = {
+            x: 0,
+            y: 0
+        };
+    });
+        }
 
 function initJoystick() {
     if (joystick) return;
@@ -1286,41 +1334,105 @@ function openSettings() {
 }
 
 function closeSettingsOverlay() {
-    settingsOverlay.classList.remove('open');
+
+function openSettings() {
+    settingsOverlay.classList.add("open");
+
+    graphicsSelect.value = settings.graphics || "high";
+    zoomRange.value = settings.zoom || 0.75;
+    hudOpacityRange.value = settings.hudOpacity || 0.9;
+    hudScaleRange.value = settings.hudScale || 1;
+    soundRange.value = settings.sound || 80;
+
+    applyHudSettings();
+}
+
+function closeSettingsOverlay() {
+    settingsOverlay.classList.remove("open");
     saveSettings();
 }
 
-btnSettingsMenu.addEventListener('click', openSettings);
-btnSettingsGame.addEventListener('click', openSettings);
-closeSettings.addEventListener('click', closeSettingsOverlay);
-settingsCloseBtn.addEventListener('click', closeSettingsOverlay);
+btnSettingsMenu.onclick = openSettings;
+btnSettingsGame.onclick = openSettings;
 
-graphicsSelect.addEventListener('change', e => { settings.graphics = e.target.value;
-    applyHudSettings(); });
-zoomRange.addEventListener('input', e => { settings.zoom = parseFloat(e.target.value);
-    applyHudSettings(); });
-hudOpacityRange.addEventListener('input', e => { settings.hudOpacity = parseFloat(e.target.value);
-    applyHudSettings(); });
-hudScaleRange.addEventListener('input', e => { settings.hudScale = parseFloat(e.target.value);
-    applyHudSettings(); });
-soundRange.addEventListener('input', e => { settings.sound = parseInt(e.target.value);
-    applyHudSettings(); });
+closeSettings.onclick = closeSettingsOverlay;
+settingsCloseBtn.onclick = closeSettingsOverlay;
+
+graphicsSelect.onchange = function () {
+    settings.graphics = this.value;
+    document.getElementById("graphicsVal").textContent =
+        this.options[this.selectedIndex].text;
+    applyHudSettings();
+};
+
+zoomRange.oninput = function () {
+    settings.zoom = parseFloat(this.value);
+    document.getElementById("zoomVal").textContent =
+        settings.zoom.toFixed(2) + "x";
+    applyHudSettings();
+};
+
+hudOpacityRange.oninput = function () {
+    settings.hudOpacity = parseFloat(this.value);
+    document.getElementById("hudOpacityVal").textContent =
+        Math.round(settings.hudOpacity * 100) + "%";
+    applyHudSettings();
+};
+
+hudScaleRange.oninput = function () {
+    settings.hudScale = parseFloat(this.value);
+    document.getElementById("hudScaleVal").textContent =
+        Math.round(settings.hudScale * 100) + "%";
+    applyHudSettings();
+};
+
+soundRange.oninput = function () {
+    settings.sound = parseInt(this.value);
+    document.getElementById("soundVal").textContent =
+        settings.sound + "%";
+};
+
+function applyHudSettings() {
+
+    document.querySelectorAll(".hud-el").forEach(el => {
+        el.style.opacity = settings.hudOpacity;
+        el.style.transform = `scale(${settings.hudScale})`;
+        el.style.transformOrigin = "top left";
+    });
+
+    if (game && scene) {
+        scene.cameras.main.setZoom(settings.zoom);
+    }
+
+    if (settings.graphics === "low") {
+        document.getElementById("fps-counter").style.display = "none";
+    } else {
+        document.getElementById("fps-counter").style.display = "block";
+    }
+}
 
 function toggleHudEdit() {
     hudEditMode = !hudEditMode;
-    hudEditToggle.textContent = hudEditMode ? 'TẮT' : 'BẬT';
-    hudEditToggle.classList.toggle('danger', hudEditMode);
-    document.querySelectorAll('.hud-el').forEach(el => {
-        el.style.cursor = hudEditMode ? 'move' : '';
-        if (!hudEditMode) el.classList.remove('hud-dragging');
+
+    hudEditToggle.textContent = hudEditMode ? "TẮT" : "BẬT";
+    hudEditToggle.classList.toggle("danger", hudEditMode);
+
+    document.querySelectorAll(".hud-el").forEach(el => {
+        el.style.cursor = hudEditMode ? "move" : "";
+        if (!hudEditMode) {
+            el.classList.remove("hud-dragging");
+        }
     });
-    toast(hudEditMode ? 'Đã bật chỉnh sửa HUD' : 'Đã tắt chỉnh sửa HUD');
+
+    toast(hudEditMode ? "Đã bật chỉnh sửa HUD" : "Đã tắt chỉnh sửa HUD");
 }
-hudEditToggle.addEventListener('click', toggleHudEdit);
-hudResetBtn.addEventListener('click', () => {
-    localStorage.removeItem('vmi_hud_pos');
-    toast('Đã đặt lại vị trí → tải lại trang');
-});
+
+hudEditToggle.onclick = toggleHudEdit;
+
+hudResetBtn.onclick = function () {
+    localStorage.removeItem("vmi_hud_pos");
+    toast("Đã đặt lại HUD, tải lại trang để áp dụng.");
+};
 
 function saveHudPos(id, x, y) {
     try {
