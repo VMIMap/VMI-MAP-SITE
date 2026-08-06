@@ -1,1014 +1,1582 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Game Quân Đội 2D</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>VMI QUÂN ĐỘI</title>
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800&family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+    <!-- Phaser + NippleJS -->
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.10.1/nipplejs.min.js"></script>
     <style>
-        /* ---------- RESET & TOÀN CỤC ---------- */
+        /* ===== RESET & ROOT ===== */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
             user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
         }
+        :root {
+            --bg: #04050a;
+            --panel: rgba(9, 13, 24, 0.88);
+            --line: rgba(0, 229, 255, 0.3);
+            --cyan: #00e5ff;
+            --gold: #e8b84b;
+            --gold-soft: #ffe6ac;
+            --red: #ff3b3b;
+            --green: #39ff88;
+            --text: #e7edff;
+            --text-dim: #8494b8;
+            --font-display: 'Orbitron', sans-serif;
+            --font-body: 'Rajdhani', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+        html,
         body {
-            background: #0a0a0a;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
+            width: 100%;
+            height: 100%;
             overflow: hidden;
+            background: var(--bg);
+            font-family: var(--font-body);
+            color: var(--text);
             touch-action: none;
         }
         #app {
+            position: relative;
             width: 100vw;
             height: 100vh;
-            max-width: 1400px;
-            max-height: 900px;
-            background: #111;
-            position: relative;
             overflow: hidden;
-            border: 2px solid #ffcc00;
-            box-shadow: 0 0 40px rgba(255, 0, 0, 0.3), 0 0 60px rgba(255, 200, 0, 0.2);
+        }
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--cyan);
+            border-radius: 4px;
         }
 
-        /* ---------- MÀN HÌNH ĐĂNG NHẬP ---------- */
-        #loginScreen {
+        /* ===== BACKGROUND FX ===== */
+        .grid-bg {
             position: absolute;
             inset: 0;
-            background: radial-gradient(circle at center, #1a0000, #0a0a0a);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 100;
-            transition: opacity 0.6s ease;
-        }
-        #loginScreen.hidden {
-            opacity: 0;
+            background-image:
+                linear-gradient(rgba(0, 229, 255, 0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 229, 255, 0.04) 1px, transparent 1px);
+            background-size: 48px 48px;
+            animation: drift 40s linear infinite;
             pointer-events: none;
         }
-        #loginScreen h1 {
-            color: #ffcc00;
-            font-size: 3rem;
-            text-shadow: 0 0 20px #ff0000, 0 0 40px #ff8800;
-            margin-bottom: 30px;
-            letter-spacing: 4px;
+        @keyframes drift {
+            from {
+                background-position: 0 0;
+            }
+            to {
+                background-position: 480px 480px;
+            }
         }
-        #loginScreen .discord-btn {
-            background: #5865F2;
-            color: #fff;
-            border: none;
-            padding: 18px 50px;
-            font-size: 1.6rem;
-            border-radius: 50px;
+        .scanline {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            mix-blend-mode: screen;
+            opacity: 0.3;
+            background: repeating-linear-gradient(0deg,
+                    rgba(0, 229, 255, 0.02) 0px,
+                    rgba(0, 229, 255, 0.02) 1px,
+                    transparent 2px,
+                    transparent 4px);
+        }
+        .vignette {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background: radial-gradient(ellipse at center, transparent 50%, rgba(0, 0, 0, 0.75) 100%);
+        }
+        .glow-orb {
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.12;
+            pointer-events: none;
+        }
+
+        /* ===== PANEL ===== */
+        .panel {
+            position: relative;
+            background: var(--panel);
+            border: 1px solid var(--line);
+            clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 0 30px rgba(0, 229, 255, 0.06);
+        }
+        .panel::before,
+        .panel::after {
+            content: '';
+            position: absolute;
+            width: 14px;
+            height: 14px;
+            pointer-events: none;
+            border: 2px solid var(--cyan);
+            opacity: 0.7;
+        }
+        .panel::before {
+            top: -1px;
+            left: -1px;
+            border-right: none;
+            border-bottom: none;
+        }
+        .panel::after {
+            bottom: -1px;
+            right: -1px;
+            border-left: none;
+            border-top: none;
+        }
+
+        /* ===== BUTTONS ===== */
+        .btn {
+            font-family: var(--font-display);
+            font-size: 13px;
+            letter-spacing: 1.5px;
+            color: var(--gold-soft);
+            background: rgba(0, 229, 255, 0.06);
+            border: 1px solid var(--cyan);
+            padding: 12px 20px;
+            clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
             cursor: pointer;
-            box-shadow: 0 0 30px #5865F2aa;
-            transition: 0.2s;
-            font-weight: bold;
+            text-transform: uppercase;
+            transition: all 0.15s ease;
+            text-align: center;
+            width: 100%;
+        }
+        .btn:hover {
+            background: rgba(0, 229, 255, 0.16);
+            box-shadow: 0 0 24px rgba(0, 229, 255, 0.35);
+            transform: translateY(-1px);
+        }
+        .btn:active {
+            transform: translateY(0);
+        }
+        .btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+        .btn.gold {
+            border-color: var(--gold);
+            color: #1a1200;
+            background: linear-gradient(180deg, var(--gold-soft), var(--gold));
+        }
+        .btn.gold:hover {
+            box-shadow: 0 0 28px rgba(232, 184, 75, 0.5);
+        }
+        .btn.danger {
+            border-color: var(--red);
+            color: #ffd6d6;
+        }
+        .btn.danger:hover {
+            background: rgba(255, 59, 59, 0.14);
+            box-shadow: 0 0 20px rgba(255, 59, 59, 0.4);
+        }
+        .btn.small {
+            padding: 8px 14px;
+            font-size: 10px;
+        }
+
+        .discord-btn {
             display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            font-family: var(--font-display);
+            font-size: 13px;
+            letter-spacing: 1px;
+            background: rgba(88, 101, 242, 0.15);
+            border: 1px solid #5865F2;
+            color: #c9cdff;
+            padding: 14px;
+            clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .discord-btn:hover {
+            background: rgba(88, 101, 242, 0.3);
+            box-shadow: 0 0 24px rgba(88, 101, 242, 0.4);
+        }
+
+        /* ===== SCREEN: MENU (LOBBY) ===== */
+        #screen-menu {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            padding: 20px;
+        }
+        .menu-wrap {
+            width: 100%;
+            max-width: 420px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .menu-title {
+            text-align: center;
+            margin-bottom: 6px;
+        }
+        .menu-title .t1 {
+            font-family: var(--font-display);
+            font-weight: 800;
+            font-size: 36px;
+            letter-spacing: 4px;
+            color: var(--gold-soft);
+            text-shadow: 0 0 18px var(--gold), 0 0 50px rgba(232, 184, 75, 0.3);
+            line-height: 1.1;
+        }
+        .menu-title .t2 {
+            font-family: var(--font-mono);
+            font-size: 10px;
+            letter-spacing: 4px;
+            color: var(--cyan);
+            margin-top: 4px;
+        }
+        .online-badge {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-family: var(--font-mono);
+            font-size: 10px;
+            color: var(--green);
+            letter-spacing: 1.5px;
+        }
+        .online-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--green);
+            box-shadow: 0 0 10px var(--green);
+            animation: pulse 1.8s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%,
+            100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.3;
+            }
+        }
+
+        /* Profile card */
+        .profile-card {
+            padding: 22px 20px;
+            display: flex;
+            flex-direction: column;
             align-items: center;
             gap: 12px;
         }
-        #loginScreen .discord-btn:hover {
-            transform: scale(1.05);
-            box-shadow: 0 0 50px #5865F2;
-        }
-        #loginScreen .discord-btn:active {
-            transform: scale(0.95);
-        }
-        #loginScreen .discord-btn img {
-            width: 36px;
-            height: 36px;
-        }
-        #loginScreen .discord-btn:disabled {
-            opacity: 0.5;
-            cursor: wait;
-        }
-
-        /* ---------- SẢNH (LOBBY) ---------- */
-        #lobby {
-            position: absolute;
-            inset: 0;
-            background: #0d0d0d;
-            display: none;
-            flex-direction: column;
-            padding: 20px 30px;
-            color: #fff;
-        }
-        #lobby.active {
-            display: flex;
-        }
-
-        .lobby-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 2px solid #ff4444;
-            padding-bottom: 15px;
-            flex-wrap: wrap;
-        }
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-        .user-info img {
-            width: 48px;
-            height: 48px;
+        .avatar {
+            width: 76px;
+            height: 76px;
             border-radius: 50%;
-            border: 2px solid #ffcc00;
-            background: #333;
-        }
-        .user-info span {
-            font-size: 1.3rem;
-            font-weight: bold;
-            color: #ffcc00;
-            text-shadow: 0 0 10px #ff8800;
-        }
-        .lobby-title {
-            font-size: 2rem;
-            font-weight: bold;
-            color: #ffcc00;
-            text-shadow: 0 0 20px #ff0000;
-        }
-
-        .map-list {
             display: flex;
-            flex-wrap: wrap;
-            gap: 20px;
+            align-items: center;
             justify-content: center;
-            margin: 30px 0;
-        }
-        .map-btn {
-            background: #1a1a1a;
-            border: 2px solid #ffcc00;
-            color: #ffcc00;
-            padding: 18px 32px;
-            border-radius: 12px;
-            font-size: 1.3rem;
-            font-weight: bold;
-            cursor: pointer;
-            transition: 0.2s;
-            min-width: 140px;
-            text-align: center;
-            box-shadow: 0 0 20px rgba(255, 0, 0, 0.3);
-        }
-        .map-btn:hover {
-            background: #2a1a1a;
-            border-color: #ff4444;
-            box-shadow: 0 0 40px #ff4444aa;
-            transform: scale(1.03);
-        }
-        .map-btn.selected {
-            background: #ffcc00;
-            color: #0a0a0a;
-            box-shadow: 0 0 50px #ffcc00;
-        }
-
-        .lobby-footer {
-            display: flex;
-            justify-content: center;
-            margin-top: auto;
-            padding: 20px 0;
-        }
-        .enter-game-btn {
-            background: #ff4444;
-            border: none;
-            padding: 18px 60px;
-            font-size: 2rem;
-            font-weight: bold;
-            border-radius: 60px;
-            color: #fff;
-            cursor: pointer;
-            box-shadow: 0 0 40px #ff0000aa;
-            transition: 0.2s;
-        }
-        .enter-game-btn:hover {
-            transform: scale(1.05);
-            box-shadow: 0 0 70px #ff0000;
-        }
-        .enter-game-btn:disabled {
-            opacity: 0.4;
-            transform: none;
-            box-shadow: none;
-            cursor: not-allowed;
-        }
-
-        /* ---------- MÀN HÌNH GAME ---------- */
-        #gameScreen {
-            position: absolute;
-            inset: 0;
-            display: none;
-            background: #1a1a2e;
+            font-family: var(--font-display);
+            font-size: 28px;
+            color: #04050a;
+            background: radial-gradient(circle at 35% 30%, #3a4258, #171b28);
+            border: 2px solid var(--line);
+            box-shadow: 0 0 20px rgba(0, 229, 255, 0.12);
+            transition: all 0.2s ease;
             overflow: hidden;
         }
-        #gameScreen.active {
-            display: block;
+        .avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+        }
+        .player-name {
+            font-family: var(--font-display);
+            font-size: 16px;
+            letter-spacing: 1px;
+            color: var(--text);
+        }
+        .player-rank {
+            font-family: var(--font-mono);
+            font-size: 10px;
+            color: var(--text-dim);
+            letter-spacing: 1.5px;
         }
 
+        /* Map selector */
+        .map-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 4px 0 2px;
+        }
+        .map-card {
+            height: 80px;
+            padding: 10px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            position: relative;
+            overflow: hidden;
+        }
+        .map-card:hover {
+            transform: translateY(-2px);
+        }
+        .map-card.selected {
+            border-color: var(--green);
+            box-shadow: 0 0 20px rgba(57, 255, 136, 0.25);
+        }
+        .map-card .fill {
+            position: absolute;
+            inset: 0;
+            opacity: 0.5;
+        }
+        .map-card .content {
+            position: relative;
+            z-index: 1;
+        }
+        .map-card .map-tag {
+            font-family: var(--font-mono);
+            font-size: 8px;
+            color: var(--cyan);
+            letter-spacing: 1.5px;
+        }
+        .map-card .map-name {
+            font-family: var(--font-display);
+            font-size: 13px;
+            letter-spacing: 0.5px;
+        }
+
+        .footer-hint {
+            text-align: center;
+            font-family: var(--font-mono);
+            font-size: 9px;
+            color: var(--text-dim);
+            line-height: 1.6;
+            opacity: 0.6;
+        }
+
+        /* ===== SCREEN: GAME ===== */
+        #screen-game {
+            position: absolute;
+            inset: 0;
+            display: none;
+            z-index: 5;
+            background: #060a12;
+        }
+        #screen-game.active {
+            display: block;
+        }
         #gameCanvas {
+            position: absolute;
+            inset: 0;
             width: 100%;
             height: 100%;
             display: block;
-            background: #2d2d44;
-            touch-action: none;
         }
 
-        /* Joystick */
-        #joystickArea {
+        /* HUD elements */
+        .hud-el {
             position: absolute;
-            bottom: 40px;
-            left: 40px;
-            width: 140px;
-            height: 140px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.1);
-            border: 2px solid rgba(255, 200, 0, 0.6);
-            box-shadow: 0 0 30px rgba(255, 200, 0, 0.2);
+            z-index: 20;
             touch-action: none;
+            pointer-events: auto;
+        }
+        .hud-top {
+            top: 16px;
+            left: 16px;
+            right: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            pointer-events: none;
+        }
+        .hud-top>* {
+            pointer-events: auto;
+        }
+
+        .map-label {
+            padding: 8px 16px;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            letter-spacing: 1.5px;
+            color: var(--gold-soft);
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .map-label .coords {
+            font-size: 9px;
+            color: var(--text-dim);
+        }
+        .map-label .online {
+            font-size: 9px;
+            color: var(--green);
+        }
+
+        .icon-btn {
+            width: 38px;
+            height: 38px;
             display: flex;
             align-items: center;
             justify-content: center;
-            z-index: 10;
+            cursor: pointer;
+            font-size: 16px;
+            background: var(--panel);
+            border: 1px solid var(--line);
+            clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
+            transition: 0.15s;
         }
-        #joystickKnob {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            background: radial-gradient(circle, #ffcc00, #ff8800);
-            box-shadow: 0 0 30px #ffcc00aa;
-            pointer-events: none;
-            transition: 0.03s;
-            position: relative;
+        .icon-btn:hover {
+            background: rgba(0, 229, 255, 0.12);
+        }
+        .icon-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        /* Joystick */
+        #joystick-zone {
+            bottom: 30px;
+            left: 30px;
+            width: 130px;
+            height: 130px;
+            z-index: 25;
         }
 
         /* Chat */
-        #chatContainer {
-            position: absolute;
-            bottom: 40px;
-            right: 30px;
+        #chatPanel {
+            bottom: 30px;
+            left: 180px;
             width: 260px;
-            max-height: 300px;
-            background: rgba(0, 0, 0, 0.75);
-            border: 1px solid #ffcc00;
-            border-radius: 12px;
-            padding: 10px;
-            color: #fff;
+            max-height: 260px;
             display: flex;
             flex-direction: column;
+            background: var(--panel);
+            border: 1px solid var(--line);
+            clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+            backdrop-filter: blur(8px);
+            overflow: hidden;
+            z-index: 20;
             resize: both;
-            overflow: auto;
-            min-width: 200px;
-            min-height: 120px;
-            z-index: 10;
-            backdrop-filter: blur(6px);
-            box-shadow: 0 0 30px rgba(255, 0, 0, 0.3);
+            min-width: 180px;
+            min-height: 100px;
         }
-        #chatContainer .chat-header {
+        #chatPanel.collapsed {
+            max-height: 44px;
+            min-height: 44px;
+        }
+        #chatPanel.collapsed .chat-body,
+        #chatPanel.collapsed .chat-input-row {
+            display: none;
+        }
+        .chat-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid #ff8800;
-            margin-bottom: 6px;
-            padding-bottom: 4px;
-            font-size: 0.9rem;
-            color: #ffcc00;
+            padding: 8px 12px;
             cursor: grab;
+            border-bottom: 1px solid var(--line);
+            font-family: var(--font-mono);
+            font-size: 10px;
+            letter-spacing: 1.5px;
+            color: var(--cyan);
+            flex-shrink: 0;
         }
-        #chatContainer .chat-header span {
+        .chat-header span:last-child {
             cursor: pointer;
+            color: var(--text-dim);
         }
-        #chatMessages {
+        .chat-body {
             flex: 1;
             overflow-y: auto;
-            max-height: 180px;
-            font-size: 0.85rem;
-            line-height: 1.4;
-            margin-bottom: 4px;
-            word-wrap: break-word;
-        }
-        #chatMessages p {
-            margin: 2px 0;
-        }
-        #chatInput {
-            background: #222;
-            border: 1px solid #555;
-            border-radius: 20px;
-            padding: 6px 12px;
-            color: #fff;
-            outline: none;
-            font-size: 0.85rem;
-            width: 100%;
-        }
-        #chatInput:focus {
-            border-color: #ffcc00;
-        }
-
-        /* HUD (avatar + tên trong game) */
-        #gameHUD {
-            position: absolute;
-            top: 20px;
-            left: 20px;
+            padding: 8px 12px;
+            font-size: 12px;
             display: flex;
-            align-items: center;
-            gap: 12px;
-            z-index: 10;
-            background: rgba(0, 0, 0, 0.5);
-            padding: 8px 16px;
-            border-radius: 40px;
-            backdrop-filter: blur(4px);
-            border: 1px solid #ffcc00;
-            pointer-events: none;
+            flex-direction: column;
+            gap: 4px;
+            min-height: 60px;
         }
-        #gameHUD img {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            border: 2px solid #ffcc00;
+        .chat-body .msg {
+            line-height: 1.3;
+            word-break: break-word;
         }
-        #gameHUD span {
-            color: #fff;
-            font-weight: bold;
-            font-size: 1rem;
+        .chat-body .msg .tag {
+            font-weight: 700;
+            margin-right: 4px;
         }
-
-        /* Nút Settings */
-        #settingsBtn {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background: rgba(0,0,0,0.6);
-            border: 1px solid #ffcc00;
-            color: #ffcc00;
-            padding: 8px 16px;
-            border-radius: 30px;
+        .chat-body .msg.sys {
+            color: var(--gold);
+            font-family: var(--font-mono);
+            font-size: 10px;
+        }
+        .chat-input-row {
+            display: flex;
+            border-top: 1px solid var(--line);
+            flex-shrink: 0;
+        }
+        .chat-input-row input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--text);
+            font-family: var(--font-body);
+            padding: 8px 12px;
+            font-size: 12px;
+        }
+        .chat-input-row button {
+            background: transparent;
+            border: none;
+            color: var(--cyan);
+            font-family: var(--font-mono);
+            padding: 0 14px;
             cursor: pointer;
-            z-index: 10;
-            font-weight: bold;
-            backdrop-filter: blur(4px);
-        }
-        #settingsBtn:hover {
-            background: #ffcc00;
-            color: #000;
+            font-size: 11px;
         }
 
-        /* Settings Panel */
-        #settingsPanel {
-            position: absolute;
-            top: 70px;
-            right: 20px;
-            width: 260px;
-            background: rgba(20,20,20,0.95);
-            border: 1px solid #ff4444;
-            border-radius: 16px;
-            padding: 20px;
-            color: #fff;
+        /* FPS */
+        #fps-counter {
+            top: 16px;
+            right: 76px;
+            padding: 4px 12px;
+            font-family: var(--font-mono);
+            font-size: 10px;
+            color: var(--green);
+            background: var(--panel);
+            border: 1px solid var(--line);
+            clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
+        }
+
+        /* HUD edit mode */
+        .hud-dragging {
+            outline: 2px dashed var(--gold) !important;
+            outline-offset: 2px;
+            background: rgba(232, 184, 75, 0.06) !important;
+            cursor: move !important;
+        }
+
+        /* ===== SETTINGS OVERLAY ===== */
+        .overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(2, 3, 7, 0.7);
+            backdrop-filter: blur(6px);
             display: none;
-            z-index: 20;
-            backdrop-filter: blur(8px);
-            box-shadow: 0 0 40px rgba(255,0,0,0.3);
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            padding: 20px;
         }
-        #settingsPanel.open {
-            display: block;
+        .overlay.open {
+            display: flex;
         }
-        #settingsPanel label {
-            display: block;
-            margin: 10px 0 4px;
-            font-size: 0.9rem;
-            color: #ffcc00;
-        }
-        #settingsPanel input[type="range"] {
+        .overlay-panel {
             width: 100%;
-            accent-color: #ffcc00;
+            max-width: 420px;
+            max-height: 80vh;
+            overflow-y: auto;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
         }
-        #settingsPanel .hud-setting {
-            margin-top: 12px;
-            border-top: 1px solid #444;
-            padding-top: 12px;
-        }
-        #settingsPanel .hud-setting .row {
+        .overlay-head {
             display: flex;
             justify-content: space-between;
-            margin: 4px 0;
+            align-items: center;
         }
-        #settingsPanel .hud-setting input[type="range"] {
-            width: 60%;
+        .overlay-head .title {
+            font-family: var(--font-display);
+            font-size: 18px;
+            letter-spacing: 1px;
+            color: var(--gold-soft);
         }
-
-        /* Nút back từ game về sảnh */
-        #backToLobby {
-            position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #ff4444;
-            border: none;
-            color: #fff;
-            padding: 10px 30px;
-            border-radius: 30px;
-            font-weight: bold;
+        .overlay-close {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             cursor: pointer;
-            z-index: 10;
-            box-shadow: 0 0 20px #ff000088;
+            color: var(--text-dim);
+            border: 1px solid var(--line);
+            font-size: 16px;
+            transition: 0.15s;
         }
-        #backToLobby:hover {
-            background: #ff6666;
+        .overlay-close:hover {
+            color: var(--red);
+            border-color: var(--red);
         }
 
-        /* Responsive */
+        .setting-row {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .setting-row label {
+            font-family: var(--font-mono);
+            font-size: 10px;
+            color: var(--text-dim);
+            letter-spacing: 1px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .setting-row input[type="range"] {
+            width: 100%;
+            accent-color: var(--cyan);
+            background: transparent;
+        }
+        .setting-row select {
+            background: rgba(0, 229, 255, 0.05);
+            border: 1px solid var(--line);
+            color: var(--text);
+            font-family: var(--font-body);
+            padding: 8px 10px;
+            font-size: 13px;
+            width: 100%;
+            border-radius: 0;
+        }
+        .hud-edit-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .hud-edit-row .btn {
+            flex: 1;
+            min-width: 60px;
+            padding: 8px;
+            font-size: 10px;
+        }
+
+                /* ===== TOAST ===== */
+        .toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-20px);
+            z-index: 200;
+            padding: 10px 24px;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            letter-spacing: 1px;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.25s ease;
+            background: var(--panel);
+            border: 1px solid var(--gold);
+            color: var(--gold-soft);
+            clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* ===== RESPONSIVE ===== */
         @media (max-width: 600px) {
-            #loginScreen h1 { font-size: 2rem; }
-            .map-btn { padding: 12px 20px; font-size: 1rem; min-width: 100px; }
-            .enter-game-btn { font-size: 1.4rem; padding: 14px 40px; }
-            #joystickArea { width: 100px; height: 100px; bottom: 20px; left: 20px; }
-            #joystickKnob { width: 45px; height: 45px; }
-            #chatContainer { width: 200px; max-height: 220px; bottom: 20px; right: 15px; }
-            #gameHUD img { width: 30px; height: 30px; }
-            #settingsPanel { width: 200px; right: 10px; }
+            .menu-title .t1 {
+                font-size: 28px;
+            }
+            .map-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 8px;
+            }
+            .map-card {
+                height: 64px;
+            }
+            .map-card .map-name {
+                font-size: 11px;
+            }
+            #joystick-zone {
+                width: 100px;
+                height: 100px;
+                bottom: 20px;
+                left: 20px;
+            }
+            #chatPanel {
+                width: 200px;
+                max-height: 180px;
+                left: 130px;
+                bottom: 20px;
+            }
+            .hud-top {
+                top: 10px;
+                left: 10px;
+                right: 10px;
+            }
+            .map-label {
+                font-size: 9px;
+                padding: 6px 12px;
+            }
+            .icon-btn {
+                width: 32px;
+                height: 32px;
+                font-size: 14px;
+            }
+            #fps-counter {
+                font-size: 9px;
+                padding: 2px 10px;
+                right: 56px;
+                top: 10px;
+            }
+        }
+        @media (orientation: landscape) and (max-height: 500px) {
+            .menu-wrap {
+                max-width: 360px;
+                gap: 8px;
+            }
+            .menu-title .t1 {
+                font-size: 26px;
+            }
+            .profile-card {
+                padding: 14px 16px;
+                gap: 8px;
+            }
+            .avatar {
+                width: 56px;
+                height: 56px;
+                font-size: 20px;
+            }
+            .map-card {
+                height: 56px;
+            }
+            #joystick-zone {
+                width: 90px;
+                height: 90px;
+            }
+            #chatPanel {
+                max-height: 140px;
+                width: 180px;
+            }
         }
     </style>
 </head>
 <body>
     <div id="app">
-        <!-- MÀN HÌNH ĐĂNG NHẬP -->
-        <div id="loginScreen">
-            <h1>⚔️ QUÂN ĐỘI ⚔️</h1>
-            <button class="discord-btn" id="loginBtn">
-                <img src="https://cdn.jsdelivr.net/npm/simple-icons@v8/icons/discord.svg" alt="Discord" style="filter: invert(1);">
-                Đăng nhập bằng Discord
-            </button>
-            <p style="color: #888; margin-top: 20px; font-size: 0.9rem;">Sử dụng PKCE – không cần secret</p>
+        <!-- BG FX -->
+        <div class="grid-bg"></div>
+        <div class="glow-orb" style="top:-120px;left:-80px;background:var(--cyan);"></div>
+        <div class="glow-orb" style="bottom:-140px;right:-100px;background:var(--gold);"></div>
+        <div class="scanline"></div>
+        <div class="vignette"></div>
+        <div class="toast" id="toast"></div>
+
+        <!-- ===================== MENU / LOBBY ===================== -->
+        <div id="screen-menu">
+            <div class="menu-wrap">
+                <div class="menu-title">
+                    <div class="t1">VMI QUÂN ĐỘI</div>
+                    <div class="t2">TACTICAL NETWORK</div>
+                </div>
+                <div class="online-badge">
+                    <span class="online-dot"></span>
+                    <span id="onlineLabel">Đang kết nối...</span>
+                </div>
+
+                <div class="panel profile-card">
+                    <div class="avatar" id="avatarEl">?</div>
+                    <div class="player-name" id="playerNameEl">Chưa đăng nhập</div>
+                    <div class="player-rank" id="playerRankEl" style="display:none;"></div>
+                    <button class="discord-btn" id="btnLogin">
+                        <span>⬡</span> ĐĂNG NHẬP DISCORD
+                    </button>
+                    <button class="btn danger" id="btnLogout" style="display:none;">ĐĂNG XUẤT</button>
+                </div>
+
+                <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);letter-spacing:1px;padding:0 4px;">CHỌN BẢN ĐỒ</div>
+                <div class="map-grid" id="mapGrid">
+                    <!-- JS sẽ tạo -->
+                </div>
+
+                <button class="btn gold" id="btnEnterGame" disabled>🚀 VÀO GAME</button>
+                <button class="btn" id="btnSettingsMenu">⚙ CÀI ĐẶT</button>
+
+                <div class="footer-hint">
+                    Đăng nhập Discord để lưu dữ liệu · HUD có thể kéo thả khi chỉnh sửa
+                </div>
+            </div>
         </div>
 
-        <!-- SẢNH (LOBBY) -->
-        <div id="lobby">
-            <div class="lobby-header">
-                <div class="user-info">
-                    <img id="avatarImg" src="https://cdn.discordapp.com/embed/avatars/0.png" alt="avatar">
-                    <span id="usernameDisplay">Người chơi</span>
-                </div>
-                <div class="lobby-title">🔥 SẢNH CHIẾN 🔥</div>
-                <div style="display: flex; gap: 10px;">
-                    <button id="settingsBtnLobby" style="background:none;border:1px solid #ffcc00;color:#ffcc00;padding:6px 16px;border-radius:20px;cursor:pointer;">⚙️</button>
-                    <button id="logoutBtn" style="background:none;border:1px solid #ff4444;color:#ff4444;padding:6px 16px;border-radius:20px;cursor:pointer;">Thoát</button>
-                </div>
-            </div>
-
-            <div class="map-list" id="mapList">
-                <button class="map-btn" data-map="0">🏕️ Khu Huấn Luyện</button>
-                <button class="map-btn" data-map="1">🎖️ Diễu Binh</button>
-                <button class="map-btn" data-map="2">⚔️ Thao Trường</button>
-                <button class="map-btn" data-map="3">🎉 Sự kiện</button>
-            </div>
-
-            <div class="lobby-footer">
-                <button class="enter-game-btn" id="enterGameBtn" disabled>🚀 Vào Game</button>
-            </div>
-        </div>
-
-        <!-- MÀN HÌNH GAME -->
-        <div id="gameScreen">
+        <!-- ===================== GAME SCREEN ===================== -->
+        <div id="screen-game">
             <canvas id="gameCanvas"></canvas>
 
-            <!-- Joystick -->
-            <div id="joystickArea">
-                <div id="joystickKnob"></div>
+            <!-- HUD Top -->
+            <div class="hud-top">
+                <div class="panel map-label hud-el" id="mapLabel" style="position:relative;top:0;left:0;">
+                    <span id="currentMapName">KHU HUẤN LUYỆN</span>
+                    <span class="coords" id="coordLabel">X:0 Y:0</span>
+                    <span class="online" id="onlineInMap">● 1 người</span>
+                </div>
+                <div class="icon-row">
+                    <div class="panel icon-btn hud-el" id="btnChatToggle" title="Chat">💬</div>
+                    <div class="panel icon-btn hud-el" id="btnSettingsGame" title="Cài đặt">⚙</div>
+                    <div class="panel icon-btn hud-el" id="btnExitGame" title="Về sảnh">✕</div>
+                </div>
             </div>
+
+            <!-- FPS -->
+            <div class="panel hud-el" id="fps-counter">FPS: 60</div>
+
+            <!-- Joystick -->
+            <div class="hud-el" id="joystick-zone"></div>
 
             <!-- Chat -->
-            <div id="chatContainer">
-                <div class="chat-header">
-                    <span>💬 Chat</span>
-                    <span id="chatToggle">🗕</span>
+            <div class="hud-el" id="chatPanel">
+                <div class="chat-header" id="chatHeader">
+                    <span>💬 CHIẾN THUẬT</span>
+                    <span id="chatCollapseBtn">▁</span>
                 </div>
-                <div id="chatMessages">
-                    <p><em>Chào mừng vào game!</em></p>
+                <div class="chat-body" id="chatBody"></div>
+                <div class="chat-input-row">
+                    <input id="chatInput" placeholder="Nhắn tin..." maxlength="200" />
+                    <button id="chatSendBtn">GỬI</button>
                 </div>
-                <input id="chatInput" type="text" placeholder="Nhập tin nhắn...">
             </div>
+        </div>
 
-            <!-- HUD -->
-            <div id="gameHUD">
-                <img id="gameAvatar" src="https://cdn.discordapp.com/embed/avatars/0.png" alt="avatar">
-                <span id="gameUsername">Người chơi</span>
-            </div>
-
-            <!-- Nút Settings -->
-            <button id="settingsBtn">⚙️ Cài đặt</button>
-
-            <!-- Panel Settings -->
-            <div id="settingsPanel">
-                <h3 style="color:#ffcc00;margin-bottom:10px;">Cài đặt</h3>
-                <label>Đồ họa (độ nét)</label>
-                <input type="range" id="graphicsQuality" min="0.5" max="1.5" step="0.1" value="1.0">
-                <label>Âm lượng</label>
-                <input type="range" id="volume" min="0" max="1" step="0.05" value="0.8">
-                <label>Zoom màn hình</label>
-                <input type="range" id="zoomLevel" min="0.5" max="1.5" step="0.05" value="0.75">
-
-                <div class="hud-setting">
-                    <div style="color:#ffcc00;font-weight:bold;">HUD</div>
-                    <div class="row"><span>Độ mờ</span><input type="range" id="hudOpacity" min="0.1" max="1" step="0.05" value="0.8"></div>
-                    <div class="row"><span>Kích thước</span><input type="range" id="hudScale" min="0.5" max="2" step="0.1" value="1.0"></div>
-                    <div style="margin-top:8px;font-size:0.8rem;color:#aaa;">(Kéo các thành phần HUD để di chuyển)</div>
+        <!-- ===================== SETTINGS OVERLAY ===================== -->
+        <div class="overlay" id="settingsOverlay">
+            <div class="panel overlay-panel">
+                <div class="overlay-head">
+                    <span class="title">⚙ CÀI ĐẶT</span>
+                    <div class="overlay-close" id="closeSettings">✕</div>
                 </div>
-                <button id="closeSettings" style="margin-top:15px;background:#ff4444;border:none;color:#fff;padding:8px;width:100%;border-radius:30px;cursor:pointer;">Đóng</button>
-            </div>
 
-            <!-- Nút quay lại sảnh -->
-            <button id="backToLobby">🔙 Về sảnh</button>
+                <div class="setting-row">
+                    <label>Đồ họa <span id="graphicsVal">Cao</span></label>
+                    <select id="graphicsSelect">
+                        <option value="low">Thấp</option>
+                        <option value="medium">Trung bình</option>
+                        <option value="high" selected>Cao</option>
+                    </select>
+                </div>
+                <div class="setting-row">
+                    <label>Zoom <span id="zoomVal">0.75x</span></label>
+                    <input type="range" id="zoomRange" min="0.4" max="1.4" step="0.05" value="0.75" />
+                </div>
+                <div class="setting-row">
+                    <label>Độ mờ HUD <span id="hudOpacityVal">90%</span></label>
+                    <input type="range" id="hudOpacityRange" min="0.2" max="1" step="0.05" value="0.9" />
+                </div>
+                <div class="setting-row">
+                    <label>Kích thước HUD <span id="hudScaleVal">100%</span></label>
+                    <input type="range" id="hudScaleRange" min="0.5" max="1.5" step="0.05" value="1" />
+                </div>
+                <div class="setting-row">
+                    <label style="margin-bottom:4px;">🖱 Chỉnh sửa HUD (kéo thả)</label>
+                    <div class="hud-edit-row">
+                        <button class="btn small" id="hudEditToggle">BẬT</button>
+                        <button class="btn small danger" id="hudResetBtn">ĐẶT LẠI</button>
+                    </div>
+                </div>
+                <button class="btn gold" id="settingsCloseBtn">ĐÓNG</button>
+            </div>
         </div>
     </div>
 
     <script>
-        // ============================================================
-        // 1. DISCORD OAUTH2 PKCE (Client-side, không cần secret)
-        // ============================================================
+        // ================================================================
+        // 1. DISCORD LOGIN (PKCE)
+        // ================================================================
         const CLIENT_ID = '1534238453871673414';
-        const REDIRECT_URI = window.location.origin + window.location.pathname; // phải khớp với Discord dev portal
+        const REDIRECT_URI = window.location.origin + window.location.pathname;
 
-        // Hàm tạo code verifier và challenge
-        function generateCodeVerifier() {
-            const array = new Uint8Array(32);
-            window.crypto.getRandomValues(array);
-            const verifier = btoa(String.fromCharCode(...array))
-                .replace(/=/g, '')
-                .replace(/\+/g, '-')
-                .replace(/\//g, '_');
-            return verifier;
+        function genVerifier() {
+            const arr = new Uint8Array(32);
+            crypto.getRandomValues(arr);
+            return btoa(String.fromCharCode(...arr)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+        }
+        async function sha256(s) {
+            const d = new TextEncoder().encode(s);
+            const h = await crypto.subtle.digest('SHA-256', d);
+            return btoa(String.fromCharCode(...new Uint8Array(h))).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g,
+            '_');
         }
 
-        async function sha256(plain) {
-            const encoder = new TextEncoder();
-            const data = encoder.encode(plain);
-            const digest = await window.crypto.subtle.digest('SHA-256', data);
-            return btoa(String.fromCharCode(...new Uint8Array(digest)))
-                .replace(/=/g, '')
-                .replace(/\+/g, '-')
-                .replace(/\//g, '_');
-        }
-
-        // Lưu verifier vào sessionStorage để dùng sau khi redirect
         function startDiscordLogin() {
-            const verifier = generateCodeVerifier();
-            sessionStorage.setItem('pkce_verifier', verifier);
-
-            sha256(verifier).then(challenge => {
-                const authUrl = new URL('https://discord.com/oauth2/authorize');
-                authUrl.searchParams.set('client_id', CLIENT_ID);
-                authUrl.searchParams.set('redirect_uri', REDIRECT_URI);
-                authUrl.searchParams.set('response_type', 'code');
-                authUrl.searchParams.set('scope', 'identify');
-                authUrl.searchParams.set('code_challenge', challenge);
-                authUrl.searchParams.set('code_challenge_method', 'S256');
-
-                window.location.href = authUrl.toString();
+            const v = genVerifier();
+            sessionStorage.setItem('pkce_v', v);
+            sha256(v).then(ch => {
+                const url = new URL('https://discord.com/api/oauth2/authorize');
+                url.searchParams.set('client_id', CLIENT_ID);
+                url.searchParams.set('redirect_uri', REDIRECT_URI);
+                url.searchParams.set('response_type', 'code');
+                url.searchParams.set('scope', 'identify');
+                url.searchParams.set('code_challenge', ch);
+                url.searchParams.set('code_challenge_method', 'S256');
+                window.location.href = url.toString();
             });
         }
 
-        // Hàm trao đổi code lấy token
         async function exchangeCode(code) {
-            const verifier = sessionStorage.getItem('pkce_verifier');
-            if (!verifier) throw new Error('Không tìm thấy verifier');
-
+            const v = sessionStorage.getItem('pkce_v');
+            if (!v) throw new Error('No verifier');
             const params = new URLSearchParams();
             params.set('client_id', CLIENT_ID);
             params.set('grant_type', 'authorization_code');
             params.set('code', code);
             params.set('redirect_uri', REDIRECT_URI);
-            params.set('code_verifier', verifier);
-
-            const resp = await fetch('https://discord.com/api/oauth2/token', {
+            params.set('code_verifier', v);
+            const res = await fetch('https://discord.com/api/oauth2/token', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: params.toString()
             });
-
-            if (!resp.ok) {
-                const err = await resp.text();
-                throw new Error(`Lỗi trao đổi token: ${err}`);
-            }
-            const data = await resp.json();
+            if (!res.ok) throw new Error(await res.text());
+            const data = await res.json();
             return data.access_token;
         }
 
-        // Lấy thông tin user
-async function fetchUserInfo(accessToken) {
-    const resp = await fetch('https://discord.com/api/users/@me', {
-        headers: {
-            'Authorization': `Bearer ${accessToken}`
+        async function fetchUser(token) {
+            const res = await fetch('https://discord.com/api/users/@me', {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            if (!res.ok) throw new Error('Failed to fetch user');
+            return res.json();
         }
-    });
-    if (!resp.ok) throw new Error('Không lấy được user info');
-    return resp.json();
-}
 
-// Xử lý redirect sau khi login
-async function handleDiscordRedirect() {
-    const params = new URLSearchParams(window.location.search);
-    const code = params.get('code');
-    if (code) {
-        try {
-            const token = await exchangeCode(code);
-            const user = await fetchUserInfo(token);
-            // Lưu user vào localStorage
-            localStorage.setItem('discord_user', JSON.stringify(user));
-            // Xóa query param để không bị lặp
-            window.history.replaceState({}, document.title, window.location.pathname);
-            // Cập nhật UI
-            showLobby(user);
-        } catch (e) {
-            alert('Đăng nhập thất bại: ' + e.message);
-            console.error(e);
+        async function handleRedirect() {
+            const p = new URLSearchParams(window.location.search);
+            const code = p.get('code');
+            if (code) {
+                try {
+                    const token = await exchangeCode(code);
+                    const user = await fetchUser(token);
+                    localStorage.setItem('vmi_user', JSON.stringify(user));
+                    window.history.replaceState({}, '', window.location.pathname);
+                    return user;
+                } catch (e) { toast('Đăng nhập thất bại: ' + e.message); }
+            }
+            return null;
         }
-    }
-}
 
-// ============================================================
-// 2. UI LOGIC
-// ============================================================
-const loginScreen = document.getElementById('loginScreen');
-const lobby = document.getElementById('lobby');
-const gameScreen = document.getElementById('gameScreen');
-const loginBtn = document.getElementById('loginBtn');
-const logoutBtn = document.getElementById('logoutBtn');
-const avatarImg = document.getElementById('avatarImg');
-const usernameDisplay = document.getElementById('usernameDisplay');
-const gameAvatar = document.getElementById('gameAvatar');
-const gameUsername = document.getElementById('gameUsername');
+        let currentUser = null;
 
-function showLobby(user) {
-    loginScreen.classList.add('hidden');
-    lobby.classList.add('active');
-    gameScreen.classList.remove('active');
+        function getSavedUser() {
+            try {
+                const d = localStorage.getItem('vmi_user');
+                return d ? JSON.parse(d) : null;
+            } catch { return null; }
+        }
 
-    const avatarUrl = user.avatar
-        ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`
-        : `https://cdn.discordapp.com/embed/avatars/${Number(user.discriminator) % 5}.png`;
-    avatarImg.src = avatarUrl;
-    gameAvatar.src = avatarUrl;
-    const name = user.global_name || user.username;
-    usernameDisplay.textContent = name;
-    gameUsername.textContent = name;
-}
+        // ================================================================
+        // 2. UI HELPERS
+        // ================================================================
+        function toast(msg) {
+            const el = document.getElementById('toast');
+            el.textContent = msg;
+            el.classList.add('show');
+            clearTimeout(el._t);
+            el._t = setTimeout(() => el.classList.remove('show'), 2200);
+        }
 
-function showLogin() {
-    loginScreen.classList.remove('hidden');
-    lobby.classList.remove('active');
-    gameScreen.classList.remove('active');
-    localStorage.removeItem('discord_user');
-}
+        const MAPS = [
+            { id: 'map1', name: 'Khu Huấn Luyện', tag: 'TRAINING', color: '#00e5ff' },
+            { id: 'map2', name: 'Diễu Binh', tag: 'PARADE', color: '#ff2ea6' },
+            { id: 'map3', name: 'Thao Trường', tag: 'DRILL YARD', color: '#39ff88' },
+            { id: 'map4', name: 'Sự Kiện', tag: 'EVENT', color: '#e8b84b' }
+        ];
+        let selectedMap = MAPS[0];
+        let settings = {
+            graphics: 'high',
+            zoom: 0.75,
+            hudOpacity: 0.9,
+            hudScale: 1
+        };
 
-// Kiểm tra đã đăng nhập chưa
-function checkLoggedIn() {
-    const userData = localStorage.getItem('discord_user');
-    if (userData) {
-        try {
-            const user = JSON.parse(userData);
-            showLobby(user);
-            return true;
-        } catch (e) {}
-    }
-    return false;
-}
+        function loadSettings() {
+            try {
+                const s = localStorage.getItem('vmi_settings');
+                if (s) settings = { ...settings, ...JSON.parse(s) };
+            } catch {}
+        }
 
-// ============================================================
-// 3. XỬ LÝ SỰ KIỆN ĐĂNG NHẬP / ĐĂNG XUẤT
-// ============================================================
-loginBtn.addEventListener('click', () => {
-    loginBtn.disabled = true;
-    startDiscordLogin();
-});
+        function saveSettings() {
+            localStorage.setItem('vmi_settings', JSON.stringify(settings));
+        }
 
-logoutBtn.addEventListener('click', () => {
-    showLogin();
-});
+        // ================================================================
+        // 3. LOBBY UI
+        // ================================================================
+        const avatarEl = document.getElementById('avatarEl');
+        const playerNameEl = document.getElementById('playerNameEl');
+        const playerRankEl = document.getElementById('playerRankEl');
+        const btnLogin = document.getElementById('btnLogin');
+        const btnLogout = document.getElementById('btnLogout');
+        const mapGrid = document.getElementById('mapGrid');
+        const btnEnter = document.getElementById('btnEnterGame');
 
-// Xử lý redirect
-handleDiscordRedirect().then(() => {
-    if (!checkLoggedIn()) {
-        // Nếu chưa đăng nhập, hiện màn hình login
-        loginScreen.classList.remove('hidden');
-        lobby.classList.remove('active');
-        gameScreen.classList.remove('active');
-    }
-}).catch(console.error);
+        function renderMaps() {
+            mapGrid.innerHTML = '';
+            MAPS.forEach(m => {
+                const card = document.createElement('div');
+                card.className = 'panel map-card' + (m.id === selectedMap.id ? ' selected' : '');
+                card.innerHTML = `
+              <div class="fill" style="background:radial-gradient(circle at 30% 20%, ${m.color}44, transparent 60%), linear-gradient(160deg, ${m.color}22, transparent);"></div>
+              <div class="content">
+                <div class="map-tag" style="color:${m.color};">${m.tag}</div>
+                <div class="map-name">${m.name}</div>
+              </div>
+            `;
+                card.addEventListener('click', () => {
+                    document.querySelectorAll('.map-card').forEach(c => c.classList.remove('selected'));
+                    card.classList.add('selected');
+                    selectedMap = m;
+                    btnEnter.disabled = false;
+                    toast('Đã chọn: ' + m.name);
+                });
+                mapGrid.appendChild(card);
+            });
+        }
+        renderMaps();
 
-// ============================================================
-// 4. LOBBIY – CHỌN MAP VÀ VÀO GAME
-// ============================================================
-const mapBtns = document.querySelectorAll('.map-btn');
-const enterBtn = document.getElementById('enterGameBtn');
-let selectedMap = null;
+        function updateUserUI(user) {
+            if (user) {
+                currentUser = user;
+                const av = user.avatar ?
+                    `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png` :
+                    `https://cdn.discordapp.com/embed/avatars/${Number(user.discriminator)%5}.png`;
+                avatarEl.innerHTML = `<img src="${av}" alt="avatar" />`;
+                playerNameEl.textContent = user.global_name || user.username;
+                playerRankEl.style.display = 'block';
+                playerRankEl.textContent = '● Đã đăng nhập';
+                btnLogin.style.display = 'none';
+                btnLogout.style.display = 'block';
+                btnEnter.disabled = !selectedMap;
+            } else {
+                currentUser = null;
+                avatarEl.innerHTML = '?';
+                playerNameEl.textContent = 'Chưa đăng nhập';
+                playerRankEl.style.display = 'none';
+                btnLogin.style.display = 'block';
+                btnLogout.style.display = 'none';
+                btnEnter.disabled = true;
+            }
+        }
 
-mapBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-        mapBtns.forEach(b => b.classList.remove('selected'));
-        btn.classList.add('selected');
-        selectedMap = btn.dataset.map;
-        enterBtn.disabled = false;
-    });
-});
+        btnLogin.addEventListener('click', () => { startDiscordLogin(); });
+        btnLogout.addEventListener('click', () => {
+            localStorage.removeItem('vmi_user');
+            updateUserUI(null);
+            toast('Đã đăng xuất');
+        });
 
-enterBtn.addEventListener('click', () => {
-    if (selectedMap !== null) {
-        startGame(selectedMap);
-    }
-});
+        // ================================================================
+        // 4. GAME ENGINE (Phaser)
+        // ================================================================
+        let game = null;
+        let scene = null;
+        let joystick = null;
+        let playerContainer = null;
+        let chatBubbleTimer = null;
+        let isChatCollapsed = false;
 
-// ============================================================
-// 5. GAME ENGINE (Canvas, Joystick, Chat, HUD, Settings)
-// ============================================================
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
-let playerX = 400, playerY = 300;
-const playerSize = 30;
-let joystickX = 0, joystickY = 0;
-let gameLoopId = null;
+        const canvas = document.getElementById('gameCanvas');
 
-function resizeCanvas() {
-    const rect = canvas.parentElement.getBoundingClientRect();
-    canvas.width = rect.width;
-    canvas.height = rect.height;
-}
-window.addEventListener('resize', resizeCanvas);
+        function initGame() {
+            if (game) { game.destroy(true);
+                game = null; }
+            const mapConf = {
+                bg: ['#1a3a2a', '#3a2a1a', '#08081a', '#2a3a3a'][MAPS.indexOf(selectedMap)] || '#1a3a2a',
+                grid: 0xffffff,
+                alpha: 0.12
+            };
+            const config = {
+                type: Phaser.CANVAS,
+                parent: document.getElementById('screen-game'),
+                canvas: canvas,
+                width: window.innerWidth,
+                height: window.innerHeight,
+                backgroundColor: mapConf.bg,
+                physics: { default: 'arcade', arcade: { debug: false } },
+                scene: { create: createScene, update: updateScene }
+            };
+            game = new Phaser.Game(config);
+            document.getElementById('screen-game').classList.add('active');
+            document.getElementById('currentMapName').textContent = selectedMap.name;
+            applyHudSettings();
+        }
 
-function startGame(mapId) {
-    lobby.classList.remove('active');
-    gameScreen.classList.add('active');
-    resizeCanvas();
-    // Reset player position
-    playerX = canvas.width / 2;
-    playerY = canvas.height / 2;
+        function createScene() {
+            scene = this;
+            const mapConf = {
+                bg: ['#1a3a2a', '#3a2a1a', '#08081a', '#2a3a3a'][MAPS.indexOf(selectedMap)] || '#1a3a2a',
+                grid: 0xffffff,
+                alpha: 0.12
+            };
+            // Grid
+            const g = scene.add.graphics();
+            g.lineStyle(1, mapConf.grid, mapConf.alpha);
+            for (let x = 0; x <= 3000; x += 50) { g.moveTo(x, 0);
+                g.lineTo(x, 3000); }
+            for (let y = 0; y <= 3000; y += 50) { g.moveTo(0, y);
+                g.lineTo(3000, y); }
+            g.strokePath();
 
-    // Cập nhật chat
-    document.getElementById('chatMessages').innerHTML += `<p><em>Đã vào map ${mapId}</em></p>`;
-
-    // Bắt đầu loop game
-    if (gameLoopId) cancelAnimationFrame(gameLoopId);
-    gameLoop();
-    // Cập nhật HUD scale từ settings
-    applyHudSettings();
-}
-
-// Joystick (cảm ứng và chuột)
-const joystickArea = document.getElementById('joystickArea');
-const joystickKnob = document.getElementById('joystickKnob');
-let isDraggingJoystick = false;
-
-function handleJoystickStart(e) {
-    e.preventDefault();
-    isDraggingJoystick = true;
-    updateJoystick(e);
-}
-
-function handleJoystickMove(e) {
-    if (!isDraggingJoystick) return;
-    e.preventDefault();
-    updateJoystick(e);
-}
-
-function handleJoystickEnd(e) {
-    if (!isDraggingJoystick) return;
-    isDraggingJoystick = false;
-    joystickX = 0;
-    joystickY = 0;
-    joystickKnob.style.transform = 'translate(0,0)';
-}
-
-function updateJoystick(e) {
-    const rect = joystickArea.getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
-    let clientX, clientY;
-    if (e.touches) {
-        clientX = e.touches[0].clientX;
-        clientY = e.touches[0].clientY;
-    } else {
-        clientX = e.clientX;
-        clientY = e.clientY;
-    }
-    let dx = clientX - centerX;
-    let dy = clientY - centerY;
-    const maxRadius = rect.width / 2 - 20;
-    const dist = Math.sqrt(dx*dx + dy*dy);
-    if (dist > maxRadius) {
-        dx = dx / dist * maxRadius;
-        dy = dy / dist * maxRadius;
-    }
-    joystickX = dx / maxRadius;
-    joystickY = dy / maxRadius;
-    joystickKnob.style.transform = `translate(${dx}px, ${dy}px)`;
-}
-
-joystickArea.addEventListener('mousedown', handleJoystickStart);
-window.addEventListener('mousemove', handleJoystickMove);
-window.addEventListener('mouseup', handleJoystickEnd);
-joystickArea.addEventListener('touchstart', handleJoystickStart);
-window.addEventListener('touchmove', handleJoystickMove);
-window.addEventListener('touchend', handleJoystickEnd);
-
-// Chat: gửi tin nhắn
-const chatInput = document.getElementById('chatInput');
-const chatMessages = document.getElementById('chatMessages');
-chatInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && chatInput.value.trim()) {
-        const msg = chatInput.value.trim();
-        chatMessages.innerHTML += `<p><strong>Bạn:</strong> ${msg}</p>`;
-        chatInput.value = '';
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-    }
-});
-
-// Chat toggle (thu phóng)
-let chatMinimized = false;
-document.getElementById('chatToggle').addEventListener('click', () => {
-    const container = document.getElementById('chatContainer');
-    if (chatMinimized) {
-        container.style.height = 'auto';
-        container.style.maxHeight = '300px';
-        chatMinimized = false;
-    } else {
-        container.style.height = '40px';
-        container.style.maxHeight = '40px';
-        chatMinimized = true;
-    }
-});
-
-// Kéo chat để di chuyển (đơn giản, dùng drag)
-let isDraggingChat = false;
-let chatOffsetX = 0, chatOffsetY = 0;
-const chatHeader = document.querySelector('.chat-header');
-chatHeader.addEventListener('mousedown', (e) => {
-    if (e.target.tagName === 'SPAN') return;
-    const rect = document.getElementById('chatContainer').getBoundingClientRect();
-    chatOffsetX = e.clientX - rect.left;
-    chatOffsetY = e.clientY - rect.top;
-    isDraggingChat = true;
-});
-window.addEventListener('mousemove', (e) => {
-    if (!isDraggingChat) return;
-    const container = document.getElementById('chatContainer');
-    container.style.left = (e.clientX - chatOffsetX) + 'px';
-    container.style.top = (e.clientY - chatOffsetY) + 'px';
-    container.style.right = 'auto';
-    container.style.bottom = 'auto';
-});
-window.addEventListener('mouseup', () => { isDraggingChat = false; });
-
-// Settings
-const settingsBtn = document.getElementById('settingsBtn');
-const settingsPanel = document.getElementById('settingsPanel');
-const closeSettings = document.getElementById('closeSettings');
-settingsBtn.addEventListener('click', () => {
-    settingsPanel.classList.toggle('open');
-});
-closeSettings.addEventListener('click', () => {
-    settingsPanel.classList.remove('open');
-});
-
-// Điều chỉnh đồ họa (nét)
-document.getElementById('graphicsQuality').addEventListener('input', (e) => {
-    const val = parseFloat(e.target.value);
-    ctx.imageSmoothingEnabled = true;
-    // Không thực sự thay đổi chất lượng, chỉ demo
-    console.log('Chất lượng đồ họa:', val);
-});
-
-// Âm lượng (demo)
-document.getElementById('volume').addEventListener('input', (e) => {
-    console.log('Âm lượng:', e.target.value);
-});
-
-// Zoom màn hình (dùng CSS transform)
-document.getElementById('zoomLevel').addEventListener('input', (e) => {
-    const zoom = parseFloat(e.target.value);
-    canvas.style.transform = `scale(${zoom})`;
-    canvas.style.transformOrigin = 'top left';
-    // Cần điều chỉnh kích thước canvas? Tạm thời để vậy.
-});
-
-// HUD settings
-function applyHudSettings() {
-    const opacity = parseFloat(document.getElementById('hudOpacity').value);
-    const scale = parseFloat(document.getElementById('hudScale').value);
-    const hud = document.getElementById('gameHUD');
-    hud.style.opacity = opacity;
-    hud.style.transform = `scale(${scale})`;
-    hud.style.transformOrigin = 'top left';
-    // Các nút khác cũng có thể áp dụng
-}
-document.getElementById('hudOpacity').addEventListener('input', applyHudSettings);
-document.getElementById('hudScale').addEventListener('input', applyHudSettings);
-
-// Kéo HUD để di chuyển (drag)
-let isDraggingHud = false;
-let hudOffsetX = 0, hudOffsetY = 0;
-const hudElement = document.getElementById('gameHUD');
-hudElement.style.cursor = 'grab';
-hudElement.addEventListener('mousedown', (e) => {
-    if (e.target.tagName === 'IMG' || e.target.tagName === 'SPAN') {
-        isDraggingHud = true;
-        const rect = hudElement.getBoundingClientRect();
-        hudOffsetX = e.clientX - rect.left;
-        hudOffsetY = e.clientY - rect.top;
-        hudElement.style.cursor = 'grabbing';
-    }
-});
-window.addEventListener('mousemove', (e) => {
-    if (!isDraggingHud) return;
-    hudElement.style.left = (e.clientX - hudOffsetX) + 'px';
-    hudElement.style.top = (e.clientY - hudOffsetY) + 'px';
-    hudElement.style.right = 'auto';
-    hudElement.style.bottom = 'auto';
-});
-window.addEventListener('mouseup', () => {
-    isDraggingHud = false;
-    hudElement.style.cursor = 'grab';
-});
-
-// Back to lobby
-document.getElementById('backToLobby').addEventListener('click', () => {
-    if (gameLoopId) cancelAnimationFrame(gameLoopId);
-    gameScreen.classList.remove('active');
-    lobby.classList.add('active');
-});
-
-// ============================================================
-// 6. GAME LOOP (di chuyển nhân vật)
-// ============================================================
-function gameLoop() {
-    // Di chuyển player theo joystick
-    const speed = 4;
-    playerX += joystickX * speed;
-    playerY += joystickY * speed;
-    // Giới hạn trong canvas
-    if (playerX < 0) playerX = 0;
-    if (playerX > canvas.width) playerX = canvas.width;
-    if (playerY < 0) playerY = 0;
-    if (playerY > canvas.height) playerY = canvas.height;
-
-    // Vẽ
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    // Vẽ map (đơn giản)
-    ctx.fillStyle = '#2d2d44';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    // Vẽ lưới
-    ctx.strokeStyle = '#444466';
-    ctx.lineWidth = 1;
-    for (let x = 0; x < canvas.width; x += 50) {
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, canvas.height);
-        ctx.stroke();
-    }
-    for (let y = 0; y < canvas.height; y += 50) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(canvas.width, y);
-        ctx.stroke();
-    }
-
-    // Vẽ nhân vật
+            // Avatar
+const r = 26;
+const texKey = 'avatar_' + Date.now();
+const c = scene.textures.createCanvas(texKey, r * 2, r * 2);
+const ctx = c.context;
+ctx.beginPath();
+ctx.arc(r, r, r, 0, Math.PI * 2);
+ctx.closePath();
+ctx.clip();
+if (currentUser && currentUser.avatar) {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => { 
+        ctx.drawImage(img, 0, 0, r * 2, r * 2);
+        c.refresh(); 
+    };
+    img.src = `https://cdn.discordapp.com/avatars/${currentUser.id}/${currentUser.avatar}.png`;
+} else {
     ctx.fillStyle = '#ffcc00';
-    ctx.shadowColor = '#ff8800';
-    ctx.shadowBlur = 20;
-    ctx.beginPath();
-    ctx.arc(playerX, playerY, playerSize/2, 0, Math.PI*2);
-    ctx.fill();
-    ctx.shadowBlur = 0;
-
-    // Vẽ tên
-    ctx.fillStyle = '#fff';
-    ctx.font = '16px sans-serif';
+    ctx.fillRect(0, 0, r * 2, r * 2);
+    ctx.fillStyle = '#000';
+    ctx.font = 'bold 24px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('⚔️', playerX, playerY - 25);
+    ctx.textBaseline = 'middle';
+    ctx.fillText((currentUser ? currentUser.username : 'V').charAt(0).toUpperCase(), r, r);
+}
+c.refresh();
 
-    gameLoopId = requestAnimationFrame(gameLoop);
+const sprite = scene.add.image(0, 0, texKey);
+
+    // Glow (viền sáng)
+const glow = scene.add.graphics();
+glow.lineStyle(3, 0xffcc00, 0.8);
+glow.strokeCircle(0, 0, r + 2);
+
+// Tên hiển thị
+const nameText = scene.add.text(
+    0,
+    r + 16,
+    currentUser ? (currentUser.global_name || currentUser.username) : 'Player',
+    {
+        fontSize: '13px',
+        fontFamily: 'Rajdhani',
+        fontWeight: '600',
+        fill: '#fff',
+        stroke: '#000',
+        strokeThickness: 3
+    }
+).setOrigin(0.5);
+
+// Bubble chat
+const bubbleBg = scene.add.graphics();
+const bubbleText = scene.add.text(0, 0, '', {
+    fontSize: '11px',
+    fill: '#000',
+    align: 'center',
+    wordWrap: { width: 130 }
+}).setOrigin(0.5);
+const bubble = scene.add.container(0, -50, [bubbleBg, bubbleText]).setVisible(false);
+
+// Container nhân vật (gom tất cả thành 1 nhóm)
+playerContainer = scene.add.container(1500, 1500, [glow, sprite, nameText, bubble]);
+
+// Physics
+scene.physics.world.enable(playerContainer);
+playerContainer.body.setCollideWorldBounds(true);
+playerContainer.body.setSize(44, 44);
+
+// Camera – theo dõi nhân vật
+const cam = scene.cameras.main;
+cam.startFollow(playerContainer, true, 0.1, 0.1);
+cam.setBounds(0, 0, 3000, 3000);
+cam.setZoom(settings.zoom);
+
+// Khởi tạo joystick
+initJoystick();
+
+// Callback hiển thị bubble chat (được gọi từ chat)
+window._showBubble = function(text) {
+    bubbleText.setText(text);
+    const b = bubbleText.getBounds();
+    const pad = 8;
+    bubbleBg.clear();
+    bubbleBg.fillStyle(0xffffff, 0.92);
+    bubbleBg.fillRoundedRect(
+        -b.width / 2 - pad,
+        -b.height / 2 - pad,
+        b.width + pad * 2,
+        b.height + pad * 2,
+        6
+    );
+    bubble.setVisible(true);
+    clearTimeout(chatBubbleTimer);
+    chatBubbleTimer = setTimeout(() => bubble.setVisible(false), 4000);
+};
+
+// Cập nhật FPS (đã có trong update)
+document.getElementById('fps-counter').textContent = 'FPS: 60';
+
+// ================================================================
+// UPDATE SCENE (cập nhật mỗi frame)
+// ================================================================
+function updateScene() {
+    if (playerContainer) {
+        const p = playerContainer;
+        document.getElementById('coordLabel').textContent =
+            `X:${Math.round(p.x)} Y:${Math.round(p.y)}`;
+    }
 }
 
-// ============================================================
-// 7. KHỞI TẠO
-// ============================================================
-// Nếu đã đăng nhập, show lobby ngay
-if (!checkLoggedIn()) {
-    // Nếu không, kiểm tra xem có code không (đã xử lý ở trên)
+// ================================================================
+// JOYSTICK (khởi tạo nipplejs)
+// ================================================================
+function initJoystick() {
+    const zone = document.getElementById('joystick-zone');
+    zone.innerHTML = '';
+    if (joystick) { joystick.destroy(); joystick = null; }
+    const size = Math.min(130, zone.clientWidth || 130);
+    joystick = nipplejs.create({
+        zone: zone,
+        mode: 'static',
+        position: { left: '50%', top: '50%' },
+        color: 'white',
+        size: size,
+        restJoystick: true
+    });
+    joystick.on('move', (_, data) => {
+        if (!scene || !playerContainer || document.getElementById('hudEditToggle').textContent === 'TẮT') return;
+        const speed = 210;
+        playerContainer.body.setVelocity(
+            data.vector.x * speed,
+            -data.vector.y * speed
+        );
+    });
+    joystick.on('end', () => {
+        if (playerContainer) playerContainer.body.setVelocity(0, 0);
+    });
 }
 
-// Xử lý resize canvas khi vào game
-// (đã có trong startGame)
+// ================================================================
+// DESTROY GAME
+// ================================================================
+function destroyGame() {
+    if (game) { game.destroy(true); game = null; scene = null; playerContainer = null; }
+    if (joystick) { joystick.destroy(); joystick = null; }
+    document.getElementById('screen-game').classList.remove('active');
+    document.getElementById('joystick-zone').innerHTML = '';
+}
 
-console.log('Game đã sẵn sàng!');
+// ================================================================
+// CHAT LOGIC
+// ================================================================
+const chatBody = document.getElementById('chatBody');
+const chatInput = document.getElementById('chatInput');
+const chatSend = document.getElementById('chatSendBtn');
+
+function addChat(msg, sys = false) {
+    const d = document.createElement('div');
+    d.className = 'msg' + (sys ? ' sys' : '');
+    if (sys) {
+        d.textContent = '» ' + msg;
+    } else {
+        d.innerHTML =
+            `<span class="tag" style="color:#00e5ff;">[${currentUser?currentUser.username:'?'}]</span> ${msg}`;
+    }
+    chatBody.appendChild(d);
+    chatBody.scrollTop = chatBody.scrollHeight;
+    if (chatBody.children.length > 60) chatBody.removeChild(chatBody.firstChild);
+    // bubble
+    if (!sys && window._showBubble) window._showBubble(msg);
+}
+
+chatSend.addEventListener('click', sendChat);
+chatInput.addEventListener('keydown', e => { if (e.key === 'Enter') sendChat(); });
+
+function sendChat() {
+    const t = chatInput.value.trim();
+    if (!t || !currentUser) return;
+    chatInput.value = '';
+    addChat(t);
+    // Lưu local chat log
+    const log = JSON.parse(localStorage.getItem('vmi_chat') || '[]');
+    log.push({ user: currentUser.username, text: t, ts: Date.now() });
+    if (log.length > 100) log.shift();
+    localStorage.setItem('vmi_chat', JSON.stringify(log));
+}
+
+// Load chat log
+function loadChatLog() {
+    try {
+        const log = JSON.parse(localStorage.getItem('vmi_chat') || '[]');
+        log.slice(-30).forEach(entry => {
+            const d = document.createElement('div');
+            d.className = 'msg';
+            d.innerHTML =
+                `<span class="tag" style="color:#00e5ff;">[${entry.user}]</span> ${entry.text}`;
+            chatBody.appendChild(d);
+        });
+        chatBody.scrollTop = chatBody.scrollHeight;
+    } catch {}
+}
+loadChatLog();
+
+// Chat collapse
+document.getElementById('chatCollapseBtn').addEventListener('click', () => {
+    isChatCollapsed = !isChatCollapsed;
+    document.getElementById('chatPanel').classList.toggle('collapsed', isChatCollapsed);
+    document.getElementById('chatCollapseBtn').textContent = isChatCollapsed ? '▔' : '▁';
+});
+
+// Chat toggle (hiển thị/ẩn)
+document.getElementById('btnChatToggle').addEventListener('click', () => {
+    const p = document.getElementById('chatPanel');
+    p.style.display = p.style.display === 'none' ? 'flex' : 'none';
+});
+
+// ================================================================
+// HUD DRAGGING & SETTINGS
+// ================================================================
+let isHudEdit = false;
+let dragTarget = null;
+let dragOffX = 0, dragOffY = 0;
+
+function makeDraggable(el) {
+    el.addEventListener('pointerdown', (e) => {
+        if (!isHudEdit) return;
+        if (e.target.closest('button, input, .chat-header')) return;
+        dragTarget = el;
+        const r = el.getBoundingClientRect();
+        dragOffX = e.clientX - r.left;
+        dragOffY = e.clientY - r.top;
+        el.style.left = r.left + 'px';
+        el.style.top = r.top + 'px';
+        el.style.right = 'auto';
+        el.style.bottom = 'auto';
+        el.setPointerCapture(e.pointerId);
+        e.preventDefault();
+    });
+    el.addEventListener('pointermove', (e) => {
+        if (!dragTarget || dragTarget !== el) return;
+        const maxX = window.innerWidth - 40;
+        const maxY = window.innerHeight - 40;
+        el.style.left = Math.max(0, Math.min(maxX, e.clientX - dragOffX)) + 'px';
+        el.style.top = Math.max(0, Math.min(maxY, e.clientY - dragOffY)) + 'px';
+        e.preventDefault();
+    });
+    el.addEventListener('pointerup', () => { if (dragTarget === el) dragTarget = null; });
+}
+
+// Gán draggable cho tất cả .hud-el
+document.querySelectorAll('.hud-el').forEach(makeDraggable);
+// Chat header riêng (kéo cả khung)
+document.getElementById('chatHeader').addEventListener('pointerdown', (e) => {
+    if (!isHudEdit) return;
+    const el = document.getElementById('chatPanel');
+    dragTarget = el;
+    const r = el.getBoundingClientRect();
+    dragOffX = e.clientX - r.left;
+    dragOffY = e.clientY - r.top;
+    el.style.left = r.left + 'px';
+    el.style.top = r.top + 'px';
+    el.style.right = 'auto';
+    el.style.bottom = 'auto';
+    el.setPointerCapture(e.pointerId);
+    e.preventDefault();
+});
+
+document.getElementById('hudEditToggle').addEventListener('click', function() {
+    isHudEdit = !isHudEdit;
+    this.textContent = isHudEdit ? 'TẮT' : 'BẬT';
+    this.style.borderColor = isHudEdit ? 'var(--gold)' : 'var(--cyan)';
+    document.querySelectorAll('.hud-el').forEach(el => {
+        el.classList.toggle('hud-dragging', isHudEdit);
+        el.style.cursor = isHudEdit ? 'move' : 'default';
+    });
+    toast(isHudEdit ? 'Đã bật chỉnh sửa HUD (kéo thả)' : 'Đã tắt chỉnh sửa HUD');
+});
+
+document.getElementById('hudResetBtn').addEventListener('click', () => {
+    document.querySelectorAll('.hud-el').forEach(el => {
+        el.style.left = '';
+        el.style.top = '';
+        el.style.right = '';
+        el.style.bottom = '';
+        el.style.transform = '';
+        el.style.width = '';
+        el.style.height = '';
+    });
+    localStorage.removeItem('vmi_hud');
+    toast('Đã đặt lại vị trí HUD');
+});
+
+// Lưu / tải vị trí HUD
+function saveHudPositions() {
+    const data = {};
+    document.querySelectorAll('.hud-el').forEach(el => {
+        if (el.style.left || el.style.top) {
+            data[el.id || el.className] = {
+                left: el.style.left,
+                top: el.style.top,
+                width: el.style.width,
+                height: el.style.height
+            };
+        }
+    });
+    if (Object.keys(data).length) localStorage.setItem('vmi_hud', JSON.stringify(data));
+}
+
+function loadHudPositions() {
+    try {
+        const data = JSON.parse(localStorage.getItem('vmi_hud') || '{}');
+        Object.keys(data).forEach(key => {
+            const el = document.querySelector('#' + key + ', .' + key) || document.getElementById(key);
+            if (el) {
+                if (data[key].left) el.style.left = data[key].left;
+                if (data[key].top) el.style.top = data[key].top;
+                if (data[key].width) el.style.width = data[key].width;
+                if (data[key].height) el.style.height = data[key].height;
+            }
+        });
+    } catch {}
+}
+loadHudPositions();
+// Tự động lưu mỗi 5 giây
+setInterval(saveHudPositions, 5000);
+
+// ================================================================
+// SETTINGS OVERLAY
+// ================================================================
+const settingsOverlay = document.getElementById('settingsOverlay');
+
+function openSettings() {
+    document.getElementById('graphicsSelect').value = settings.graphics;
+    document.getElementById('zoomRange').value = settings.zoom;
+    document.getElementById('hudOpacityRange').value = settings.hudOpacity;
+    document.getElementById('hudScaleRange').value = settings.hudScale;
+    updateSettingsLabels();
+    settingsOverlay.classList.add('open');
+}
+
+function closeSettings() {
+    settingsOverlay.classList.remove('open');
+}
+
+function updateSettingsLabels() {
+    document.getElementById('graphicsVal').textContent =
+        ({ low: 'Thấp', medium: 'Trung bình', high: 'Cao' })[settings.graphics] || 'Cao';
+    document.getElementById('zoomVal').textContent = settings.zoom.toFixed(2) + 'x';
+    document.getElementById('hudOpacityVal').textContent = Math.round(settings.hudOpacity * 100) + '%';
+    document.getElementById('hudScaleVal').textContent = Math.round(settings.hudScale * 100) + '%';
+}
+
+function applyHudSettings() {
+    const opacity = settings.hudOpacity;
+    const scale = settings.hudScale;
+    document.querySelectorAll('.hud-el').forEach(el => {
+        el.style.opacity = opacity;
+        el.style.transform = `scale(${scale})`;
+        el.style.transformOrigin = 'top left';
+    });
+    // Camera zoom
+    if (scene && scene.cameras) {
+        scene.cameras.main.setZoom(settings.zoom);
+    }
+    saveSettings();
+}
+
+document.getElementById('graphicsSelect').addEventListener('change', function() {
+    settings.graphics = this.value;
+    updateSettingsLabels();
+    saveSettings();
+    toast('Đồ họa: ' + this.options[this.selectedIndex].text);
+});
+document.getElementById('zoomRange').addEventListener('input', function() {
+    settings.zoom = parseFloat(this.value);
+    updateSettingsLabels();
+    applyHudSettings();
+});
+document.getElementById('hudOpacityRange').addEventListener('input', function() {
+    settings.hudOpacity = parseFloat(this.value);
+    updateSettingsLabels();
+    applyHudSettings();
+});
+document.getElementById('hudScaleRange').addEventListener('input', function() {
+    settings.hudScale = parseFloat(this.value);
+    updateSettingsLabels();
+    applyHudSettings();
+});
+
+document.getElementById('btnSettingsMenu').addEventListener('click', openSettings);
+document.getElementById('btnSettingsGame').addEventListener('click', openSettings);
+document.getElementById('closeSettings').addEventListener('click', closeSettings);
+document.getElementById('settingsCloseBtn').addEventListener('click', closeSettings);
+
+// ================================================================
+// GAME ENTRY / EXIT
+// ================================================================
+btnEnter.addEventListener('click', () => {
+    if (!currentUser) { toast('Vui lòng đăng nhập!'); return; }
+    if (!selectedMap) { toast('Chọn map trước!'); return; }
+    initGame();
+    document.getElementById('screen-menu').style.display = 'none';
+    toast('Đã vào ' + selectedMap.name);
+});
+
+document.getElementById('btnExitGame').addEventListener('click', () => {
+    destroyGame();
+    document.getElementById('screen-menu').style.display = 'flex';
+    toast('Đã về sảnh');
+});
+
+// ================================================================
+// BOOT (khởi tạo toàn bộ)
+// ================================================================
+async function boot() {
+    loadSettings();
+    const user = await handleRedirect() || getSavedUser();
+    updateUserUI(user);
+    if (user) {
+        document.getElementById('onlineLabel').textContent = '● Đã đăng nhập';
+        if (!selectedMap) { selectedMap = MAPS[0]; renderMaps(); }
+        btnEnter.disabled = false;
+    } else {
+        document.getElementById('onlineLabel').textContent = '● Chưa đăng nhập';
+    }
+    applyHudSettings();
+    // Resize
+    window.addEventListener('resize', () => {
+        if (game) game.scale.resize(window.innerWidth, window.innerHeight);
+        if (document.getElementById('screen-game').classList.contains('active')) initJoystick();
+    });
+    window.addEventListener('orientationchange', () => {
+        setTimeout(() => {
+            if (game) game.scale.resize(window.innerWidth, window.innerHeight);
+            if (document.getElementById('screen-game').classList.contains('active')) initJoystick();
+        }, 300);
+    });
+}
+
+boot().catch(console.error);
+console.log('VMI Quân Đội loaded ✅');
 console.log('Client ID:', CLIENT_ID);
 console.log('Redirect URI:', REDIRECT_URI);
 console.log('⚠️ Nhớ cấu hình Redirect URI này trong Discord Developer Portal!');
 </script>
 </body>
 </html>
-    
