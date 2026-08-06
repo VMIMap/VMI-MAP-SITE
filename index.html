@@ -560,7 +560,444 @@
                 return;
             }
 
-            if (accessToken) {
+                        if (accessToken) {
                 window.history.replaceState(null, null, window.location.pathname);
                 fetch('https://discord.com/api/users/@me', {
-                    headers: { authorization: `Bearer ${accessTo
+                    headers: { authorization: `Bearer ${accessToken}` }
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.id) {
+                        discordUser = {
+                            id: data.id,
+                            username: data.global_name || data.username,
+                            avatarUrl: data.avatar 
+                                ? `https://cdn.discordapp.com/avatars/${data.id}/${data.avatar}.png`
+                                : `https://cdn.discordapp.com/embed/avatars/0.png`
+                        };
+                        updateLobbyUI();
+                        showNotification(`Chào mừng ${discordUser.username}!`);
+                    } else { showLoginRequired(); }
+                })
+                .catch(() => showLoginRequired());
+            } else {
+                const saved = localStorage.getItem('vmi_discord_user');
+                if (saved) { 
+                    try {
+                        discordUser = JSON.parse(saved); 
+                        updateLobbyUI(); 
+                    } catch(e) { showLoginRequired(); }
+                } else { showLoginRequired(); }
+            }
+        }
+
+        function showLoginRequired() {
+            discordUser = null;
+            localStorage.removeItem('vmi_discord_user');
+            document.getElementById('user-info-display').style.display = 'none';
+            document.getElementById('auth-btn-group').style.display = 'block';
+            document.getElementById('in-game-btn-group').style.display = 'none';
+        }
+
+        function updateLobbyUI() {
+            if (discordUser) {
+                localStorage.setItem('vmi_discord_user', JSON.stringify(discordUser));
+                document.getElementById('lobby-user-avatar').src = discordUser.avatarUrl;
+                document.getElementById('lobby-user-name').innerText = discordUser.username;
+                document.getElementById('member-list-name').innerText = discordUser.username;
+                
+                document.getElementById('user-info-display').style.display = 'flex';
+                document.getElementById('auth-btn-group').style.display = 'none';
+                document.getElementById('in-game-btn-group').style.display = 'block';
+            }
+        }
+
+        function logout() {
+            showLoginRequired();
+            showNotification("Đã đăng xuất!");
+        }
+
+        // CHỌN & ĐỔI BẢN ĐỒ
+        function selectMap(mapId) {
+            selectedMap = mapId;
+            document.querySelectorAll('.map-selector-horizontal .map-card-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            const activeBtn = document.getElementById(`lobby-map-${mapId}`);
+            if (activeBtn) activeBtn.classList.add('active');
+        }
+
+        function changeMapInGame(mapId) {
+            selectMap(mapId);
+            if (mainScene && mainScene.applyMapConfig) {
+                mainScene.applyMapConfig(mapId);
+            }
+            closeSubModal('map-modal');
+            showNotification(`Đã đổi sang bản đồ: ${mapId}`);
+        }
+
+        // ĐIỀU KHIỂN SẢNH & GAME
+        function enterGame() {
+            document.getElementById('lobby-overlay').style.display = 'none';
+            document.getElementById('game-hud-wrapper').style.display = 'block';
+            
+            if (!gameInstance) {
+                initPhaserGame();
+            } else if (mainScene) {
+                mainScene.scene.restart();
+            }
+            initJoystick();
+        }
+
+        function backToLobby() {
+            closeMenu();
+            document.getElementById('game-hud-wrapper').style.display = 'none';
+            document.getElementById('lobby-overlay').style.display = 'flex';
+            if (joystickManager) {
+                joystickManager.destroy();
+                joystickManager = null;
+            }
+        }
+
+        function openMenu() { document.getElementById('roblox-main-modal').style.display = 'flex'; }
+        function closeMenu() { document.getElementById('roblox-main-modal').style.display = 'none'; }
+        function openSubModal(id) { document.getElementById(id).style.display = 'flex'; }
+        function closeSubModal(id) { document.getElementById(id).style.display = 'none'; }
+
+        function toggleChatContainer() {
+            const chatBox = document.getElementById('roblox-chat-container');
+            chatBox.style.display = (chatBox.style.display === 'flex') ? 'none' : 'flex';
+        }
+
+        function sendChatMessage() {
+            const input = document.getElementById('chat-input');
+            const text = input.value.trim();
+            if (!text) return;
+            
+            const history = document.getElementById('chat-history');
+            const msgEl = document.createElement('div');
+            msgEl.className = 'chat-msg';
+            const sender = discordUser ? discordUser.username : 'Người chơi';
+            msgEl.innerHTML = `<b>${escapeHtml(sender)}:</b> ${escapeHtml(text)}`;
+            history.appendChild(msgEl);
+            history.scrollTop = history.scrollHeight;
+            
+            if (showChatBubbleCallback) {
+                showChatBubbleCallback(text);
+            }
+            input.value = '';
+        }
+
+        function escapeHtml(text) {
+            return text.replace(/[&<>"']/g, function(m) {
+                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
+            });
+        }
+
+        function updateCameraZoom(val) {
+            cameraZoom = parseFloat(val);
+            document.getElementById('zoom-val').innerText = cameraZoom.toFixed(2) + 'x';
+            if (mainScene && mainScene.cameras && mainScene.cameras.main) {
+                mainScene.cameras.main.setZoom(cameraZoom);
+            }
+        }
+
+        function changeOverallHUDOpacity(val) {
+            const hud = document.getElementById('game-hud-wrapper');
+            if (hud) hud.style.opacity = val;
+        }
+
+        function updateFontResolution(val) {
+            fontResolutionScale = parseInt(val);
+            const resMap = { 1: '1k', 2: '2k', 3: '3k', 4: '4k' };
+            document.getElementById('font-res-val').innerText = resMap[val] || '1k';
+            if (mainScene && mainScene.updateNameTagScale) {
+                mainScene.updateNameTagScale(fontResolutionScale);
+            }
+        }
+
+        // TÙY CHỈNH HUD
+        function toggleCustomHUD() {
+            isCustomHUDMode = !isCustomHUDMode;
+            const editPanel = document.getElementById('hud-edit-panel');
+            const body = document.body;
+
+            if (isCustomHUDMode) {
+                editPanel.style.display = 'flex';
+                body.classList.add('is-editing-hud');
+                setupHUDInteractions();
+            } else {
+                editPanel.style.display = 'none';
+                body.classList.remove('is-editing-hud');
+                removeHUDInteractions();
+            }
+        }
+
+        function setupHUDInteractions() {
+            const hudElements = document.querySelectorAll('.hud-element');
+            hudElements.forEach(el => {
+                el.style.cursor = 'move';
+                el.onclick = (e) => {
+                    e.stopPropagation();
+                    selectHudElement(el);
+                };
+                makeDraggable(el);
+            });
+        }
+
+        function removeHUDInteractions() {
+            const hudElements = document.querySelectorAll('.hud-element');
+            hudElements.forEach(el => {
+                el.style.cursor = 'default';
+                el.onclick = null;
+                el.onmousedown = null;
+                el.ontouchstart = null;
+                el.classList.remove('hud-dragging');
+            });
+            selectedHudEl = null;
+            document.getElementById('selected-hud-name').innerText = 'Chưa chọn';
+        }
+
+        function selectHudElement(el) {
+            document.querySelectorAll('.hud-element').forEach(e => e.classList.remove('hud-dragging'));
+            selectedHudEl = el;
+            el.classList.add('hud-dragging');
+            document.getElementById('selected-hud-name').innerText = el.id || 'Phần tử';
+            
+            const scale = el.dataset.scale || 1;
+            const opacity = el.style.opacity || 1;
+            document.getElementById('hud-scale-slider').value = scale;
+            document.getElementById('hud-opacity-slider').value = opacity;
+        }
+
+        function makeDraggable(el) {
+            let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+            el.onmousedown = dragMouseDown;
+            el.ontouchstart = dragTouchStart;
+
+            function dragMouseDown(e) {
+                if (!isCustomHUDMode) return;
+                e.preventDefault();
+                pos3 = e.clientX;
+                pos4 = e.clientY;
+                document.onmouseup = closeDragElement;
+                document.onmousemove = elementDrag;
+            }
+
+            function elementDrag(e) {
+                e.preventDefault();
+                pos1 = pos3 - e.clientX;
+                pos2 = pos4 - e.clientY;
+                pos3 = e.clientX;
+                pos4 = e.clientY;
+                el.style.top = (el.offsetTop - pos2) + "px";
+                el.style.left = (el.offsetLeft - pos1) + "px";
+                el.style.bottom = 'auto';
+                el.style.right = 'auto';
+            }
+
+            function closeDragElement() {
+                document.onmouseup = null;
+                document.onmousemove = null;
+            }
+
+            function dragTouchStart(e) {
+                if (!isCustomHUDMode) return;
+                const touch = e.touches[0];
+                pos3 = touch.clientX;
+                pos4 = touch.clientY;
+                document.ontouchend = closeTouchElement;
+                document.ontouchmove = touchDrag;
+            }
+
+            function touchDrag(e) {
+                const touch = e.touches[0];
+                pos1 = pos3 - touch.clientX;
+                pos2 = pos4 - touch.clientY;
+                pos3 = touch.clientX;
+                pos4 = touch.clientY;
+                el.style.top = (el.offsetTop - pos2) + "px";
+                el.style.left = (el.offsetLeft - pos1) + "px";
+                el.style.bottom = 'auto';
+                el.style.right = 'auto';
+            }
+
+            function closeTouchElement() {
+                document.ontouchend = null;
+                document.ontouchmove = null;
+            }
+        }
+
+        document.getElementById('hud-scale-slider').addEventListener('input', function(e) {
+            if (selectedHudEl) {
+                const scale = e.target.value;
+                selectedHudEl.style.transform = `scale(${scale})`;
+                selectedHudEl.dataset.scale = scale;
+            }
+        });
+
+        document.getElementById('hud-opacity-slider').addEventListener('input', function(e) {
+            if (selectedHudEl) {
+                selectedHudEl.style.opacity = e.target.value;
+            }
+        });
+
+        // JOYSTICK NIPPLEJS
+        function initJoystick() {
+            const zone = document.getElementById('joystick-zone');
+            if (!zone) return;
+            if (joystickManager) joystickManager.destroy();
+
+            joystickManager = nipplejs.create({
+                zone: zone,
+                mode: 'static',
+                position: { left: '50%', top: '50%' },
+                color: '#ffcc00',
+                size: 110
+            });
+
+            joystickManager.on('move', (evt, data) => {
+                if (data && data.vector) {
+                    moveVector.x = data.vector.x;
+                    moveVector.y = -data.vector.y;
+                }
+            });
+
+            joystickManager.on('end', () => {
+                moveVector.x = 0;
+                moveVector.y = 0;
+            });
+        }
+
+        // GAME PHASER 3
+        function initPhaserGame() {
+            const config = {
+                type: Phaser.AUTO,
+                width: window.innerWidth,
+                height: window.innerHeight,
+                parent: document.body,
+                physics: {
+                    default: 'arcade',
+                    arcade: { debug: false }
+                },
+                scene: {
+                    preload: preload,
+                    create: create,
+                    update: update
+                }
+            };
+
+            gameInstance = new Phaser.Game(config);
+
+            function preload() {}
+
+            function create() {
+                mainScene = this;
+                this.cameras.main.setZoom(cameraZoom);
+                this.physics.world.setBounds(0, 0, 2000, 2000);
+
+                this.gridGraphics = this.add.graphics();
+                this.applyMapConfig = function(mapId) {
+                    const cfg = mapConfigs[mapId] || mapConfigs['map1'];
+                    this.cameras.main.setBackgroundColor(cfg.bg);
+                    this.gridGraphics.clear();
+                    this.gridGraphics.lineStyle(1, cfg.grid, cfg.gridAlpha);
+                    for (let x = 0; x <= 2000; x += 50) {
+                        this.gridGraphics.lineBetween(x, 0, x, 2000);
+                    }
+                    for (let y = 0; y <= 2000; y += 50) {
+                        this.gridGraphics.lineBetween(0, y, 2000, y);
+                    }
+                };
+                this.applyMapConfig(selectedMap);
+
+                this.player = this.add.container(1000, 1000);
+                this.physics.world.enable(this.player);
+                this.player.body.setCollideWorldBounds(true);
+                this.player.body.setSize(40, 40);
+
+                const circle = this.add.circle(0, 0, 20, 0xffcc00);
+                circle.setStrokeStyle(2, 0xffffff);
+                this.player.add(circle);
+
+                const nameText = discordUser ? discordUser.username : 'Player';
+                this.nameTag = this.add.text(0, -32, nameText, {
+                    font: '14px Arial',
+                    fill: '#ffffff',
+                    stroke: '#000000',
+                    strokeThickness: 3
+                }).setOrigin(0.5);
+                this.player.add(this.nameTag);
+
+                this.updateNameTagScale = (resScale) => {
+                    this.nameTag.setFontSize(14 * resScale);
+                    this.nameTag.setScale(1 / resScale);
+                };
+
+                this.chatBubble = this.add.container(0, -65);
+                const bubbleBg = this.add.rectangle(0, 0, 100, 26, 0x000000, 0.75);
+                bubbleBg.setStrokeStyle(1, 0xffcc00);
+                const bubbleText = this.add.text(0, 0, '', {
+                    font: '12px Arial', fill: '#ffffff'
+                }).setOrigin(0.5);
+                this.chatBubble.add(bubbleBg);
+                this.chatBubble.add(bubbleText);
+                this.chatBubble.setVisible(false);
+                this.player.add(this.chatBubble);
+
+                let bubbleTimer = null;
+                showChatBubbleCallback = (msg) => {
+                    bubbleText.setText(msg);
+                    bubbleBg.setSize(bubbleText.width + 16, 24);
+                    this.chatBubble.setVisible(true);
+                    if (bubbleTimer) clearTimeout(bubbleTimer);
+                    bubbleTimer = setTimeout(() => {
+                        this.chatBubble.setVisible(false);
+                    }, 4000);
+                };
+
+                this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
+
+                this.cursors = this.input.keyboard.createCursorKeys();
+                this.wasd = this.input.keyboard.addKeys({
+                    up: Phaser.Input.Keyboard.KeyCodes.W,
+                    down: Phaser.Input.Keyboard.KeyCodes.S,
+                    left: Phaser.Input.Keyboard.KeyCodes.A,
+                    right: Phaser.Input.Keyboard.KeyCodes.D
+                });
+
+                window.addEventListener('resize', () => {
+                    if (gameInstance) {
+                        gameInstance.scale.resize(window.innerWidth, window.innerHeight);
+                    }
+                });
+            }
+
+            function update() {
+                if (!mainScene || !this.player) return;
+
+                const fps = Math.round(gameInstance.loop.actualFps);
+                document.getElementById('fps-counter').innerText = `FPS: ${fps}`;
+
+                const speed = 250;
+                let vx = 0;
+                let vy = 0;
+
+                if (this.cursors.left.isDown || this.wasd.left.isDown) vx -= 1;
+                if (this.cursors.right.isDown || this.wasd.right.isDown) vx += 1;
+                if (this.cursors.up.isDown || this.wasd.up.isDown) vy -= 1;
+                if (this.cursors.down.isDown || this.wasd.down.isDown) vy += 1;
+
+                if (moveVector.x !== 0 || moveVector.y !== 0) {
+                    vx = moveVector.x;
+                    vy = moveVector.y;
+                }
+
+                this.player.body.setVelocity(vx * speed, vy * speed);
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', checkDiscordAuth);
+    </script>
+</body>
+</html>
