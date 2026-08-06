@@ -2,1002 +2,509 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, viewport-fit=cover">
-    <title>VMI Game Client</title>
-    <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>VMI MAP - VIP ADMIN EDITION</title>
+    
+    <!-- Thư viện -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/3.60.0/phaser.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.10.1/nipplejs.min.js"></script>
     
     <style>
-        * {
-            box-sizing: border-box;
-            user-select: none;
-            -webkit-user-select: none;
-            -webkit-touch-callout: none;
-            -webkit-tap-highlight-color: transparent;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
+        /* ================= RESET & CƠ BẢN ================= */
+        * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-user-select: none; }
+        body, html { width: 100%; height: 100%; background-color: #0f0f13; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow: hidden; color: #fff; }
+        
+        /* Loại bỏ highlight khi chạm trên Mobile */
+        button, div, a { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 
-        body, html {
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background-color: #0b0c10;
-            color: #fff;
-            touch-action: manipulation;
-        }
-
-        body.is-editing-hud .hud-element * {
-            pointer-events: none !important;
-        }
-
-        #lobby-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: radial-gradient(circle, #2a0808 0%, #0b0505 100%);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-        }
-
-        .lobby-content-wrapper {
-            transform: scale(0.85);
-            transform-origin: center center;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            width: 100%;
-        }
-
-        .lobby-card {
-            background: rgba(20, 15, 15, 0.95);
-            border: 2px solid #ffcc00;
+        /* ================= STYLE VIP GLASSMORPHISM ================= */
+        .glass-panel {
+            background: rgba(20, 20, 30, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 16px;
-            padding: 20px 24px;
-            width: 90vw;
-            max-width: 420px;
-            text-align: center;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
         }
 
-        .lobby-title {
-            color: #ffcc00;
-            font-size: 20px;
-            font-weight: bold;
-            margin-bottom: 12px;
-            text-shadow: 0 0 8px rgba(255,204,0,0.4);
-            letter-spacing: 1px;
-        }
+        .gold-border { border: 1px solid #ffd700; box-shadow: 0 0 10px rgba(255, 215, 0, 0.3); }
+        .gold-text { color: #ffd700; text-shadow: 0 0 5px rgba(255, 215, 0, 0.5); }
 
-        .user-info-box {
-            background: rgba(40, 30, 30, 0.8);
-            border: 1px solid #443322;
-            border-radius: 12px;
-            padding: 10px 15px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 15px;
-        }
-
-        .user-avatar {
-            width: 42px;
-            height: 42px;
-            border-radius: 50%;
-            border: 2px solid #ffcc00;
-            object-fit: cover;
-        }
-
-        .user-details {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-            overflow: hidden;
-        }
-
-        .user-label {
-            font-size: 10px;
-            color: #aaa;
-            text-transform: uppercase;
-        }
-
-        .user-name {
-            font-size: 14px;
-            font-weight: bold;
-            color: #fff;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 260px;
-        }
-
-        .map-selector-horizontal {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 8px;
-            margin-top: 8px;
-            margin-bottom: 15px;
-            width: 100%;
-        }
-
-        .map-card-btn {
-            background: rgba(255,255,255,0.05);
-            border: 1px solid #555;
-            border-radius: 8px;
-            padding: 10px 4px;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 4px;
-            font-size: 11px;
-            font-weight: bold;
-            color: #fff;
-        }
-
-        .map-card-btn.active {
-            border-color: #ffcc00;
-            background: rgba(255, 204, 0, 0.2);
-            box-shadow: 0 0 10px rgba(255,204,0,0.3);
-        }
-
+        /* ================= BUTTONS ================= */
         .btn {
-            width: 100%;
-            padding: 12px;
-            border-radius: 8px;
-            border: none;
-            font-weight: bold;
-            font-size: 14px;
-            cursor: pointer;
-            transition: all 0.2s;
-            margin-top: 6px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
+            padding: 10px 20px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;
+            transition: all 0.2s; pointer-events: auto !important; z-index: 99999; text-transform: uppercase; letter-spacing: 1px;
         }
-
-        .btn-play { background: linear-gradient(135deg, #ffcc00, #ff8800); color: #000; }
-        .btn-logout { background: #4a1515; color: #ff8888; border: 1px solid #772222; }
-        .btn-discord { background: #5865F2; color: #fff; }
-
-        .hud-element {
-            position: absolute;
-            z-index: 100;
-            touch-action: none;
+        .btn:active { transform: scale(0.95); opacity: 0.8; }
+        .btn-discord { background: linear-gradient(135deg, #5865F2, #4752C4); color: white; width: 100%; padding: 15px; font-size: 16px; }
+        .btn-play { background: linear-gradient(135deg, #ffd700, #ffaa00); color: #000; padding: 15px 30px; font-size: 18px; margin-top: 15px; width: 100%; }
+        .btn-admin { background: #ff3333; color: white; border: 1px solid #ffaaaa; }
+        .btn-close { background: #333; color: white; }
+        
+        /* ================= LOBBY (SẢNH CHỜ) ================= */
+        #lobby-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 100000;
+            display: flex; justify-content: center; align-items: center; pointer-events: auto;
+            background: radial-gradient(circle at center, #1a1a2e 0%, #0f0f13 100%);
         }
-
-        #menu-toggle-btn {
-            top: 15px;
-            left: 15px;
-            width: 42px;
-            height: 42px;
-            cursor: pointer;
-            background: rgba(0,0,0,0.6);
-            border-radius: 8px;
-            border: 1px solid rgba(255,255,255,0.2);
-            font-size: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        .lobby-box { width: 90%; max-width: 400px; padding: 30px; text-align: center; }
+        .avatar-box img { width: 80px; height: 80px; border-radius: 50%; border: 2px solid #ffd700; margin-bottom: 10px; }
+        
+        /* Thẻ Map */
+        .map-selector { display: flex; gap: 10px; margin-top: 20px; justify-content: center; }
+        .map-card {
+            padding: 15px; border-radius: 12px; background: rgba(255,255,255,0.05); border: 2px solid transparent;
+            cursor: pointer; transition: 0.3s; flex: 1; pointer-events: auto;
         }
+        .map-card.active { border-color: #ffd700; background: rgba(255, 215, 0, 0.1); }
 
-        #chat-toggle-btn {
-            top: 15px;
-            left: 68px;
-            background: rgba(0,0,0,0.5);
-            border: 1px solid rgba(255,255,255,0.2);
-            color: white;
-            padding: 8px 12px;
-            border-radius: 8px;
-            font-size: 12px;
-            cursor: pointer;
+        /* ================= IN-GAME HUD ================= */
+        #game-hud { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; }
+        
+        /* Joystick & Nút */
+        #joystick-zone { position: absolute; bottom: 30px; left: 30px; width: 120px; height: 120px; pointer-events: auto; }
+        .top-right-menu { position: absolute; top: 15px; right: 15px; display: flex; gap: 10px; pointer-events: auto; }
+        .icon-btn { width: 45px; height: 45px; border-radius: 50%; border: none; background: rgba(0,0,0,0.5); color: #ffd700; font-size: 20px; cursor: pointer; border: 1px solid #ffd700; backdrop-filter: blur(5px); }
+        
+        /* Chat Box */
+        #chat-container {
+            position: absolute; bottom: 20px; right: 20px; width: 300px; max-height: 200px;
+            display: flex; flex-direction: column; pointer-events: auto; padding: 10px;
         }
+        #chat-history { flex: 1; overflow-y: auto; font-size: 13px; margin-bottom: 5px; text-shadow: 1px 1px 2px #000; pointer-events: auto; }
+        .chat-input-box { display: flex; gap: 5px; }
+        .chat-input-box input { flex: 1; padding: 8px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.6); color: white; outline: none; }
+        .chat-input-box button { padding: 8px 12px; border-radius: 8px; background: #ffd700; border: none; color: black; font-weight: bold; }
 
-        #roblox-chat-container {
-            top: 65px;
-            left: 15px;
-            width: 210px;
-            height: 140px;
-            background: rgba(0, 0, 0, 0.65);
-            border-radius: 8px;
-            display: none;
-            flex-direction: column;
-            border: 1px solid rgba(255,255,255,0.1);
-            padding: 6px;
-        }
-
-        #chat-history {
-            flex: 1;
-            overflow-y: auto;
-            font-size: 11px;
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-
-        .chat-msg {
-            background: rgba(255,255,255,0.1);
-            padding: 4px 6px;
-            border-radius: 4px;
-            word-break: break-word;
-        }
-
-        #chat-input-zone {
-            display: flex;
-            gap: 4px;
-            margin-top: 4px;
-        }
-
-        #chat-input {
-            flex: 1;
-            background: rgba(0,0,0,0.5);
-            border: 1px solid #555;
-            color: white;
-            padding: 4px 6px;
-            border-radius: 4px;
-            outline: none;
-            font-size: 11px;
-        }
-
-        #chat-send-btn {
-            background: #ffcc00;
-            border: none;
-            color: black;
-            font-weight: bold;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 11px;
-        }
-
-        #joystick-zone {
-            bottom: 30px;
-            left: 30px;
-            width: 140px;
-            height: 140px;
-        }
-
-        #fps-counter {
-            top: 15px;
-            right: 15px;
-            background: rgba(0,0,0,0.5);
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-            color: #00ffcc;
-        }
-
-        #server-notification {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%) translateY(-50px);
-            background: rgba(0, 0, 0, 0.85);
-            border: 1px solid #ffcc00;
-            color: #ffcc00;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 13px;
-            font-weight: bold;
-            z-index: 3000;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-            transition: transform 0.3s ease, opacity 0.3s ease;
-            opacity: 0;
-            pointer-events: none;
-            white-space: nowrap;
-        }
-        #server-notification.show {
-            transform: translateX(-50%) translateY(0);
-            opacity: 1;
-        }
-
+        /* ================= MODALS (CÀI ĐẶT & ADMIN) ================= */
         .modal {
-            position: fixed;
-            top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(0,0,0,0.7);
-            z-index: 1000;
-            display: none;
-            justify-content: center;
-            align-items: center;
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7); z-index: 200000; justify-content: center; align-items: center; pointer-events: auto;
         }
+        .modal-content { width: 90%; max-width: 500px; padding: 25px; position: relative; }
+        .modal-header { font-size: 20px; font-weight: bold; margin-bottom: 20px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;}
+        
+        /* Grid Admin Buttons */
+        .admin-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px; }
+        .admin-btn { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 10px; border-radius: 8px; font-size: 12px; cursor: pointer; text-align: center; }
+        .admin-btn:hover, .admin-btn:active { background: rgba(255, 215, 0, 0.3); border-color: #ffd700; }
+        .admin-input-group { display: flex; gap: 5px; margin-bottom: 15px; }
+        .admin-input { flex: 1; padding: 10px; border-radius: 8px; background: rgba(0,0,0,0.5); border: 1px solid #555; color: white; }
 
-        .modal-content {
-            background: #1e1e24;
-            border: 1px solid #444;
-            border-radius: 12px;
-            width: 90vw;
-            max-width: 440px;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
+        /* Sliders */
+        .setting-group { margin-bottom: 15px; }
+        .setting-group label { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 5px; }
+        input[type=range] { width: 100%; accent-color: #ffd700; }
 
-        .modal-header {
-            font-weight: bold;
-            font-size: 18px;
-            color: #ffcc00;
-            text-align: center;
-            margin-bottom: 4px;
-        }
-
-        .menu-btn-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            margin-top: 5px;
-        }
-
-        .settings-grid-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            background: rgba(255,255,255,0.03);
-            border: 1px solid rgba(255,255,255,0.08);
-            padding: 10px;
-            border-radius: 8px;
-            align-items: center;
-            font-size: 12px;
-        }
-
-        .hud-dragging {
-            outline: 2px dashed #ffcc00 !important;
-            background: rgba(255, 204, 0, 0.1) !important;
-        }
-
-        #hud-edit-panel {
-            position: fixed;
-            bottom: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0,0,0,0.85);
-            border: 1px solid #ffcc00;
-            padding: 10px 15px;
-            border-radius: 10px;
-            z-index: 2000;
-            display: none;
-            gap: 10px;
-            align-items: center;
-            font-size: 12px;
+        /* Notification */
+        #notification {
+            position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+            background: rgba(0,0,0,0.8); border: 1px solid #ffd700; padding: 10px 20px;
+            border-radius: 20px; color: #ffd700; font-weight: bold; z-index: 999999;
+            display: none; transition: 0.3s;
         }
     </style>
 </head>
 <body>
 
-    <div id="server-notification"></div>
+    <!-- THÔNG BÁO -->
+    <div id="notification">Thông báo hệ thống</div>
 
     <!-- SẢNH CHỜ LOBBY -->
     <div id="lobby-overlay">
-        <div class="lobby-content-wrapper">
-            <div class="lobby-card">
-                <div class="lobby-title">SẢNH CHỜ VMI</div>
+        <div class="glass-panel lobby-box gold-border">
+            <h2 class="gold-text" style="margin-bottom: 20px; font-size: 26px;">VMI MAP VIP</h2>
+            
+            <div id="auth-section">
+                <p style="margin-bottom: 15px; color: #ccc; font-size: 14px;">Đăng nhập để vào Server</p>
+                <button class="btn btn-discord" onclick="loginWithDiscord(event)">ĐĂNG NHẬP DISCORD</button>
+            </div>
 
-                <div id="user-info-display" class="user-info-box" style="display: none;">
-                    <img id="lobby-user-avatar" class="user-avatar" src="" alt="Avatar">
-                    <div class="user-details">
-                        <span class="user-label">Tài Khoản</span>
-                        <span id="lobby-user-name" class="user-name">Loading...</span>
-                    </div>
+            <div id="user-section" style="display: none;">
+                <div class="avatar-box">
+                    <img id="lobby-avatar" src="https://cdn.discordapp.com/embed/avatars/0.png">
+                    <h3 id="lobby-name" style="margin-bottom: 5px;">Player</h3>
+                    <span id="lobby-role" style="font-size: 12px; color: #ffaa00; background: rgba(255,170,0,0.2); padding: 2px 8px; border-radius: 10px;">Thành viên</span>
                 </div>
 
-                <div style="text-align: left; font-size: 12px; color: #ccc; margin-top: 5px;">Bản Đồ Thi Đấu:</div>
-                <div class="map-selector-horizontal">
-                    <div class="map-card-btn active" id="lobby-map-map1" onclick="selectMap('map1')"><span>Đồng Cỏ</span></div>
-                    <div class="map-card-btn" id="lobby-map-map2" onclick="selectMap('map2')"><span>Sa Mạc</span></div>
-                    <div class="map-card-btn" id="lobby-map-map3" onclick="selectMap('map3')"><span>Vũ Trụ</span></div>
-                    <div class="map-card-btn" id="lobby-map-map4" onclick="selectMap('map4')"><span>Tuyết</span></div>
+                <div class="map-selector">
+                    <div id="map-1" class="map-card active" onclick="selectMap(1)">Bản đồ 1</div>
+                    <div id="map-2" class="map-card" onclick="selectMap(2)">Bản đồ 2</div>
                 </div>
 
-                <div id="auth-btn-group">
-                    <button class="btn btn-discord" onclick="loginWithDiscord()">Đăng nhập bằng Discord</button>
-                </div>
-
-                <div id="in-game-btn-group" style="display:none;">
-                    <button class="btn btn-play" onclick="enterGame()">VÀO GAME</button>
-                    <button class="btn btn-logout" onclick="logout()">Đăng Xuất</button>
-                </div>
+                <button class="btn btn-play" onclick="enterGame()">VÀO GAME</button>
+                <button class="btn" style="background: transparent; border: 1px solid #555; color: #aaa; margin-top: 10px; width: 100%;" onclick="logout()">Đăng xuất</button>
             </div>
         </div>
     </div>
 
-    <!-- KHUNG HUD GAME (NỔI TRÊN CANVAS PHASER) -->
-    <div id="game-hud-wrapper" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 500; pointer-events: none; display: none;">
-        <button id="menu-toggle-btn" class="hud-element" onclick="openMenu()">⚙️</button>
-        <button id="chat-toggle-btn" class="hud-element" onclick="toggleChatContainer()">Chat</button>
+    <!-- IN-GAME HUD -->
+    <div id="game-hud">
+        <div id="joystick-zone"></div>
         
-        <div id="roblox-chat-container" class="hud-element">
+        <div class="top-right-menu">
+            <button class="icon-btn" onclick="openModal('admin-modal')" id="btn-admin-hud" style="display: none; color: #ff3333; border-color: #ff3333;">⚙️</button>
+            <button class="icon-btn" onclick="openModal('settings-modal')">🔧</button>
+            <button class="icon-btn" onclick="exitGame()">🚪</button>
+        </div>
+
+        <div id="chat-container" class="glass-panel">
             <div id="chat-history"></div>
-            <div id="chat-input-zone">
-                <input type="text" id="chat-input" placeholder="Nhập tin nhắn..." onkeydown="if(event.key==='Enter') sendChatMessage()">
-                <button id="chat-send-btn" onclick="sendChatMessage()">Gửi</button>
+            <div class="chat-input-box">
+                <input type="text" id="chat-input" placeholder="Nhập tin nhắn hoặc lệnh (/...)" onkeypress="if(event.key === 'Enter') sendChat()">
+                <button onclick="sendChat()">Gửi</button>
             </div>
         </div>
-
-        <div id="joystick-zone" class="hud-element"></div>
-        <div id="fps-counter" class="hud-element">FPS: 60</div>
     </div>
 
-    <!-- KHUNG CHỈNH HUD -->
-    <div id="hud-edit-panel">
-        <span>Đang chọn: <b id="selected-hud-name" style="color:#ffcc00">Chưa chọn</b></span>
-        <label>Size: <input type="range" id="hud-scale-slider" min="0.6" max="1.6" step="0.1" value="1"></label>
-        <label>Độ mờ: <input type="range" id="hud-opacity-slider" min="0.2" max="1" step="0.1" value="1"></label>
-        <button onclick="toggleCustomHUD()" style="background:#00a2ff; border:none; color:white; padding:4px 8px; border-radius:4px; font-weight:bold; cursor:pointer;">Lưu Lại</button>
-    </div>
-
-    <!-- MODALS MENU -->
-    <div id="roblox-main-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">MENU VMI</div>
-            <button class="btn btn-play" onclick="closeMenu()">Tiếp Tục Chơi</button>
-            
-            <div class="menu-btn-grid">
-                <button class="btn" style="background:#333;" onclick="closeMenu(); toggleCustomHUD()">Chỉnh HUD</button>
-                <button class="btn" style="background:#333;" onclick="openSubModal('map-modal')">Đổi Map</button>
-                <button class="btn" style="background:#333;" onclick="openSubModal('settings-modal')">Độ Hoạ</button>
-                <button class="btn" style="background:#333;" onclick="openSubModal('audio-modal')">Âm thanh</button>
-                <button class="btn" style="background:#333;" onclick="openSubModal('members-modal')">Thành viên</button>
-            </div>
-
-            <button class="btn btn-logout" onclick="backToLobby()" style="margin-top: 10px;">Rời Trận Về Sảnh</button>
-        </div>
-    </div>
-
-    <div id="map-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">CHỌN BẢN ĐỒ</div>
-            <div class="map-selector-horizontal">
-                <div class="map-card-btn" id="in-game-map-map1" onclick="changeMapInGame('map1')"><span>Đồng Cỏ</span></div>
-                <div class="map-card-btn" id="in-game-map-map2" onclick="changeMapInGame('map2')"><span>Sa Mạc</span></div>
-                <div class="map-card-btn" id="in-game-map-map3" onclick="changeMapInGame('map3')"><span>Vũ Trụ</span></div>
-                <div class="map-card-btn" id="in-game-map-map4" onclick="changeMapInGame('map4')"><span>Tuyết</span></div>
-            </div>
-            <button class="btn btn-logout" onclick="closeSubModal('map-modal')" style="margin-top: 10px;">Đóng</button>
-        </div>
-    </div>
-
+    <!-- MODAL CÀI ĐẶT -->
     <div id="settings-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">CÀI ĐẶT ĐỘ HOẠ</div>
+        <div class="glass-panel modal-content">
+            <div class="modal-header">CÀI ĐẶT GIAO DIỆN</div>
             
-            <div class="settings-grid-row">
-                <div>Thu Phóng Zoom: <b id="zoom-val">0.8x</b></div>
-                <input type="range" id="zoom-slider" min="0.3" max="1.5" step="0.05" value="0.8" style="width:100%;" oninput="updateCameraZoom(this.value)">
+            <div class="setting-group">
+                <label>Độ thu phóng (Camera Zoom): <span id="val-zoom">0.75x</span></label>
+                <input type="range" id="slider-zoom" min="0.3" max="2" step="0.05" value="0.75" oninput="updateSettings()">
             </div>
-
-            <div class="settings-grid-row">
-                <div>Độ Mờ HUD Chung</div>
-                <input type="range" min="0.2" max="1" step="0.1" value="1" style="width:100%;" oninput="changeOverallHUDOpacity(this.value)">
+            
+            <div class="setting-group">
+                <label>Độ mờ HUD (Opacity): <span id="val-opacity">0.75</span></label>
+                <input type="range" id="slider-opacity" min="0.1" max="1" step="0.05" value="0.75" oninput="updateSettings()">
             </div>
-
-            <div class="settings-grid-row">
-                <div>Độ Nét Phông Chữ: <b id="font-res-val">1k</b></div>
-                <select id="font-res-select" style="width:100%; background:#111; color:#fff; border:1px solid #555; padding:4px; border-radius:4px;" onchange="updateFontResolution(this.value)">
-                    <option value="1">1K (Chuẩn)</option>
-                    <option value="2">2K (Nét)</option>
-                    <option value="3">3K (Rất Nét)</option>
-                    <option value="4">4K (Siêu Nét)</option>
-                </select>
+            
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button class="btn btn-close" style="flex: 1;" onclick="closeModal('settings-modal')">Đóng</button>
             </div>
-
-            <button class="btn btn-play" onclick="closeSubModal('settings-modal')" style="margin-top: 10px;">Lưu & Đóng</button>
         </div>
     </div>
 
-    <div id="audio-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">ÂM THANH</div>
-            <div class="settings-grid-row">
-                <div>Âm lượng game</div>
-                <input type="range" min="0" max="1" step="0.1" value="0.8" style="width:100%;">
+    <!-- MODAL ADMIN PANEL VIP -->
+    <div id="admin-modal" class="modal">
+        <div class="glass-panel modal-content gold-border">
+            <div class="modal-header gold-text" style="color: #ff3333;">CONTROL PANEL ADMIN</div>
+            
+            <div class="admin-input-group">
+                <input type="text" id="admin-target" class="admin-input" placeholder="Nhập tên người chơi hoặc thông số...">
             </div>
-            <button class="btn btn-play" onclick="closeSubModal('audio-modal')" style="margin-top: 10px;">Đóng</button>
+
+            <div class="admin-grid">
+                <div class="admin-btn" onclick="adminAction('color')">Đổi Màu Tên (Hex)</div>
+                <div class="admin-btn" onclick="adminAction('tp')">TP (x,y)</div>
+                <div class="admin-btn" onclick="adminAction('to')">TP Tới (To)</div>
+                <div class="admin-btn" onclick="adminAction('bring')">Bring (Kéo về)</div>
+                <div class="admin-btn" onclick="adminAction('kick')">Kick</div>
+                <div class="admin-btn" onclick="adminAction('ban')">Ban</div>
+                <div class="admin-btn" onclick="adminAction('view')">View (Spectate)</div>
+                <div class="admin-btn" onclick="adminAction('giveperm')">Give Perm</div>
+                <div class="admin-btn" onclick="adminAction('givemod')">Temp Mod (1D)</div>
+            </div>
+
+            <button class="btn btn-close" style="width: 100%;" onclick="closeModal('admin-modal')">Đóng Panel</button>
         </div>
     </div>
 
-    <div id="members-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">THÀNH VIÊN TRONG PHÒNG</div>
-            <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:8px; font-size:12px; min-height:80px; max-height:150px; overflow-y:auto;">
-                - <span id="member-list-name">Người chơi hiện tại</span> (Host)
-            </div>
-            <button class="btn btn-play" onclick="closeSubModal('members-modal')" style="margin-top: 10px;">Đóng</button>
-        </div>
-    </div>
-
-    <!-- JAVASCRIPT LOGIC -->
+    <!-- ================= JAVASCRIPT ================= -->
     <script>
-        let discordUser = null;
-        let gameInstance = null;
-        let mainScene = null;
-        let cameraZoom = 0.8; 
-        let selectedMap = 'map1';
-        let joystickManager = null;
+        // --- BIẾN TOÀN CỤC ---
+        let user = null;
+        let isAdmin = false; 
+        let selectedMapID = 1;
+        let game, scene;
+        let joystick;
         let moveVector = { x: 0, y: 0 };
-        let isCustomHUDMode = false;
-        let selectedHudEl = null;
-        let showChatBubbleCallback = null;
-        let fontResolutionScale = 1;
-
-        const mapConfigs = {
-            'map1': { bg: '#1a3a2a', grid: 0xffffff, gridAlpha: 0.12 },
-            'map2': { bg: '#3a2a1a', grid: 0xffaa00, gridAlpha: 0.15 },
-            'map3': { bg: '#08081a', grid: 0x00a2ff, gridAlpha: 0.20 },
-            'map4': { bg: '#2a3a3a', grid: 0xffffff, gridAlpha: 0.25 }
-        };
-
-        function showNotification(msg) {
-            const noti = document.getElementById('server-notification');
-            if (!noti) return;
-            noti.innerText = msg;
-            noti.classList.add('show');
-            setTimeout(() => { noti.classList.remove('show'); }, 3000);
-        }
-
-        // AUTH DISCORD
-        function loginWithDiscord() {
-            window.location.href = "https://discord.com/api/oauth2/authorize?client_id=1534238453871673414&redirect_uri=https%3A%2F%2Fvmimap.github.io%2FVMI-MAP-SITE%2F&response_type=token&scope=identify";
-        }
-
-        function checkDiscordAuth() {
-            const hash = window.location.hash.substring(1);
-            const params = new URLSearchParams(hash);
-            const accessToken = params.get('access_token');
-            const error = params.get('error');
-
-            if (error) {
+        
+        // --- HỆ THỐNG XÁC THỰC DISCORD ---
+        function checkAuth() {
+            const hash = window.location.hash;
+            let token = new URLSearchParams(hash.substring(1)).get('access_token');
+            
+            if (token) {
                 window.history.replaceState(null, null, window.location.pathname);
-                showNotification("Đã hủy hoặc lỗi đăng nhập Discord!");
-                showLoginRequired();
-                return;
-            }
-
-                        if (accessToken) {
-                window.history.replaceState(null, null, window.location.pathname);
-                fetch('https://discord.com/api/users/@me', {
-                    headers: { authorization: `Bearer ${accessToken}` }
-                })
-                .then(res => res.json())
+                fetch('https://discord.com/api/users/@me', { headers: { authorization: `Bearer ${token}` } })
+                .then(r => r.json())
                 .then(data => {
-                    if (data.id) {
-                        discordUser = {
+                    if(data.id) {
+                        user = {
                             id: data.id,
-                            username: data.global_name || data.username,
-                            avatarUrl: data.avatar 
-                                ? `https://cdn.discordapp.com/avatars/${data.id}/${data.avatar}.png`
-                                : `https://cdn.discordapp.com/embed/avatars/0.png`
+                            name: data.global_name || data.username,
+                            avatar: data.avatar ? `https://cdn.discordapp.com/avatars/${data.id}/${data.avatar}.png` : `https://cdn.discordapp.com/embed/avatars/0.png`
                         };
-                        updateLobbyUI();
-                        showNotification(`Chào mừng ${discordUser.username}!`);
-                    } else { showLoginRequired(); }
-                })
-                .catch(() => showLoginRequired());
+                        localStorage.setItem('vmi_user', JSON.stringify(user));
+                        checkAdminStatus();
+                        updateLobby();
+                    }
+                });
             } else {
-                const saved = localStorage.getItem('vmi_discord_user');
+                let saved = localStorage.getItem('vmi_user');
                 if (saved) { 
-                    try {
-                        discordUser = JSON.parse(saved); 
-                        updateLobbyUI(); 
-                    } catch(e) { showLoginRequired(); }
-                } else { showLoginRequired(); }
+                    user = JSON.parse(saved); 
+                    checkAdminStatus();
+                    updateLobby(); 
+                }
             }
         }
 
-        function showLoginRequired() {
-            discordUser = null;
-            localStorage.removeItem('vmi_discord_user');
-            document.getElementById('user-info-display').style.display = 'none';
-            document.getElementById('auth-btn-group').style.display = 'block';
-            document.getElementById('in-game-btn-group').style.display = 'none';
-        }
-
-        function updateLobbyUI() {
-            if (discordUser) {
-                localStorage.setItem('vmi_discord_user', JSON.stringify(discordUser));
-                document.getElementById('lobby-user-avatar').src = discordUser.avatarUrl;
-                document.getElementById('lobby-user-name').innerText = discordUser.username;
-                document.getElementById('member-list-name').innerText = discordUser.username;
-                
-                document.getElementById('user-info-display').style.display = 'flex';
-                document.getElementById('auth-btn-group').style.display = 'none';
-                document.getElementById('in-game-btn-group').style.display = 'block';
-            }
+        function loginWithDiscord(e) {
+            if(e) { e.preventDefault(); e.stopPropagation(); }
+            const authUrl = "https://discord.com/api/oauth2/authorize?client_id=1534238453871673414&redirect_uri=https%3A%2F%2Fvmimap.github.io%2FVMI-MAP-SITE%2F&response_type=token&scope=identify";
+            window.location.href = authUrl;
         }
 
         function logout() {
-            showLoginRequired();
-            showNotification("Đã đăng xuất!");
+            user = null; isAdmin = false;
+            localStorage.removeItem('vmi_user');
+            localStorage.removeItem('vmi_temp_mod');
+            document.getElementById('auth-section').style.display = 'block';
+            document.getElementById('user-section').style.display = 'none';
         }
 
-        // CHỌN & ĐỔI BẢN ĐỒ
-        function selectMap(mapId) {
-            selectedMap = mapId;
-            document.querySelectorAll('.map-selector-horizontal .map-card-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            const activeBtn = document.getElementById(`lobby-map-${mapId}`);
-            if (activeBtn) activeBtn.classList.add('active');
-        }
-
-        function changeMapInGame(mapId) {
-            selectMap(mapId);
-            if (mainScene && mainScene.applyMapConfig) {
-                mainScene.applyMapConfig(mapId);
-            }
-            closeSubModal('map-modal');
-            showNotification(`Đã đổi sang bản đồ: ${mapId}`);
-        }
-
-        // ĐIỀU KHIỂN SẢNH & GAME
-        function enterGame() {
-            document.getElementById('lobby-overlay').style.display = 'none';
-            document.getElementById('game-hud-wrapper').style.display = 'block';
+        // --- HỆ THỐNG ADMIN / TEMP MOD ---
+        function checkAdminStatus() {
+            // Mặc định cho phép người đăng nhập test admin để trải nghiệm UI
+            isAdmin = true; 
             
-            if (!gameInstance) {
-                initPhaserGame();
-            } else if (mainScene) {
-                mainScene.scene.restart();
+            // Kiểm tra Temp Mod (1 Ngày)
+            let tempModExpiry = localStorage.getItem('vmi_temp_mod');
+            if (tempModExpiry && Date.now() < parseInt(tempModExpiry)) {
+                isAdmin = true;
+            } else if (tempModExpiry) {
+                localStorage.removeItem('vmi_temp_mod'); // Hết hạn
             }
-            initJoystick();
-        }
 
-        function backToLobby() {
-            closeMenu();
-            document.getElementById('game-hud-wrapper').style.display = 'none';
-            document.getElementById('lobby-overlay').style.display = 'flex';
-            if (joystickManager) {
-                joystickManager.destroy();
-                joystickManager = null;
+            if (isAdmin) {
+                document.getElementById('lobby-role').innerText = "V.I.P Admin";
+                document.getElementById('lobby-role').style.color = "#ff3333";
+                document.getElementById('lobby-role').style.background = "rgba(255, 51, 51, 0.2)";
+                document.getElementById('btn-admin-hud').style.display = 'block';
             }
         }
 
-        function openMenu() { document.getElementById('roblox-main-modal').style.display = 'flex'; }
-        function closeMenu() { document.getElementById('roblox-main-modal').style.display = 'none'; }
-        function openSubModal(id) { document.getElementById(id).style.display = 'flex'; }
-        function closeSubModal(id) { document.getElementById(id).style.display = 'none'; }
-
-        function toggleChatContainer() {
-            const chatBox = document.getElementById('roblox-chat-container');
-            chatBox.style.display = (chatBox.style.display === 'flex') ? 'none' : 'flex';
+        // --- GIAO DIỆN & MODAL ---
+        function updateLobby() {
+            if(user) {
+                document.getElementById('auth-section').style.display = 'none';
+                document.getElementById('user-section').style.display = 'block';
+                document.getElementById('lobby-avatar').src = user.avatar;
+                document.getElementById('lobby-name').innerText = user.name;
+            }
         }
 
-        function sendChatMessage() {
+        function selectMap(id) {
+            selectedMapID = id;
+            document.querySelectorAll('.map-card').forEach(c => c.classList.remove('active'));
+            document.getElementById(`map-${id}`).classList.add('active');
+            if (scene) { scene.changeMap(id); }
+        }
+
+        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+        
+        function showNotif(msg) {
+            const n = document.getElementById('notification');
+            n.innerText = msg;
+            n.style.display = 'block';
+            setTimeout(() => { n.style.display = 'none'; }, 3000);
+        }
+
+        // Cài đặt thông số (Mặc định 0.75)
+        function updateSettings() {
+            const zoom = document.getElementById('slider-zoom').value;
+            const opacity = document.getElementById('slider-opacity').value;
+            
+            document.getElementById('val-zoom').innerText = zoom + "x";
+            document.getElementById('val-opacity').innerText = opacity;
+            
+            document.getElementById('game-hud').style.opacity = opacity;
+            if(scene) scene.cameras.main.setZoom(parseFloat(zoom));
+        }
+
+        // --- ADMIN ACTIONS (UI & Giả lập logic) ---
+        function adminAction(action) {
+            const target = document.getElementById('admin-target').value.trim();
+            if (!target && action !== 'tp') { showNotif("Vui lòng nhập mục tiêu/thông số!"); return; }
+
+            switch(action) {
+                case 'color': // /color #ff0000
+                    if (scene) scene.nameText.setColor(target);
+                    showNotif(`Đã đổi màu tên thành: ${target}`);
+                    break;
+                case 'tp': // /tp x y
+                    if(scene) {
+                        let coords = target.split(' ');
+                        let tx = coords[0] ? parseInt(coords[0]) : Math.random() * 2000;
+                        let ty = coords[1] ? parseInt(coords[1]) : Math.random() * 2000;
+                        scene.player.setPosition(tx, ty);
+                        showNotif(`Dịch chuyển tới tọa độ: ${tx}, ${ty}`);
+                    }
+                    break;
+                case 'to': showNotif(`Đã dịch chuyển tới người chơi: ${target}`); break;
+                case 'bring': showNotif(`Đã kéo (Bring) ${target} tới vị trí của bạn`); break;
+                case 'kick': showNotif(`Đã Kick người chơi: ${target}`); break;
+                case 'ban': showNotif(`Đã BAN vĩnh viễn: ${target}`); break;
+                case 'view': showNotif(`Đang theo dõi góc nhìn của: ${target}`); break;
+                case 'giveperm': showNotif(`Đã cấp quyền vĩnh viễn cho: ${target}`); break;
+                case 'givemod': 
+                    // Cấp Temp Mod 1 ngày (24h * 60m * 60s * 1000ms)
+                    let expiry = Date.now() + (24 * 60 * 60 * 1000);
+                    localStorage.setItem('vmi_temp_mod', expiry.toString());
+                    showNotif(`Đã cấp Temp Mod (1 Ngày) cho: ${target}`);
+                    break;
+            }
+            closeModal('admin-modal');
+        }
+
+        // --- CHAT & PARSER LỆNH ---
+        function sendChat() {
             const input = document.getElementById('chat-input');
-            const text = input.value.trim();
-            if (!text) return;
+            let text = input.value.trim();
+            if(!text) return;
             
-            const history = document.getElementById('chat-history');
-            const msgEl = document.createElement('div');
-            msgEl.className = 'chat-msg';
-            const sender = discordUser ? discordUser.username : 'Người chơi';
-            msgEl.innerHTML = `<b>${escapeHtml(sender)}:</b> ${escapeHtml(text)}`;
-            history.appendChild(msgEl);
-            history.scrollTop = history.scrollHeight;
-            
-            if (showChatBubbleCallback) {
-                showChatBubbleCallback(text);
+            // Xử lý lệnh Admin nếu gõ từ khung chat
+            if (text.startsWith('/')) {
+                if (!isAdmin) { showNotif("Bạn không có quyền dùng lệnh!"); return; }
+                let args = text.split(' ');
+                let cmd = args[0].toLowerCase();
+                
+                if(cmd === '/color' && args[1]) {
+                    if (scene) scene.nameText.setColor(args[1]);
+                    showNotif("Đổi màu thành công!");
+                } else if (cmd === '/tp' && args[1] && args[2]) {
+                    if(scene) scene.player.setPosition(parseInt(args[1]), parseInt(args[2]));
+                } else {
+                    showNotif("Thực thi lệnh: " + cmd);
+                }
+            } else {
+                // Chat bình thường
+                const history = document.getElementById('chat-history');
+                let colorHex = scene ? scene.nameText.style.color : "#fff";
+                history.innerHTML += `<div><b style="color:${colorHex}">${user ? user.name : 'Khách'}:</b> ${text}</div>`;
+                history.scrollTop = history.scrollHeight;
+                
+                                // Hiển thị bong bóng chat trên đầu nhân vật
+                if (scene) scene.showChatBubble(text);
             }
             input.value = '';
         }
 
-        function escapeHtml(text) {
-            return text.replace(/[&<>"']/g, function(m) {
-                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
-            });
-        }
-
-        function updateCameraZoom(val) {
-            cameraZoom = parseFloat(val);
-            document.getElementById('zoom-val').innerText = cameraZoom.toFixed(2) + 'x';
-            if (mainScene && mainScene.cameras && mainScene.cameras.main) {
-                mainScene.cameras.main.setZoom(cameraZoom);
-            }
-        }
-
-        function changeOverallHUDOpacity(val) {
-            const hud = document.getElementById('game-hud-wrapper');
-            if (hud) hud.style.opacity = val;
-        }
-
-        function updateFontResolution(val) {
-            fontResolutionScale = parseInt(val);
-            const resMap = { 1: '1k', 2: '2k', 3: '3k', 4: '4k' };
-            document.getElementById('font-res-val').innerText = resMap[val] || '1k';
-            if (mainScene && mainScene.updateNameTagScale) {
-                mainScene.updateNameTagScale(fontResolutionScale);
-            }
-        }
-
-        // TÙY CHỈNH HUD
-        function toggleCustomHUD() {
-            isCustomHUDMode = !isCustomHUDMode;
-            const editPanel = document.getElementById('hud-edit-panel');
-            const body = document.body;
-
-            if (isCustomHUDMode) {
-                editPanel.style.display = 'flex';
-                body.classList.add('is-editing-hud');
-                setupHUDInteractions();
-            } else {
-                editPanel.style.display = 'none';
-                body.classList.remove('is-editing-hud');
-                removeHUDInteractions();
-            }
-        }
-
-        function setupHUDInteractions() {
-            const hudElements = document.querySelectorAll('.hud-element');
-            hudElements.forEach(el => {
-                el.style.cursor = 'move';
-                el.onclick = (e) => {
-                    e.stopPropagation();
-                    selectHudElement(el);
-                };
-                makeDraggable(el);
-            });
-        }
-
-        function removeHUDInteractions() {
-            const hudElements = document.querySelectorAll('.hud-element');
-            hudElements.forEach(el => {
-                el.style.cursor = 'default';
-                el.onclick = null;
-                el.onmousedown = null;
-                el.ontouchstart = null;
-                el.classList.remove('hud-dragging');
-            });
-            selectedHudEl = null;
-            document.getElementById('selected-hud-name').innerText = 'Chưa chọn';
-        }
-
-        function selectHudElement(el) {
-            document.querySelectorAll('.hud-element').forEach(e => e.classList.remove('hud-dragging'));
-            selectedHudEl = el;
-            el.classList.add('hud-dragging');
-            document.getElementById('selected-hud-name').innerText = el.id || 'Phần tử';
+        // --- QUẢN LÝ GAME (PHASER + NIPPLEJS) ---
+        function enterGame() {
+            document.getElementById('lobby-overlay').style.display = 'none';
+            document.getElementById('game-hud').style.display = 'block';
             
-            const scale = el.dataset.scale || 1;
-            const opacity = el.style.opacity || 1;
-            document.getElementById('hud-scale-slider').value = scale;
-            document.getElementById('hud-opacity-slider').value = opacity;
+            // Áp dụng cài đặt mặc định
+            updateSettings();
+
+            if (!game) initPhaser();
+            initJoystick();
         }
 
-        function makeDraggable(el) {
-            let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
-            el.onmousedown = dragMouseDown;
-            el.ontouchstart = dragTouchStart;
-
-            function dragMouseDown(e) {
-                if (!isCustomHUDMode) return;
-                e.preventDefault();
-                pos3 = e.clientX;
-                pos4 = e.clientY;
-                document.onmouseup = closeDragElement;
-                document.onmousemove = elementDrag;
-            }
-
-            function elementDrag(e) {
-                e.preventDefault();
-                pos1 = pos3 - e.clientX;
-                pos2 = pos4 - e.clientY;
-                pos3 = e.clientX;
-                pos4 = e.clientY;
-                el.style.top = (el.offsetTop - pos2) + "px";
-                el.style.left = (el.offsetLeft - pos1) + "px";
-                el.style.bottom = 'auto';
-                el.style.right = 'auto';
-            }
-
-            function closeDragElement() {
-                document.onmouseup = null;
-                document.onmousemove = null;
-            }
-
-            function dragTouchStart(e) {
-                if (!isCustomHUDMode) return;
-                const touch = e.touches[0];
-                pos3 = touch.clientX;
-                pos4 = touch.clientY;
-                document.ontouchend = closeTouchElement;
-                document.ontouchmove = touchDrag;
-            }
-
-            function touchDrag(e) {
-                const touch = e.touches[0];
-                pos1 = pos3 - touch.clientX;
-                pos2 = pos4 - touch.clientY;
-                pos3 = touch.clientX;
-                pos4 = touch.clientY;
-                el.style.top = (el.offsetTop - pos2) + "px";
-                el.style.left = (el.offsetLeft - pos1) + "px";
-                el.style.bottom = 'auto';
-                el.style.right = 'auto';
-            }
-
-            function closeTouchElement() {
-                document.ontouchend = null;
-                document.ontouchmove = null;
-            }
+        function exitGame() {
+            document.getElementById('game-hud').style.display = 'none';
+            document.getElementById('lobby-overlay').style.display = 'flex';
+            if (joystick) { joystick.destroy(); joystick = null; }
         }
 
-        document.getElementById('hud-scale-slider').addEventListener('input', function(e) {
-            if (selectedHudEl) {
-                const scale = e.target.value;
-                selectedHudEl.style.transform = `scale(${scale})`;
-                selectedHudEl.dataset.scale = scale;
-            }
-        });
-
-        document.getElementById('hud-opacity-slider').addEventListener('input', function(e) {
-            if (selectedHudEl) {
-                selectedHudEl.style.opacity = e.target.value;
-            }
-        });
-
-        // JOYSTICK NIPPLEJS
         function initJoystick() {
-            const zone = document.getElementById('joystick-zone');
-            if (!zone) return;
-            if (joystickManager) joystickManager.destroy();
-
-            joystickManager = nipplejs.create({
-                zone: zone,
-                mode: 'static',
-                position: { left: '50%', top: '50%' },
-                color: '#ffcc00',
-                size: 110
+            if (joystick) joystick.destroy();
+            joystick = nipplejs.create({
+                zone: document.getElementById('joystick-zone'),
+                mode: 'static', position: { left: '60px', bottom: '60px' },
+                color: '#ffd700', size: 100
             });
-
-            joystickManager.on('move', (evt, data) => {
-                if (data && data.vector) {
-                    moveVector.x = data.vector.x;
-                    moveVector.y = -data.vector.y;
-                }
-            });
-
-            joystickManager.on('end', () => {
-                moveVector.x = 0;
-                moveVector.y = 0;
-            });
+            joystick.on('move', (evt, data) => { moveVector = { x: data.vector.x, y: -data.vector.y }; });
+            joystick.on('end', () => { moveVector = { x: 0, y: 0 }; });
         }
 
-        // GAME PHASER 3
-        function initPhaserGame() {
+        function initPhaser() {
             const config = {
-                type: Phaser.AUTO,
-                width: window.innerWidth,
-                height: window.innerHeight,
-                parent: document.body,
-                physics: {
-                    default: 'arcade',
-                    arcade: { debug: false }
-                },
-                scene: {
-                    preload: preload,
-                    create: create,
-                    update: update
+                type: Phaser.AUTO, width: window.innerWidth, height: window.innerHeight,
+                backgroundColor: '#1a1a2e',
+                physics: { default: 'arcade' },
+                scene: { create: createGame, update: updateGame }
+            };
+            game = new Phaser.Game(config);
+        }
+
+        function createGame() {
+            scene = this;
+            
+            // Vẽ Map Grid
+            this.grid = this.add.graphics();
+            this.changeMap = function(id) {
+                this.grid.clear();
+                let color = id === 1 ? 0x222233 : 0x2a3a2a;
+                this.cameras.main.setBackgroundColor(color);
+                this.grid.lineStyle(1, 0xffffff, 0.1);
+                for(let i=0; i<=2000; i+=50) {
+                    this.grid.lineBetween(i, 0, i, 2000);
+                    this.grid.lineBetween(0, i, 2000, i);
                 }
             };
+            this.changeMap(selectedMapID);
+            this.physics.world.setBounds(0, 0, 2000, 2000);
 
-            gameInstance = new Phaser.Game(config);
+            // Nhân vật
+            this.player = this.add.container(1000, 1000);
+            this.physics.world.enable(this.player);
+            this.player.body.setCollideWorldBounds(true);
+            this.player.body.setSize(40, 40);
 
-            function preload() {}
+            let body = this.add.circle(0, 0, 20, 0xffd700).setStrokeStyle(2, 0xffffff);
+            this.player.add(body);
 
-            function create() {
-                mainScene = this;
-                this.cameras.main.setZoom(cameraZoom);
-                this.physics.world.setBounds(0, 0, 2000, 2000);
+            // Tên Nhân vật
+            this.nameText = this.add.text(0, -35, user ? user.name : "Player", {
+                font: 'bold 16px Arial', fill: '#ffffff', stroke: '#000000', strokeThickness: 4
+            }).setOrigin(0.5);
+            this.player.add(this.nameText);
 
-                this.gridGraphics = this.add.graphics();
-                this.applyMapConfig = function(mapId) {
-                    const cfg = mapConfigs[mapId] || mapConfigs['map1'];
-                    this.cameras.main.setBackgroundColor(cfg.bg);
-                    this.gridGraphics.clear();
-                    this.gridGraphics.lineStyle(1, cfg.grid, cfg.gridAlpha);
-                    for (let x = 0; x <= 2000; x += 50) {
-                        this.gridGraphics.lineBetween(x, 0, x, 2000);
-                    }
-                    for (let y = 0; y <= 2000; y += 50) {
-                        this.gridGraphics.lineBetween(0, y, 2000, y);
-                    }
-                };
-                this.applyMapConfig(selectedMap);
-
-                this.player = this.add.container(1000, 1000);
-                this.physics.world.enable(this.player);
-                this.player.body.setCollideWorldBounds(true);
-                this.player.body.setSize(40, 40);
-
-                const circle = this.add.circle(0, 0, 20, 0xffcc00);
-                circle.setStrokeStyle(2, 0xffffff);
-                this.player.add(circle);
-
-                const nameText = discordUser ? discordUser.username : 'Player';
-                this.nameTag = this.add.text(0, -32, nameText, {
-                    font: '14px Arial',
-                    fill: '#ffffff',
-                    stroke: '#000000',
-                    strokeThickness: 3
-                }).setOrigin(0.5);
-                this.player.add(this.nameTag);
-
-                this.updateNameTagScale = (resScale) => {
-                    this.nameTag.setFontSize(14 * resScale);
-                    this.nameTag.setScale(1 / resScale);
-                };
-
-                this.chatBubble = this.add.container(0, -65);
-                const bubbleBg = this.add.rectangle(0, 0, 100, 26, 0x000000, 0.75);
-                bubbleBg.setStrokeStyle(1, 0xffcc00);
-                const bubbleText = this.add.text(0, 0, '', {
-                    font: '12px Arial', fill: '#ffffff'
-                }).setOrigin(0.5);
-                this.chatBubble.add(bubbleBg);
-                this.chatBubble.add(bubbleText);
-                this.chatBubble.setVisible(false);
-                this.player.add(this.chatBubble);
-
-                let bubbleTimer = null;
-                showChatBubbleCallback = (msg) => {
-                    bubbleText.setText(msg);
-                    bubbleBg.setSize(bubbleText.width + 16, 24);
-                    this.chatBubble.setVisible(true);
-                    if (bubbleTimer) clearTimeout(bubbleTimer);
-                    bubbleTimer = setTimeout(() => {
-                        this.chatBubble.setVisible(false);
-                    }, 4000);
-                };
-
-                this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
-
-                this.cursors = this.input.keyboard.createCursorKeys();
-                this.wasd = this.input.keyboard.addKeys({
-                    up: Phaser.Input.Keyboard.KeyCodes.W,
-                    down: Phaser.Input.Keyboard.KeyCodes.S,
-                    left: Phaser.Input.Keyboard.KeyCodes.A,
-                    right: Phaser.Input.Keyboard.KeyCodes.D
-                });
-
-                window.addEventListener('resize', () => {
-                    if (gameInstance) {
-                        gameInstance.scale.resize(window.innerWidth, window.innerHeight);
-                    }
-                });
+            // Bong bóng Chat
+            this.chatBubble = this.add.text(0, -60, "", {
+                font: '14px Arial', fill: '#000', backgroundColor: '#fff', padding: { x: 5, y: 3 }
+            }).setOrigin(0.5).setVisible(false);
+            this.player.add(this.chatBubble);
+            
+            let bubbleTimer;
+            this.showChatBubble = (txt) => {
+                this.chatBubble.setText(txt).setVisible(true);
+                clearTimeout(bubbleTimer);
+                bubbleTimer = setTimeout(() => this.chatBubble.setVisible(false), 4000);
             }
 
-            function update() {
-                if (!mainScene || !this.player) return;
+            // Camera follow (Cài đặt Zoom mặc định từ thanh trượt)
+            this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
+            let defaultZoom = parseFloat(document.getElementById('slider-zoom').value);
+            this.cameras.main.setZoom(defaultZoom);
 
-                const fps = Math.round(gameInstance.loop.actualFps);
-                document.getElementById('fps-counter').innerText = `FPS: ${fps}`;
-
-                const speed = 250;
-                let vx = 0;
-                let vy = 0;
-
-                if (this.cursors.left.isDown || this.wasd.left.isDown) vx -= 1;
-                if (this.cursors.right.isDown || this.wasd.right.isDown) vx += 1;
-                if (this.cursors.up.isDown || this.wasd.up.isDown) vy -= 1;
-                if (this.cursors.down.isDown || this.wasd.down.isDown) vy += 1;
-
-                if (moveVector.x !== 0 || moveVector.y !== 0) {
-                    vx = moveVector.x;
-                    vy = moveVector.y;
-                }
-
-                this.player.body.setVelocity(vx * speed, vy * speed);
-            }
+            this.cursors = this.input.keyboard.createCursorKeys();
+            this.wasd = this.input.keyboard.addKeys({ W: 87, A: 65, S: 83, D: 68 });
+            
+            window.addEventListener('resize', () => { game.scale.resize(window.innerWidth, window.innerHeight); });
         }
 
-        window.addEventListener('DOMContentLoaded', checkDiscordAuth);
+        function updateGame() {
+            if (!scene || !scene.player) return;
+            const speed = 300;
+            let vx = 0, vy = 0;
+
+            if (scene.cursors.left.isDown || scene.wasd.A.isDown) vx = -1;
+            else if (scene.cursors.right.isDown || scene.wasd.D.isDown) vx = 1;
+            if (scene.cursors.up.isDown || scene.wasd.W.isDown) vy = -1;
+            else if (scene.cursors.down.isDown || scene.wasd.S.isDown) vy = 1;
+
+            if (moveVector.x !== 0 || moveVector.y !== 0) { vx = moveVector.x; vy = moveVector.y; }
+
+            // Normalize vector để không chạy chéo quá nhanh
+            let length = Math.sqrt(vx*vx + vy*vy);
+            if(length > 0) { vx /= length; vy /= length; }
+
+            scene.player.body.setVelocity(vx * speed, vy * speed);
+        }
+
+        // Bắt đầu
+        window.addEventListener('DOMContentLoaded', checkAuth);
     </script>
 </body>
 </html>
+
+      
