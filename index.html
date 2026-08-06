@@ -1243,6 +1243,34 @@ function updateScene() {
     }
 }
 
+
+// ================================================================
+// GAME ENTRY / EXIT (sửa lỗi)
+// ================================================================
+function enterGameHandler() {
+    if (!currentUser) { toast('Vui lòng đăng nhập!'); return; }
+    if (!selectedMap) { toast('Chọn map trước!'); return; }
+    initGame();
+    document.getElementById('screen-menu').style.display = 'none';
+    toast('Đã vào ' + selectedMap.name);
+}
+
+function exitGameHandler() {
+    destroyGame();
+    document.getElementById('screen-menu').style.display = 'flex';
+    toast('Đã về sảnh');
+}
+
+// Gán sự kiện (đảm bảo phần tử tồn tại)
+document.addEventListener('DOMContentLoaded', function() {
+    const enterBtn = document.getElementById('btnEnterGame');
+    const exitBtn = document.getElementById('btnExitGame');
+    if (enterBtn) enterBtn.addEventListener('click', enterGameHandler);
+    else console.warn('Không tìm thấy nút VÀO GAME');
+    if (exitBtn) exitBtn.addEventListener('click', exitGameHandler);
+    else console.warn('Không tìm thấy nút THOÁT GAME');
+});
+
 // ================================================================
 // JOYSTICK (khởi tạo nipplejs)
 // ================================================================
