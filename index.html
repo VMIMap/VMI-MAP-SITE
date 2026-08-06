@@ -1,1610 +1,181 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html>
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>VMI QUÂN ĐỘI</title>
-    <!-- Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800&family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
-    <!-- Phaser + NippleJS -->
-    <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.10.1/nipplejs.min.js"></script>
-    <style>
-        /* ===== RESET & ROOT ===== */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            user-select: none;
-            -webkit-user-select: none;
-            -webkit-tap-highlight-color: transparent;
-        }
-        :root {
-            --bg: #04050a;
-            --panel: rgba(9, 13, 24, 0.88);
-            --line: rgba(0, 229, 255, 0.3);
-            --cyan: #00e5ff;
-            --gold: #e8b84b;
-            --gold-soft: #ffe6ac;
-            --red: #ff3b3b;
-            --green: #39ff88;
-            --text: #e7edff;
-            --text-dim: #8494b8;
-            --font-display: 'Orbitron', sans-serif;
-            --font-body: 'Rajdhani', sans-serif;
-            --font-mono: 'JetBrains Mono', monospace;
-        }
-        html,
-        body {
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background: var(--bg);
-            font-family: var(--font-body);
-            color: var(--text);
-            touch-action: none;
-        }
-        #app {
-            position: relative;
-            width: 100vw;
-            height: 100vh;
-            overflow: hidden;
-        }
-        ::-webkit-scrollbar {
-            width: 4px;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: var(--cyan);
-            border-radius: 4px;
-        }
-
-        /* ===== BACKGROUND FX ===== */
-        .grid-bg {
-            position: absolute;
-            inset: 0;
-            background-image:
-                linear-gradient(rgba(0, 229, 255, 0.04) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0, 229, 255, 0.04) 1px, transparent 1px);
-            background-size: 48px 48px;
-            animation: drift 40s linear infinite;
-            pointer-events: none;
-        }
-        @keyframes drift {
-            from {
-                background-position: 0 0;
-            }
-            to {
-                background-position: 480px 480px;
-            }
-        }
-        .scanline {
-            position: absolute;
-            inset: 0;
-            pointer-events: none;
-            mix-blend-mode: screen;
-            opacity: 0.3;
-            background: repeating-linear-gradient(0deg,
-                    rgba(0, 229, 255, 0.02) 0px,
-                    rgba(0, 229, 255, 0.02) 1px,
-                    transparent 2px,
-                    transparent 4px);
-        }
-        .vignette {
-            position: absolute;
-            inset: 0;
-            pointer-events: none;
-            background: radial-gradient(ellipse at center, transparent 50%, rgba(0, 0, 0, 0.75) 100%);
-        }
-        .glow-orb {
-            position: absolute;
-            width: 500px;
-            height: 500px;
-            border-radius: 50%;
-            filter: blur(80px);
-            opacity: 0.12;
-            pointer-events: none;
-        }
-
-        /* ===== PANEL ===== */
-        .panel {
-            position: relative;
-            background: var(--panel);
-            border: 1px solid var(--line);
-            clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
-            backdrop-filter: blur(10px);
-            box-shadow: 0 0 30px rgba(0, 229, 255, 0.06);
-        }
-        .panel::before,
-        .panel::after {
-            content: '';
-            position: absolute;
-            width: 14px;
-            height: 14px;
-            pointer-events: none;
-            border: 2px solid var(--cyan);
-            opacity: 0.7;
-        }
-        .panel::before {
-            top: -1px;
-            left: -1px;
-            border-right: none;
-            border-bottom: none;
-        }
-        .panel::after {
-            bottom: -1px;
-            right: -1px;
-            border-left: none;
-            border-top: none;
-        }
-
-        /* ===== BUTTONS ===== */
-        .btn {
-            font-family: var(--font-display);
-            font-size: 13px;
-            letter-spacing: 1.5px;
-            color: var(--gold-soft);
-            background: rgba(0, 229, 255, 0.06);
-            border: 1px solid var(--cyan);
-            padding: 12px 20px;
-            clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
-            cursor: pointer;
-            text-transform: uppercase;
-            transition: all 0.15s ease;
-            text-align: center;
-            width: 100%;
-        }
-        .btn:hover {
-            background: rgba(0, 229, 255, 0.16);
-            box-shadow: 0 0 24px rgba(0, 229, 255, 0.35);
-            transform: translateY(-1px);
-        }
-        .btn:active {
-            transform: translateY(0);
-        }
-        .btn:disabled {
-            opacity: 0.3;
-            cursor: not-allowed;
-            box-shadow: none;
-            transform: none;
-        }
-        .btn.gold {
-            border-color: var(--gold);
-            color: #1a1200;
-            background: linear-gradient(180deg, var(--gold-soft), var(--gold));
-        }
-        .btn.gold:hover {
-            box-shadow: 0 0 28px rgba(232, 184, 75, 0.5);
-        }
-        .btn.danger {
-            border-color: var(--red);
-            color: #ffd6d6;
-        }
-        .btn.danger:hover {
-            background: rgba(255, 59, 59, 0.14);
-            box-shadow: 0 0 20px rgba(255, 59, 59, 0.4);
-        }
-        .btn.small {
-            padding: 8px 14px;
-            font-size: 10px;
-        }
-
-        .discord-btn {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            width: 100%;
-            font-family: var(--font-display);
-            font-size: 13px;
-            letter-spacing: 1px;
-            background: rgba(88, 101, 242, 0.15);
-            border: 1px solid #5865F2;
-            color: #c9cdff;
-            padding: 14px;
-            clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
-            cursor: pointer;
-            transition: all 0.15s ease;
-        }
-        .discord-btn:hover {
-            background: rgba(88, 101, 242, 0.3);
-            box-shadow: 0 0 24px rgba(88, 101, 242, 0.4);
-        }
-
-        /* ===== SCREEN: MENU (LOBBY) ===== */
-        #screen-menu {
-            position: absolute;
-            inset: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 10;
-            padding: 20px;
-        }
-        .menu-wrap {
-            width: 100%;
-            max-width: 420px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-        .menu-title {
-            text-align: center;
-            margin-bottom: 6px;
-        }
-        .menu-title .t1 {
-            font-family: var(--font-display);
-            font-weight: 800;
-            font-size: 36px;
-            letter-spacing: 4px;
-            color: var(--gold-soft);
-            text-shadow: 0 0 18px var(--gold), 0 0 50px rgba(232, 184, 75, 0.3);
-            line-height: 1.1;
-        }
-        .menu-title .t2 {
-            font-family: var(--font-mono);
-            font-size: 10px;
-            letter-spacing: 4px;
-            color: var(--cyan);
-            margin-top: 4px;
-        }
-        .online-badge {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            font-family: var(--font-mono);
-            font-size: 10px;
-            color: var(--green);
-            letter-spacing: 1.5px;
-        }
-        .online-dot {
-            width: 7px;
-            height: 7px;
-            border-radius: 50%;
-            background: var(--green);
-            box-shadow: 0 0 10px var(--green);
-            animation: pulse 1.8s ease-in-out infinite;
-        }
-        @keyframes pulse {
-            0%,
-            100% {
-                opacity: 1;
-            }
-            50% {
-                opacity: 0.3;
-            }
-        }
-
-        /* Profile card */
-        .profile-card {
-            padding: 22px 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 12px;
-        }
-        .avatar {
-            width: 76px;
-            height: 76px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-family: var(--font-display);
-            font-size: 28px;
-            color: #04050a;
-            background: radial-gradient(circle at 35% 30%, #3a4258, #171b28);
-            border: 2px solid var(--line);
-            box-shadow: 0 0 20px rgba(0, 229, 255, 0.12);
-            transition: all 0.2s ease;
-            overflow: hidden;
-        }
-        .avatar img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            border-radius: 50%;
-        }
-        .player-name {
-            font-family: var(--font-display);
-            font-size: 16px;
-            letter-spacing: 1px;
-            color: var(--text);
-        }
-        .player-rank {
-            font-family: var(--font-mono);
-            font-size: 10px;
-            color: var(--text-dim);
-            letter-spacing: 1.5px;
-        }
-
-        /* Map selector */
-        .map-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin: 4px 0 2px;
-        }
-        .map-card {
-            height: 80px;
-            padding: 10px;
-            cursor: pointer;
-            transition: all 0.15s ease;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-end;
-            position: relative;
-            overflow: hidden;
-        }
-        .map-card:hover {
-            transform: translateY(-2px);
-        }
-        .map-card.selected {
-            border-color: var(--green);
-            box-shadow: 0 0 20px rgba(57, 255, 136, 0.25);
-        }
-        .map-card .fill {
-            position: absolute;
-            inset: 0;
-            opacity: 0.5;
-        }
-        .map-card .content {
-            position: relative;
-            z-index: 1;
-        }
-        .map-card .map-tag {
-            font-family: var(--font-mono);
-            font-size: 8px;
-            color: var(--cyan);
-            letter-spacing: 1.5px;
-        }
-        .map-card .map-name {
-            font-family: var(--font-display);
-            font-size: 13px;
-            letter-spacing: 0.5px;
-        }
-
-        .footer-hint {
-            text-align: center;
-            font-family: var(--font-mono);
-            font-size: 9px;
-            color: var(--text-dim);
-            line-height: 1.6;
-            opacity: 0.6;
-        }
-
-        /* ===== SCREEN: GAME ===== */
-        #screen-game {
-            position: absolute;
-            inset: 0;
-            display: none;
-            z-index: 5;
-            background: #060a12;
-        }
-        #screen-game.active {
-            display: block;
-        }
-        #gameCanvas {
-            position: absolute;
-            inset: 0;
-            width: 100%;
-            height: 100%;
-            display: block;
-        }
-
-        /* HUD elements */
-        .hud-el {
-            position: absolute;
-            z-index: 20;
-            touch-action: none;
-            pointer-events: auto;
-        }
-        .hud-top {
-            top: 16px;
-            left: 16px;
-            right: 16px;
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            pointer-events: none;
-        }
-        .hud-top>* {
-            pointer-events: auto;
-        }
-
-        .map-label {
-            padding: 8px 16px;
-            font-family: var(--font-mono);
-            font-size: 11px;
-            letter-spacing: 1.5px;
-            color: var(--gold-soft);
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-        }
-        .map-label .coords {
-            font-size: 9px;
-            color: var(--text-dim);
-        }
-        .map-label .online {
-            font-size: 9px;
-            color: var(--green);
-        }
-
-        .icon-btn {
-            width: 38px;
-            height: 38px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            font-size: 16px;
-            background: var(--panel);
-            border: 1px solid var(--line);
-            clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
-            transition: 0.15s;
-        }
-        .icon-btn:hover {
-            background: rgba(0, 229, 255, 0.12);
-        }
-        .icon-row {
-            display: flex;
-            gap: 8px;
-        }
-
-        /* Joystick */
-        #joystick-zone {
-            bottom: 30px;
-            left: 30px;
-            width: 130px;
-            height: 130px;
-            z-index: 25;
-        }
-
-        /* Chat */
-        #chatPanel {
-            bottom: 30px;
-            left: 180px;
-            width: 260px;
-            max-height: 260px;
-            display: flex;
-            flex-direction: column;
-            background: var(--panel);
-            border: 1px solid var(--line);
-            clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
-            backdrop-filter: blur(8px);
-            overflow: hidden;
-            z-index: 20;
-            resize: both;
-            min-width: 180px;
-            min-height: 100px;
-        }
-        #chatPanel.collapsed {
-            max-height: 44px;
-            min-height: 44px;
-        }
-        #chatPanel.collapsed .chat-body,
-        #chatPanel.collapsed .chat-input-row {
-            display: none;
-        }
-        .chat-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px 12px;
-            cursor: grab;
-            border-bottom: 1px solid var(--line);
-            font-family: var(--font-mono);
-            font-size: 10px;
-            letter-spacing: 1.5px;
-            color: var(--cyan);
-            flex-shrink: 0;
-        }
-        .chat-header span:last-child {
-            cursor: pointer;
-            color: var(--text-dim);
-        }
-        .chat-body {
-            flex: 1;
-            overflow-y: auto;
-            padding: 8px 12px;
-            font-size: 12px;
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-            min-height: 60px;
-        }
-        .chat-body .msg {
-            line-height: 1.3;
-            word-break: break-word;
-        }
-        .chat-body .msg .tag {
-            font-weight: 700;
-            margin-right: 4px;
-        }
-        .chat-body .msg.sys {
-            color: var(--gold);
-            font-family: var(--font-mono);
-            font-size: 10px;
-        }
-        .chat-input-row {
-            display: flex;
-            border-top: 1px solid var(--line);
-            flex-shrink: 0;
-        }
-        .chat-input-row input {
-            flex: 1;
-            background: transparent;
-            border: none;
-            outline: none;
-            color: var(--text);
-            font-family: var(--font-body);
-            padding: 8px 12px;
-            font-size: 12px;
-        }
-        .chat-input-row button {
-            background: transparent;
-            border: none;
-            color: var(--cyan);
-            font-family: var(--font-mono);
-            padding: 0 14px;
-            cursor: pointer;
-            font-size: 11px;
-        }
-
-        /* FPS */
-        #fps-counter {
-            top: 16px;
-            right: 76px;
-            padding: 4px 12px;
-            font-family: var(--font-mono);
-            font-size: 10px;
-            color: var(--green);
-            background: var(--panel);
-            border: 1px solid var(--line);
-            clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
-        }
-
-        /* HUD edit mode */
-        .hud-dragging {
-            outline: 2px dashed var(--gold) !important;
-            outline-offset: 2px;
-            background: rgba(232, 184, 75, 0.06) !important;
-            cursor: move !important;
-        }
-
-        /* ===== SETTINGS OVERLAY ===== */
-        .overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(2, 3, 7, 0.7);
-            backdrop-filter: blur(6px);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 100;
-            padding: 20px;
-        }
-        .overlay.open {
-            display: flex;
-        }
-        .overlay-panel {
-            width: 100%;
-            max-width: 420px;
-            max-height: 80vh;
-            overflow-y: auto;
-            padding: 24px;
-            display: flex;
-            flex-direction: column;
-            gap: 14px;
-        }
-        .overlay-head {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .overlay-head .title {
-            font-family: var(--font-display);
-            font-size: 18px;
-            letter-spacing: 1px;
-            color: var(--gold-soft);
-        }
-        .overlay-close {
-            width: 32px;
-            height: 32px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            color: var(--text-dim);
-            border: 1px solid var(--line);
-            font-size: 16px;
-            transition: 0.15s;
-        }
-        .overlay-close:hover {
-            color: var(--red);
-            border-color: var(--red);
-        }
-
-        .setting-row {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-        .setting-row label {
-            font-family: var(--font-mono);
-            font-size: 10px;
-            color: var(--text-dim);
-            letter-spacing: 1px;
-            display: flex;
-            justify-content: space-between;
-        }
-        .setting-row input[type="range"] {
-            width: 100%;
-            accent-color: var(--cyan);
-            background: transparent;
-        }
-        .setting-row select {
-            background: rgba(0, 229, 255, 0.05);
-            border: 1px solid var(--line);
-            color: var(--text);
-            font-family: var(--font-body);
-            padding: 8px 10px;
-            font-size: 13px;
-            width: 100%;
-            border-radius: 0;
-        }
-        .hud-edit-row {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-        .hud-edit-row .btn {
-            flex: 1;
-            min-width: 60px;
-            padding: 8px;
-            font-size: 10px;
-        }
-
-                /* ===== TOAST ===== */
-        .toast {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%) translateY(-20px);
-            z-index: 200;
-            padding: 10px 24px;
-            font-family: var(--font-mono);
-            font-size: 11px;
-            letter-spacing: 1px;
-            opacity: 0;
-            pointer-events: none;
-            transition: all 0.25s ease;
-            background: var(--panel);
-            border: 1px solid var(--gold);
-            color: var(--gold-soft);
-            clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
-        }
-        .toast.show {
-            opacity: 1;
-            transform: translateX(-50%) translateY(0);
-        }
-
-        /* ===== RESPONSIVE ===== */
-        @media (max-width: 600px) {
-            .menu-title .t1 {
-                font-size: 28px;
-            }
-            .map-grid {
-                grid-template-columns: 1fr 1fr;
-                gap: 8px;
-            }
-            .map-card {
-                height: 64px;
-            }
-            .map-card .map-name {
-                font-size: 11px;
-            }
-            #joystick-zone {
-                width: 100px;
-                height: 100px;
-                bottom: 20px;
-                left: 20px;
-            }
-            #chatPanel {
-                width: 200px;
-                max-height: 180px;
-                left: 130px;
-                bottom: 20px;
-            }
-            .hud-top {
-                top: 10px;
-                left: 10px;
-                right: 10px;
-            }
-            .map-label {
-                font-size: 9px;
-                padding: 6px 12px;
-            }
-            .icon-btn {
-                width: 32px;
-                height: 32px;
-                font-size: 14px;
-            }
-            #fps-counter {
-                font-size: 9px;
-                padding: 2px 10px;
-                right: 56px;
-                top: 10px;
-            }
-        }
-        @media (orientation: landscape) and (max-height: 500px) {
-            .menu-wrap {
-                max-width: 360px;
-                gap: 8px;
-            }
-            .menu-title .t1 {
-                font-size: 26px;
-            }
-            .profile-card {
-                padding: 14px 16px;
-                gap: 8px;
-            }
-            .avatar {
-                width: 56px;
-                height: 56px;
-                font-size: 20px;
-            }
-            .map-card {
-                height: 56px;
-            }
-            #joystick-zone {
-                width: 90px;
-                height: 90px;
-            }
-            #chatPanel {
-                max-height: 140px;
-                width: 180px;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div id="app">
-        <!-- BG FX -->
-        <div class="grid-bg"></div>
-        <div class="glow-orb" style="top:-120px;left:-80px;background:var(--cyan);"></div>
-        <div class="glow-orb" style="bottom:-140px;right:-100px;background:var(--gold);"></div>
-        <div class="scanline"></div>
-        <div class="vignette"></div>
-        <div class="toast" id="toast"></div>
-
-        <!-- ===================== MENU / LOBBY ===================== -->
-        <div id="screen-menu">
-            <div class="menu-wrap">
-                <div class="menu-title">
-                    <div class="t1">VMI QUÂN ĐỘI</div>
-                    <div class="t2">TACTICAL NETWORK</div>
-                </div>
-                <div class="online-badge">
-                    <span class="online-dot"></span>
-                    <span id="onlineLabel">Đang kết nối...</span>
-                </div>
-
-                <div class="panel profile-card">
-                    <div class="avatar" id="avatarEl">?</div>
-                    <div class="player-name" id="playerNameEl">Chưa đăng nhập</div>
-                    <div class="player-rank" id="playerRankEl" style="display:none;"></div>
-                    <button class="discord-btn" id="btnLogin">
-                        <span>⬡</span> ĐĂNG NHẬP DISCORD
-                    </button>
-                    <button class="btn danger" id="btnLogout" style="display:none;">ĐĂNG XUẤT</button>
-                </div>
-
-                <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);letter-spacing:1px;padding:0 4px;">CHỌN BẢN ĐỒ</div>
-                <div class="map-grid" id="mapGrid">
-                    <!-- JS sẽ tạo -->
-                </div>
-
-                <button class="btn gold" id="btnEnterGame" disabled>🚀 VÀO GAME</button>
-                <button class="btn" id="btnSettingsMenu">⚙ CÀI ĐẶT</button>
-
-                <div class="footer-hint">
-                    Đăng nhập Discord để lưu dữ liệu · HUD có thể kéo thả khi chỉnh sửa
-                </div>
-            </div>
-        </div>
-
-        <!-- ===================== GAME SCREEN ===================== -->
-        <div id="screen-game">
-            <canvas id="gameCanvas"></canvas>
-
-            <!-- HUD Top -->
-            <div class="hud-top">
-                <div class="panel map-label hud-el" id="mapLabel" style="position:relative;top:0;left:0;">
-                    <span id="currentMapName">KHU HUẤN LUYỆN</span>
-                    <span class="coords" id="coordLabel">X:0 Y:0</span>
-                    <span class="online" id="onlineInMap">● 1 người</span>
-                </div>
-                <div class="icon-row">
-                    <div class="panel icon-btn hud-el" id="btnChatToggle" title="Chat">💬</div>
-                    <div class="panel icon-btn hud-el" id="btnSettingsGame" title="Cài đặt">⚙</div>
-                    <div class="panel icon-btn hud-el" id="btnExitGame" title="Về sảnh">✕</div>
-                </div>
-            </div>
-
-            <!-- FPS -->
-            <div class="panel hud-el" id="fps-counter">FPS: 60</div>
-
-            <!-- Joystick -->
-            <div class="hud-el" id="joystick-zone"></div>
-
-            <!-- Chat -->
-            <div class="hud-el" id="chatPanel">
-                <div class="chat-header" id="chatHeader">
-                    <span>💬 CHIẾN THUẬT</span>
-                    <span id="chatCollapseBtn">▁</span>
-                </div>
-                <div class="chat-body" id="chatBody"></div>
-                <div class="chat-input-row">
-                    <input id="chatInput" placeholder="Nhắn tin..." maxlength="200" />
-                    <button id="chatSendBtn">GỬI</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- ===================== SETTINGS OVERLAY ===================== -->
-        <div class="overlay" id="settingsOverlay">
-            <div class="panel overlay-panel">
-                <div class="overlay-head">
-                    <span class="title">⚙ CÀI ĐẶT</span>
-                    <div class="overlay-close" id="closeSettings">✕</div>
-                </div>
-
-                <div class="setting-row">
-                    <label>Đồ họa <span id="graphicsVal">Cao</span></label>
-                    <select id="graphicsSelect">
-                        <option value="low">Thấp</option>
-                        <option value="medium">Trung bình</option>
-                        <option value="high" selected>Cao</option>
-                    </select>
-                </div>
-                <div class="setting-row">
-                    <label>Zoom <span id="zoomVal">0.75x</span></label>
-                    <input type="range" id="zoomRange" min="0.4" max="1.4" step="0.05" value="0.75" />
-                </div>
-                <div class="setting-row">
-                    <label>Độ mờ HUD <span id="hudOpacityVal">90%</span></label>
-                    <input type="range" id="hudOpacityRange" min="0.2" max="1" step="0.05" value="0.9" />
-                </div>
-                <div class="setting-row">
-                    <label>Kích thước HUD <span id="hudScaleVal">100%</span></label>
-                    <input type="range" id="hudScaleRange" min="0.5" max="1.5" step="0.05" value="1" />
-                </div>
-                <div class="setting-row">
-                    <label style="margin-bottom:4px;">🖱 Chỉnh sửa HUD (kéo thả)</label>
-                    <div class="hud-edit-row">
-                        <button class="btn small" id="hudEditToggle">BẬT</button>
-                        <button class="btn small danger" id="hudResetBtn">ĐẶT LẠI</button>
-                    </div>
-                </div>
-                <button class="btn gold" id="settingsCloseBtn">ĐÓNG</button>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        // ================================================================
-        // 1. DISCORD LOGIN (PKCE)
-        // ================================================================
-        const CLIENT_ID = '1534238453871673414';
-        const REDIRECT_URI = window.location.origin + window.location.pathname;
-
-        function genVerifier() {
-            const arr = new Uint8Array(32);
-            crypto.getRandomValues(arr);
-            return btoa(String.fromCharCode(...arr)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
-        }
-        async function sha256(s) {
-            const d = new TextEncoder().encode(s);
-            const h = await crypto.subtle.digest('SHA-256', d);
-            return btoa(String.fromCharCode(...new Uint8Array(h))).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g,
-            '_');
-        }
-
-        function startDiscordLogin() {
-            const v = genVerifier();
-            sessionStorage.setItem('pkce_v', v);
-            sha256(v).then(ch => {
-                const url = new URL('https://discord.com/api/oauth2/authorize');
-                url.searchParams.set('client_id', CLIENT_ID);
-                url.searchParams.set('redirect_uri', REDIRECT_URI);
-                url.searchParams.set('response_type', 'code');
-                url.searchParams.set('scope', 'identify');
-                url.searchParams.set('code_challenge', ch);
-                url.searchParams.set('code_challenge_method', 'S256');
-                window.location.href = url.toString();
-            });
-        }
-
-        async function exchangeCode(code) {
-            const v = sessionStorage.getItem('pkce_v');
-            if (!v) throw new Error('No verifier');
-            const params = new URLSearchParams();
-            params.set('client_id', CLIENT_ID);
-            params.set('grant_type', 'authorization_code');
-            params.set('code', code);
-            params.set('redirect_uri', REDIRECT_URI);
-            params.set('code_verifier', v);
-            const res = await fetch('https://discord.com/api/oauth2/token', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: params.toString()
-            });
-            if (!res.ok) throw new Error(await res.text());
-            const data = await res.json();
-            return data.access_token;
-        }
-
-        async function fetchUser(token) {
-            const res = await fetch('https://discord.com/api/users/@me', {
-                headers: { 'Authorization': 'Bearer ' + token }
-            });
-            if (!res.ok) throw new Error('Failed to fetch user');
-            return res.json();
-        }
-
-        async function handleRedirect() {
-            const p = new URLSearchParams(window.location.search);
-            const code = p.get('code');
-            if (code) {
-                try {
-                    const token = await exchangeCode(code);
-                    const user = await fetchUser(token);
-                    localStorage.setItem('vmi_user', JSON.stringify(user));
-                    window.history.replaceState({}, '', window.location.pathname);
-                    return user;
-                } catch (e) { toast('Đăng nhập thất bại: ' + e.message); }
-            }
-            return null;
-        }
-
-        let currentUser = null;
-
-        function getSavedUser() {
-            try {
-                const d = localStorage.getItem('vmi_user');
-                return d ? JSON.parse(d) : null;
-            } catch { return null; }
-        }
-
-        // ================================================================
-        // 2. UI HELPERS
-        // ================================================================
-        function toast(msg) {
-            const el = document.getElementById('toast');
-            el.textContent = msg;
-            el.classList.add('show');
-            clearTimeout(el._t);
-            el._t = setTimeout(() => el.classList.remove('show'), 2200);
-        }
-
-        const MAPS = [
-            { id: 'map1', name: 'Khu Huấn Luyện', tag: 'TRAINING', color: '#00e5ff' },
-            { id: 'map2', name: 'Diễu Binh', tag: 'PARADE', color: '#ff2ea6' },
-            { id: 'map3', name: 'Thao Trường', tag: 'DRILL YARD', color: '#39ff88' },
-            { id: 'map4', name: 'Sự Kiện', tag: 'EVENT', color: '#e8b84b' }
-        ];
-        let selectedMap = MAPS[0];
-        let settings = {
-            graphics: 'high',
-            zoom: 0.75,
-            hudOpacity: 0.9,
-            hudScale: 1
-        };
-
-        function loadSettings() {
-            try {
-                const s = localStorage.getItem('vmi_settings');
-                if (s) settings = { ...settings, ...JSON.parse(s) };
-            } catch {}
-        }
-
-        function saveSettings() {
-            localStorage.setItem('vmi_settings', JSON.stringify(settings));
-        }
-
-        // ================================================================
-        // 3. LOBBY UI
-        // ================================================================
-        const avatarEl = document.getElementById('avatarEl');
-        const playerNameEl = document.getElementById('playerNameEl');
-        const playerRankEl = document.getElementById('playerRankEl');
-        const btnLogin = document.getElementById('btnLogin');
-        const btnLogout = document.getElementById('btnLogout');
-        const mapGrid = document.getElementById('mapGrid');
-        const btnEnter = document.getElementById('btnEnterGame');
-
-        function renderMaps() {
-            mapGrid.innerHTML = '';
-            MAPS.forEach(m => {
-                const card = document.createElement('div');
-                card.className = 'panel map-card' + (m.id === selectedMap.id ? ' selected' : '');
-                card.innerHTML = `
-              <div class="fill" style="background:radial-gradient(circle at 30% 20%, ${m.color}44, transparent 60%), linear-gradient(160deg, ${m.color}22, transparent);"></div>
-              <div class="content">
-                <div class="map-tag" style="color:${m.color};">${m.tag}</div>
-                <div class="map-name">${m.name}</div>
-              </div>
-            `;
-                card.addEventListener('click', () => {
-                    document.querySelectorAll('.map-card').forEach(c => c.classList.remove('selected'));
-                    card.classList.add('selected');
-                    selectedMap = m;
-                    btnEnter.disabled = false;
-                    toast('Đã chọn: ' + m.name);
-                });
-                mapGrid.appendChild(card);
-            });
-        }
-        renderMaps();
-
-        function updateUserUI(user) {
-            if (user) {
-                currentUser = user;
-                const av = user.avatar ?
-                    `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png` :
-                    `https://cdn.discordapp.com/embed/avatars/${Number(user.discriminator)%5}.png`;
-                avatarEl.innerHTML = `<img src="${av}" alt="avatar" />`;
-                playerNameEl.textContent = user.global_name || user.username;
-                playerRankEl.style.display = 'block';
-                playerRankEl.textContent = '● Đã đăng nhập';
-                btnLogin.style.display = 'none';
-                btnLogout.style.display = 'block';
-                btnEnter.disabled = !selectedMap;
-            } else {
-                currentUser = null;
-                avatarEl.innerHTML = '?';
-                playerNameEl.textContent = 'Chưa đăng nhập';
-                playerRankEl.style.display = 'none';
-                btnLogin.style.display = 'block';
-                btnLogout.style.display = 'none';
-                btnEnter.disabled = true;
-            }
-        }
-
-        btnLogin.addEventListener('click', () => { startDiscordLogin(); });
-        btnLogout.addEventListener('click', () => {
-            localStorage.removeItem('vmi_user');
-            updateUserUI(null);
-            toast('Đã đăng xuất');
-        });
-
-        // ================================================================
-        // 4. GAME ENGINE (Phaser)
-        // ================================================================
-        let game = null;
-        let scene = null;
-        let joystick = null;
-        let playerContainer = null;
-        let chatBubbleTimer = null;
-        let isChatCollapsed = false;
-
-        const canvas = document.getElementById('gameCanvas');
-
-        function initGame() {
-            if (game) { game.destroy(true);
-                game = null; }
-            const mapConf = {
-                bg: ['#1a3a2a', '#3a2a1a', '#08081a', '#2a3a3a'][MAPS.indexOf(selectedMap)] || '#1a3a2a',
-                grid: 0xffffff,
-                alpha: 0.12
-            };
-            const config = {
-                type: Phaser.CANVAS,
-                parent: document.getElementById('screen-game'),
-                canvas: canvas,
-                width: window.innerWidth,
-                height: window.innerHeight,
-                backgroundColor: mapConf.bg,
-                physics: { default: 'arcade', arcade: { debug: false } },
-                scene: { create: createScene, update: updateScene }
-            };
-            game = new Phaser.Game(config);
-            document.getElementById('screen-game').classList.add('active');
-            document.getElementById('currentMapName').textContent = selectedMap.name;
-            applyHudSettings();
-        }
-
-        function createScene() {
-            scene = this;
-            const mapConf = {
-                bg: ['#1a3a2a', '#3a2a1a', '#08081a', '#2a3a3a'][MAPS.indexOf(selectedMap)] || '#1a3a2a',
-                grid: 0xffffff,
-                alpha: 0.12
-            };
-            // Grid
-            const g = scene.add.graphics();
-            g.lineStyle(1, mapConf.grid, mapConf.alpha);
-            for (let x = 0; x <= 3000; x += 50) { g.moveTo(x, 0);
-                g.lineTo(x, 3000); }
-            for (let y = 0; y <= 3000; y += 50) { g.moveTo(0, y);
-                g.lineTo(3000, y); }
-            g.strokePath();
-
-            // Avatar
-const r = 26;
-const texKey = 'avatar_' + Date.now();
-const c = scene.textures.createCanvas(texKey, r * 2, r * 2);
-const ctx = c.context;
-ctx.beginPath();
-ctx.arc(r, r, r, 0, Math.PI * 2);
-ctx.closePath();
-ctx.clip();
-if (currentUser && currentUser.avatar) {
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => { 
-        ctx.drawImage(img, 0, 0, r * 2, r * 2);
-        c.refresh(); 
-    };
-    img.src = `https://cdn.discordapp.com/avatars/${currentUser.id}/${currentUser.avatar}.png`;
-} else {
-    ctx.fillStyle = '#ffcc00';
-    ctx.fillRect(0, 0, r * 2, r * 2);
-    ctx.fillStyle = '#000';
-    ctx.font = 'bold 24px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText((currentUser ? currentUser.username : 'V').charAt(0).toUpperCase(), r, r);
+<title>VMI TEST GAME</title>
+<style>
+body{
+    margin:0;
+    overflow:hidden;
+    background:#111;
 }
-c.refresh();
+#login{
+    position:absolute;
+    top:40%;
+    left:40%;
+}
+#game{
+    display:none;
+}
+#info{
+    position:absolute;
+    color:white;
+    top:10px;
+    left:10px;
+    font-size:20px;
+}
+</style>
+</head>
 
-const sprite = scene.add.image(0, 0, texKey);
+<body>
 
-    // Glow (viền sáng)
-const glow = scene.add.graphics();
-glow.lineStyle(3, 0xffcc00, 0.8);
-glow.strokeCircle(0, 0, r + 2);
+<div id="login">
+<a href="https://discord.com/oauth2/authorize?client_id=YOUR_CLIENT_ID&response_type=token&redirect_uri=YOUR_REDIRECT_URL&scope=identify">
+<button>Đăng nhập Discord</button>
+</a>
+</div>
 
-// Tên hiển thị
-const nameText = scene.add.text(
-    0,
-    r + 16,
-    currentUser ? (currentUser.global_name || currentUser.username) : 'Player',
-    {
-        fontSize: '13px',
-        fontFamily: 'Rajdhani',
-        fontWeight: '600',
-        fill: '#fff',
-        stroke: '#000',
-        strokeThickness: 3
-    }
-).setOrigin(0.5);
 
-// Bubble chat
-const bubbleBg = scene.add.graphics();
-const bubbleText = scene.add.text(0, 0, '', {
-    fontSize: '11px',
-    fill: '#000',
-    align: 'center',
-    wordWrap: { width: 130 }
-}).setOrigin(0.5);
-const bubble = scene.add.container(0, -50, [bubbleBg, bubbleText]).setVisible(false);
+<div id="game">
+<div id="info"></div>
+<canvas id="canvas"></canvas>
+</div>
 
-// Container nhân vật (gom tất cả thành 1 nhóm)
-playerContainer = scene.add.container(1500, 1500, [glow, sprite, nameText, bubble]);
 
-// Physics
-scene.physics.world.enable(playerContainer);
-playerContainer.body.setCollideWorldBounds(true);
-playerContainer.body.setSize(44, 44);
+<script>
 
-// Camera – theo dõi nhân vật
-const cam = scene.cameras.main;
-cam.startFollow(playerContainer, true, 0.1, 0.1);
-cam.setBounds(0, 0, 3000, 3000);
-cam.setZoom(settings.zoom);
-
-// Khởi tạo joystick
-initJoystick();
-
-// Callback hiển thị bubble chat (được gọi từ chat)
-window._showBubble = function(text) {
-    bubbleText.setText(text);
-    const b = bubbleText.getBounds();
-    const pad = 8;
-    bubbleBg.clear();
-    bubbleBg.fillStyle(0xffffff, 0.92);
-    bubbleBg.fillRoundedRect(
-        -b.width / 2 - pad,
-        -b.height / 2 - pad,
-        b.width + pad * 2,
-        b.height + pad * 2,
-        6
-    );
-    bubble.setVisible(true);
-    clearTimeout(chatBubbleTimer);
-    chatBubbleTimer = setTimeout(() => bubble.setVisible(false), 4000);
+let player={
+ x:400,
+ y:300,
+ speed:5,
+ name:""
 };
 
-// Cập nhật FPS (đã có trong update)
-document.getElementById('fps-counter').textContent = 'FPS: 60';
 
-// ================================================================
-// UPDATE SCENE (cập nhật mỗi frame)
-// ================================================================
-function updateScene() {
-    if (playerContainer) {
-        const p = playerContainer;
-        document.getElementById('coordLabel').textContent =
-            `X:${Math.round(p.x)} Y:${Math.round(p.y)}`;
-    }
+let keys={};
+
+
+window.onload=()=>{
+
+// TEST DATA
+let discord={
+ username:"Tester",
+ avatar:"https://cdn.discordapp.com/embed/avatars/0.png"
+};
+
+
+if(location.hash){
+    document.getElementById("login").style.display="none";
+    document.getElementById("game").style.display="block";
 }
 
 
-// ================================================================
-// GAME ENTRY / EXIT (sửa lỗi)
-// ================================================================
-function enterGameHandler() {
-    if (!currentUser) { toast('Vui lòng đăng nhập!'); return; }
-    if (!selectedMap) { toast('Chọn map trước!'); return; }
-    initGame();
-    document.getElementById('screen-menu').style.display = 'none';
-    toast('Đã vào ' + selectedMap.name);
+player.name=discord.username;
+
+
+document.getElementById("info").innerHTML=
+"👤 "+discord.username+
+"<br><img width='50' src='"+discord.avatar+"'>";
+
+startGame();
+
 }
 
-function exitGameHandler() {
-    destroyGame();
-    document.getElementById('screen-menu').style.display = 'flex';
-    toast('Đã về sảnh');
+
+
+document.addEventListener("keydown",
+e=>keys[e.key]=true);
+
+document.addEventListener("keyup",
+e=>keys[e.key]=false);
+
+
+
+function startGame(){
+
+let c=document.getElementById("canvas");
+let ctx=c.getContext("2d");
+
+c.width=innerWidth;
+c.height=innerHeight;
+
+
+function loop(){
+
+update();
+
+draw(ctx);
+
+requestAnimationFrame(loop);
+
 }
 
-// Gán sự kiện (đảm bảo phần tử tồn tại)
-document.addEventListener('DOMContentLoaded', function() {
-    const enterBtn = document.getElementById('btnEnterGame');
-    const exitBtn = document.getElementById('btnExitGame');
-    if (enterBtn) enterBtn.addEventListener('click', enterGameHandler);
-    else console.warn('Không tìm thấy nút VÀO GAME');
-    if (exitBtn) exitBtn.addEventListener('click', exitGameHandler);
-    else console.warn('Không tìm thấy nút THOÁT GAME');
-});
+loop();
 
-// ================================================================
-// JOYSTICK (khởi tạo nipplejs)
-// ================================================================
-function initJoystick() {
-    const zone = document.getElementById('joystick-zone');
-    zone.innerHTML = '';
-    if (joystick) { joystick.destroy(); joystick = null; }
-    const size = Math.min(130, zone.clientWidth || 130);
-    joystick = nipplejs.create({
-        zone: zone,
-        mode: 'static',
-        position: { left: '50%', top: '50%' },
-        color: 'white',
-        size: size,
-        restJoystick: true
-    });
-    joystick.on('move', (_, data) => {
-        if (!scene || !playerContainer || document.getElementById('hudEditToggle').textContent === 'TẮT') return;
-        const speed = 210;
-        playerContainer.body.setVelocity(
-            data.vector.x * speed,
-            -data.vector.y * speed
-        );
-    });
-    joystick.on('end', () => {
-        if (playerContainer) playerContainer.body.setVelocity(0, 0);
-    });
 }
 
-// ================================================================
-// DESTROY GAME
-// ================================================================
-function destroyGame() {
-    if (game) { game.destroy(true); game = null; scene = null; playerContainer = null; }
-    if (joystick) { joystick.destroy(); joystick = null; }
-    document.getElementById('screen-game').classList.remove('active');
-    document.getElementById('joystick-zone').innerHTML = '';
+
+
+function update(){
+
+if(keys["w"]){
+ player.y-=player.speed;
 }
 
-// ================================================================
-// CHAT LOGIC
-// ================================================================
-const chatBody = document.getElementById('chatBody');
-const chatInput = document.getElementById('chatInput');
-const chatSend = document.getElementById('chatSendBtn');
-
-function addChat(msg, sys = false) {
-    const d = document.createElement('div');
-    d.className = 'msg' + (sys ? ' sys' : '');
-    if (sys) {
-        d.textContent = '» ' + msg;
-    } else {
-        d.innerHTML =
-            `<span class="tag" style="color:#00e5ff;">[${currentUser?currentUser.username:'?'}]</span> ${msg}`;
-    }
-    chatBody.appendChild(d);
-    chatBody.scrollTop = chatBody.scrollHeight;
-    if (chatBody.children.length > 60) chatBody.removeChild(chatBody.firstChild);
-    // bubble
-    if (!sys && window._showBubble) window._showBubble(msg);
+if(keys["s"]){
+ player.y+=player.speed;
 }
 
-chatSend.addEventListener('click', sendChat);
-chatInput.addEventListener('keydown', e => { if (e.key === 'Enter') sendChat(); });
-
-function sendChat() {
-    const t = chatInput.value.trim();
-    if (!t || !currentUser) return;
-    chatInput.value = '';
-    addChat(t);
-    // Lưu local chat log
-    const log = JSON.parse(localStorage.getItem('vmi_chat') || '[]');
-    log.push({ user: currentUser.username, text: t, ts: Date.now() });
-    if (log.length > 100) log.shift();
-    localStorage.setItem('vmi_chat', JSON.stringify(log));
+if(keys["a"]){
+ player.x-=player.speed;
 }
 
-// Load chat log
-function loadChatLog() {
-    try {
-        const log = JSON.parse(localStorage.getItem('vmi_chat') || '[]');
-        log.slice(-30).forEach(entry => {
-            const d = document.createElement('div');
-            d.className = 'msg';
-            d.innerHTML =
-                `<span class="tag" style="color:#00e5ff;">[${entry.user}]</span> ${entry.text}`;
-            chatBody.appendChild(d);
-        });
-        chatBody.scrollTop = chatBody.scrollHeight;
-    } catch {}
-}
-loadChatLog();
-
-// Chat collapse
-document.getElementById('chatCollapseBtn').addEventListener('click', () => {
-    isChatCollapsed = !isChatCollapsed;
-    document.getElementById('chatPanel').classList.toggle('collapsed', isChatCollapsed);
-    document.getElementById('chatCollapseBtn').textContent = isChatCollapsed ? '▔' : '▁';
-});
-
-// Chat toggle (hiển thị/ẩn)
-document.getElementById('btnChatToggle').addEventListener('click', () => {
-    const p = document.getElementById('chatPanel');
-    p.style.display = p.style.display === 'none' ? 'flex' : 'none';
-});
-
-// ================================================================
-// HUD DRAGGING & SETTINGS
-// ================================================================
-let isHudEdit = false;
-let dragTarget = null;
-let dragOffX = 0, dragOffY = 0;
-
-function makeDraggable(el) {
-    el.addEventListener('pointerdown', (e) => {
-        if (!isHudEdit) return;
-        if (e.target.closest('button, input, .chat-header')) return;
-        dragTarget = el;
-        const r = el.getBoundingClientRect();
-        dragOffX = e.clientX - r.left;
-        dragOffY = e.clientY - r.top;
-        el.style.left = r.left + 'px';
-        el.style.top = r.top + 'px';
-        el.style.right = 'auto';
-        el.style.bottom = 'auto';
-        el.setPointerCapture(e.pointerId);
-        e.preventDefault();
-    });
-    el.addEventListener('pointermove', (e) => {
-        if (!dragTarget || dragTarget !== el) return;
-        const maxX = window.innerWidth - 40;
-        const maxY = window.innerHeight - 40;
-        el.style.left = Math.max(0, Math.min(maxX, e.clientX - dragOffX)) + 'px';
-        el.style.top = Math.max(0, Math.min(maxY, e.clientY - dragOffY)) + 'px';
-        e.preventDefault();
-    });
-    el.addEventListener('pointerup', () => { if (dragTarget === el) dragTarget = null; });
+if(keys["d"]){
+ player.x+=player.speed;
 }
 
-// Gán draggable cho tất cả .hud-el
-document.querySelectorAll('.hud-el').forEach(makeDraggable);
-// Chat header riêng (kéo cả khung)
-document.getElementById('chatHeader').addEventListener('pointerdown', (e) => {
-    if (!isHudEdit) return;
-    const el = document.getElementById('chatPanel');
-    dragTarget = el;
-    const r = el.getBoundingClientRect();
-    dragOffX = e.clientX - r.left;
-    dragOffY = e.clientY - r.top;
-    el.style.left = r.left + 'px';
-    el.style.top = r.top + 'px';
-    el.style.right = 'auto';
-    el.style.bottom = 'auto';
-    el.setPointerCapture(e.pointerId);
-    e.preventDefault();
-});
 
-document.getElementById('hudEditToggle').addEventListener('click', function() {
-    isHudEdit = !isHudEdit;
-    this.textContent = isHudEdit ? 'TẮT' : 'BẬT';
-    this.style.borderColor = isHudEdit ? 'var(--gold)' : 'var(--cyan)';
-    document.querySelectorAll('.hud-el').forEach(el => {
-        el.classList.toggle('hud-dragging', isHudEdit);
-        el.style.cursor = isHudEdit ? 'move' : 'default';
-    });
-    toast(isHudEdit ? 'Đã bật chỉnh sửa HUD (kéo thả)' : 'Đã tắt chỉnh sửa HUD');
-});
-
-document.getElementById('hudResetBtn').addEventListener('click', () => {
-    document.querySelectorAll('.hud-el').forEach(el => {
-        el.style.left = '';
-        el.style.top = '';
-        el.style.right = '';
-        el.style.bottom = '';
-        el.style.transform = '';
-        el.style.width = '';
-        el.style.height = '';
-    });
-    localStorage.removeItem('vmi_hud');
-    toast('Đã đặt lại vị trí HUD');
-});
-
-// Lưu / tải vị trí HUD
-function saveHudPositions() {
-    const data = {};
-    document.querySelectorAll('.hud-el').forEach(el => {
-        if (el.style.left || el.style.top) {
-            data[el.id || el.className] = {
-                left: el.style.left,
-                top: el.style.top,
-                width: el.style.width,
-                height: el.style.height
-            };
-        }
-    });
-    if (Object.keys(data).length) localStorage.setItem('vmi_hud', JSON.stringify(data));
 }
 
-function loadHudPositions() {
-    try {
-        const data = JSON.parse(localStorage.getItem('vmi_hud') || '{}');
-        Object.keys(data).forEach(key => {
-            const el = document.querySelector('#' + key + ', .' + key) || document.getElementById(key);
-            if (el) {
-                if (data[key].left) el.style.left = data[key].left;
-                if (data[key].top) el.style.top = data[key].top;
-                if (data[key].width) el.style.width = data[key].width;
-                if (data[key].height) el.style.height = data[key].height;
-            }
-        });
-    } catch {}
-}
-loadHudPositions();
-// Tự động lưu mỗi 5 giây
-setInterval(saveHudPositions, 5000);
 
-// ================================================================
-// SETTINGS OVERLAY
-// ================================================================
-const settingsOverlay = document.getElementById('settingsOverlay');
 
-function openSettings() {
-    document.getElementById('graphicsSelect').value = settings.graphics;
-    document.getElementById('zoomRange').value = settings.zoom;
-    document.getElementById('hudOpacityRange').value = settings.hudOpacity;
-    document.getElementById('hudScaleRange').value = settings.hudScale;
-    updateSettingsLabels();
-    settingsOverlay.classList.add('open');
-}
+function draw(ctx){
 
-function closeSettings() {
-    settingsOverlay.classList.remove('open');
-}
+ctx.clearRect(0,0,innerWidth,innerHeight);
 
-function updateSettingsLabels() {
-    document.getElementById('graphicsVal').textContent =
-        ({ low: 'Thấp', medium: 'Trung bình', high: 'Cao' })[settings.graphics] || 'Cao';
-    document.getElementById('zoomVal').textContent = settings.zoom.toFixed(2) + 'x';
-    document.getElementById('hudOpacityVal').textContent = Math.round(settings.hudOpacity * 100) + '%';
-    document.getElementById('hudScaleVal').textContent = Math.round(settings.hudScale * 100) + '%';
+
+// MAP
+ctx.fillStyle="#356b35";
+ctx.fillRect(0,0,2000,2000);
+
+
+// đường
+ctx.fillStyle="#777";
+ctx.fillRect(300,0,100,1000);
+
+
+// player
+ctx.fillStyle="blue";
+ctx.fillRect(
+player.x,
+player.y,
+40,
+40
+);
+
+
+// tên
+ctx.fillStyle="white";
+ctx.fillText(
+player.name,
+player.x,
+player.y-10
+);
+
+
 }
 
-function applyHudSettings() {
-    const opacity = settings.hudOpacity;
-    const scale = settings.hudScale;
-    document.querySelectorAll('.hud-el').forEach(el => {
-        el.style.opacity = opacity;
-        el.style.transform = `scale(${scale})`;
-        el.style.transformOrigin = 'top left';
-    });
-    // Camera zoom
-    if (scene && scene.cameras) {
-        scene.cameras.main.setZoom(settings.zoom);
-    }
-    saveSettings();
-}
 
-document.getElementById('graphicsSelect').addEventListener('change', function() {
-    settings.graphics = this.value;
-    updateSettingsLabels();
-    saveSettings();
-    toast('Đồ họa: ' + this.options[this.selectedIndex].text);
-});
-document.getElementById('zoomRange').addEventListener('input', function() {
-    settings.zoom = parseFloat(this.value);
-    updateSettingsLabels();
-    applyHudSettings();
-});
-document.getElementById('hudOpacityRange').addEventListener('input', function() {
-    settings.hudOpacity = parseFloat(this.value);
-    updateSettingsLabels();
-    applyHudSettings();
-});
-document.getElementById('hudScaleRange').addEventListener('input', function() {
-    settings.hudScale = parseFloat(this.value);
-    updateSettingsLabels();
-    applyHudSettings();
-});
-
-document.getElementById('btnSettingsMenu').addEventListener('click', openSettings);
-document.getElementById('btnSettingsGame').addEventListener('click', openSettings);
-document.getElementById('closeSettings').addEventListener('click', closeSettings);
-document.getElementById('settingsCloseBtn').addEventListener('click', closeSettings);
-
-// ================================================================
-// GAME ENTRY / EXIT
-// ================================================================
-btnEnter.addEventListener('click', () => {
-    if (!currentUser) { toast('Vui lòng đăng nhập!'); return; }
-    if (!selectedMap) { toast('Chọn map trước!'); return; }
-    initGame();
-    document.getElementById('screen-menu').style.display = 'none';
-    toast('Đã vào ' + selectedMap.name);
-});
-
-document.getElementById('btnExitGame').addEventListener('click', () => {
-    destroyGame();
-    document.getElementById('screen-menu').style.display = 'flex';
-    toast('Đã về sảnh');
-});
-
-// ================================================================
-// BOOT (khởi tạo toàn bộ)
-// ================================================================
-async function boot() {
-    loadSettings();
-    const user = await handleRedirect() || getSavedUser();
-    updateUserUI(user);
-    if (user) {
-        document.getElementById('onlineLabel').textContent = '● Đã đăng nhập';
-        if (!selectedMap) { selectedMap = MAPS[0]; renderMaps(); }
-        btnEnter.disabled = false;
-    } else {
-        document.getElementById('onlineLabel').textContent = '● Chưa đăng nhập';
-    }
-    applyHudSettings();
-    // Resize
-    window.addEventListener('resize', () => {
-        if (game) game.scale.resize(window.innerWidth, window.innerHeight);
-        if (document.getElementById('screen-game').classList.contains('active')) initJoystick();
-    });
-    window.addEventListener('orientationchange', () => {
-        setTimeout(() => {
-            if (game) game.scale.resize(window.innerWidth, window.innerHeight);
-            if (document.getElementById('screen-game').classList.contains('active')) initJoystick();
-        }, 300);
-    });
-}
-
-boot().catch(console.error);
-console.log('VMI Quân Đội loaded ✅');
-console.log('Client ID:', CLIENT_ID);
-console.log('Redirect URI:', REDIRECT_URI);
-console.log('⚠️ Nhớ cấu hình Redirect URI này trong Discord Developer Portal!');
 </script>
+
 </body>
 </html>
