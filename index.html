@@ -754,6 +754,137 @@
 </style>
 </head>
 <body>
+    <div id="app">
+
+    <div class="grid-bg"></div>
+    <div class="glow-orb" style="top:-120px;left:-80px;background:var(--cyan);"></div>
+    <div class="glow-orb" style="bottom:-140px;right:-100px;background:var(--gold);"></div>
+    <div class="scanline"></div>
+    <div class="vignette"></div>
+    <div class="toast" id="toast"></div>
+
+    <!-- ================= MENU ================= -->
+    <div id="screen-menu">
+
+        <div class="menu-wrap">
+
+            <div class="menu-title">
+                <div class="t1">VMI MAP</div>
+                <div class="t2">SEVER VMI</div>
+            </div>
+
+            <div class="online-badge">
+                <span class="online-dot"></span>
+                <span id="onlineLabel">Đang kết nối...</span>
+            </div>
+
+            <div class="panel profile-card">
+                <div class="avatar" id="avatarEl">?</div>
+
+                <div class="player-name" id="playerNameEl">
+                    Chưa đăng nhập
+                </div>
+
+                <div class="player-rank" id="playerRankEl" style="display:none;"></div>
+
+                <button class="discord-btn" id="btnLogin">
+                    ⬡ ĐĂNG NHẬP DISCORD
+                </button>
+
+                <button class="btn danger" id="btnLogout" style="display:none;">
+                    ĐĂNG XUẤT
+                </button>
+            </div>
+
+            <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);letter-spacing:1px;padding:0 4px;">
+                CHỌN KHU VỰC 
+            </div>
+
+            <div id="mapGrid" class="map-grid"></div>
+
+            <button id="btnEnterGame" class="btn gold" disabled>
+                VÀO GAME
+            </button>
+
+            <button id="btnSettingsMenu" class="btn">
+                ⚙ CÀI ĐẶT
+            </button>
+
+            <div class="footer-hint">
+                Đăng nhập Discord để lưu dữ liệu
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- ================= GAME ================= -->
+    <div id="screen-game" style="display:none;">
+
+        <canvas id="gameCanvas"></canvas>
+
+        <div class="hud-top">
+
+            <div class="panel map-label hud-el" id="mapLabel">
+                <span id="currentMapName">KHU HUẤN LUYỆN</span>
+                <span class="online" id="onlineInMap">● 1 người</span>
+            </div>
+
+            <div class="icon-row">
+
+                <div class="panel icon-btn hud-el"
+                     id="btnChatToggle"
+                     title="Chat">
+                    💬
+                </div>
+
+                <div class="panel icon-btn hud-el"
+                     id="btnSettingsGame"
+                     title="Cài đặt">
+                    ⚙
+                </div>
+
+                <div class="panel icon-btn hud-el"
+                     id="btnExitGame"
+                     title="Rời Map">
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="panel hud-el" id="fps-counter">
+            FPS: 60
+        </div>
+
+        <div id="joystick-zone" class="hud-el"></div>
+
+        <div id="chatPanel" class="hud-el">
+
+            <div class="chat-header" id="chatHeader">
+                <span>Trò chuyện</span>
+                <span id="chatCollapseBtn">💬</span>
+            </div>
+
+            <div id="chatBody" class="chat-body"></div>
+
+            <div class="chat-input-row">
+                <input
+                    id="chatInput"
+                    placeholder="Nhắn tin..."
+                    maxlength="200">
+
+                <button id="chatSendBtn">
+                    GỬI
+                </button>
+            </div>
+
+        </div>
+
+    </div>
+
+    </div>
+    
     <!-- SETTINGS OVERLAY -->
 <div class="overlay" id="settingsOverlay">
     <div class="panel overlay-panel">
@@ -1214,22 +1345,10 @@ function applyHudSettings() {
 }
 
 function openSettings() {
-    settingsOverlay.classList.add('open');
-    graphicsSelect.value = settings.graphics;
-    zoomRange.value = settings.zoom;
-    hudOpacityRange.value = settings.hudOpacity;
-    hudScaleRange.value = settings.hudScale;
-    soundRange.value = settings.sound;
-    applyHudSettings();
-}
-
-function closeSettingsOverlay() {
-
-function openSettings() {
     settingsOverlay.classList.add("open");
 
     graphicsSelect.value = settings.graphics || "high";
-    zoomRange.value = settings.zoom || 0.75;
+    zoomRange.value = settings.zoom || 0.70;
     hudOpacityRange.value = settings.hudOpacity || 0.9;
     hudScaleRange.value = settings.hudScale || 1;
     soundRange.value = settings.sound || 80;
@@ -1248,38 +1367,39 @@ btnSettingsGame.onclick = openSettings;
 closeSettings.onclick = closeSettingsOverlay;
 settingsCloseBtn.onclick = closeSettingsOverlay;
 
+    btnSettingsMenu.onclick = openSettings;
+btnSettingsGame.onclick = openSettings;
+
+document.getElementById("closeSettings").onclick = closeSettingsOverlay;
+document.getElementById("settingsCloseBtn").onclick = closeSettingsOverlay;
+
 graphicsSelect.onchange = function () {
     settings.graphics = this.value;
-    document.getElementById("graphicsVal").textContent =
-        this.options[this.selectedIndex].text;
+    graphicsVal.textContent = this.options[this.selectedIndex].text;
     applyHudSettings();
 };
 
 zoomRange.oninput = function () {
     settings.zoom = parseFloat(this.value);
-    document.getElementById("zoomVal").textContent =
-        settings.zoom.toFixed(2) + "x";
+    zoomVal.textContent = settings.zoom.toFixed(2) + "x";
     applyHudSettings();
 };
 
 hudOpacityRange.oninput = function () {
     settings.hudOpacity = parseFloat(this.value);
-    document.getElementById("hudOpacityVal").textContent =
-        Math.round(settings.hudOpacity * 100) + "%";
+    hudOpacityVal.textContent = Math.round(settings.hudOpacity * 100) + "%";
     applyHudSettings();
 };
 
 hudScaleRange.oninput = function () {
     settings.hudScale = parseFloat(this.value);
-    document.getElementById("hudScaleVal").textContent =
-        Math.round(settings.hudScale * 100) + "%";
+    hudScaleVal.textContent = Math.round(settings.hudScale * 100) + "%";
     applyHudSettings();
 };
 
 soundRange.oninput = function () {
     settings.sound = parseInt(this.value);
-    document.getElementById("soundVal").textContent =
-        settings.sound + "%";
+    soundVal.textContent = settings.sound + "%";
 };
 
 function applyHudSettings() {
