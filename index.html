@@ -288,49 +288,50 @@
         }
 
                 function createScene() {
-            // CẤU HÌNH MAP SUPER LARGE 80,000 x 80,000
-            const MAP_SIZE = 80000;
+            // KÍCH THƯỚC MAP TỐI ƯU CHO MOBILE (9,600 x 9,600 px)
+            const MAP_SIZE = 9600;
             scene.physics.world.setBounds(0, 0, MAP_SIZE, MAP_SIZE);
 
-            const startPos = MAP_SIZE / 2; // Tọa độ tâm Spawn (40000, 40000)
+            const startPos = MAP_SIZE / 2; // Tọa độ Spawn ở trung tâm map (4800, 4800)
 
-            // 1. NỀN CỎ XANH LÁ CÂY NHẠT
+            // 1. NỀN CỎ XANH LÁ NHẠT + LƯỚI ĐƯỜNG KẺ
             const bg = scene.add.graphics();
-            bg.fillStyle(0x4a7c59, 1); // Xanh lá nhạt
+            bg.fillStyle(0x5c8a67, 1); // Màu cỏ xanh nhạt dịu mắt
             bg.fillRect(0, 0, MAP_SIZE, MAP_SIZE);
-            bg.lineStyle(2, 0x3d6b4a, 0.3);
-            for (let x = 0; x <= MAP_SIZE; x += 150) bg.lineBetween(x, 0, x, MAP_SIZE);
-            for (let y = 0; y <= MAP_SIZE; y += 150) bg.lineBetween(0, y, MAP_SIZE, y);
+            bg.lineStyle(2, 0x4e7858, 0.3);
+            for (let x = 0; x <= MAP_SIZE; x += 120) bg.lineBetween(x, 0, x, MAP_SIZE);
+            for (let y = 0; y <= MAP_SIZE; y += 120) bg.lineBetween(0, y, MAP_SIZE, y);
 
-            // 2. KHU VỰC SPAWN (SÂN BÊ TÔNG TRẮNG & CỘT CỜ)
-            const spawnPlatform = scene.add.rectangle(startPos, startPos, 600, 600, 0xe0e0e0).setStrokeStyle(4, 0xcccccc);
+            // 2. KHU VỰC SPAWN (SÂN BÊ TÔNG TRẮNG & CỘT CỜ TRỰC QUAN)
+            const spawnPlatform = scene.add.rectangle(startPos, startPos, 500, 500, 0xeeeeee).setStrokeStyle(4, 0xcccccc);
 
-            // Cột cờ (Interactive - Bấm để kéo lên/xuống)
-            const flagBase = scene.add.circle(startPos, startPos, 25, 0x808080).setStrokeStyle(3, 0x333333);
-            const flagPole = scene.add.line(startPos, startPos, 0, 0, 0, -120, 0xffffff).setLineWidth(4);
-            const flag = scene.add.rectangle(startPos + 25, startPos - 30, 50, 30, 0xda251d); // Cờ đỏ
-            const flagStar = scene.add.polygon(startPos + 25, startPos - 30, [0,-6, 2,-2, 6,-2, 3,1, 4,5, 0,3, -4,5, -3,1, -6,-2, -2,-2], 0xffff00); // Sao vàng
+            // Bệ và Cột cờ
+            const flagBase = scene.add.circle(startPos, startPos, 22, 0x777777).setStrokeStyle(3, 0x333333);
+            const flagPole = scene.add.line(startPos, startPos, 0, 0, 0, -100, 0xffffff).setLineWidth(4);
+            const flag = scene.add.rectangle(startPos + 22, startPos - 25, 44, 26, 0xda251d); // Lá cờ đỏ
+            const flagStar = scene.add.polygon(startPos + 22, startPos - 25, [0,-5, 2,-1, 5,-1, 2,1, 3,4, 0,2, -3,4, -2,1, -5,-1, -2,-1], 0xffff00); // Sao vàng
             
-            let isFlagUp = false; // Trạng thái cờ
+            let isFlagUp = false;
             const flagGroup = scene.add.container(0, 0, [flag, flagStar]);
 
-            // Cho phép bấm vào cột cờ để kéo
+            // Bấm vào cột cờ để kéo lên / hạ xuống
             flagBase.setInteractive({ cursor: 'pointer' });
             flagBase.on('pointerdown', () => {
                 isFlagUp = !isFlagUp;
                 scene.tweens.add({
                     targets: flagGroup,
-                    y: isFlagUp ? -80 : 0,
-                    duration: 1500,
+                    y: isFlagUp ? -65 : 0,
+                    duration: 1200,
                     ease: 'Power2'
                 });
-                showRobloxBubbleChat(isFlagUp ? "Đã kéo cờ lên!" : "Đã hạ cờ xuống!");
+                if (typeof showRobloxBubbleChat === 'function') {
+                    showRobloxBubbleChat(isFlagUp ? "Đã kéo cờ!" : "Đã hạ cờ!");
+                }
             });
 
             // 3. KHU VỰC PAD ĐỨNG (6 CỤM - MỖI CỤM 8 NGANG x 6 DÀI)
-            const padGroup = scene.add.group();
-            const clusterOffsetX = [-500, 0, 500, -500, 0, 500];
-            const clusterOffsetY = [-900, -900, -900, -1400, -1400, -1400];
+            const clusterOffsetX = [-400, 0, 400, -400, 0, 400];
+            const clusterOffsetY = [-700, -700, -700, -1100, -1100, -1100];
 
             for (let c = 0; c < 6; c++) {
                 const baseX = startPos + clusterOffsetX[c];
@@ -338,61 +339,53 @@
 
                 for (let row = 0; row < 6; row++) {
                     for (let col = 0; col < 8; col++) {
-                        const px = baseX + (col - 3.5) * 45;
-                        const py = baseY + (row - 2.5) * 45;
-                        const pad = scene.add.rectangle(px, py, 35, 35, 0xffffff, 0.85).setStrokeStyle(2, 0x00e5ff);
-                        padGroup.add(pad);
+                        const px = baseX + (col - 3.5) * 40;
+                        const py = baseY + (row - 2.5) * 40;
+                        scene.add.rectangle(px, py, 30, 30, 0xffffff, 0.9).setStrokeStyle(2, 0x00e5ff);
                     }
                 }
             }
 
-            // 4. CỔNG GÁC, HÀNG RÀO VÀNG VÀ VẬT LÝ NỔI (ĐI THẲNG TỪ SPAWN QUA PAD)
-            const gateY = startPos - 1900; // Vị trí cổng gác phía trên
+            // 4. CỔNG GÁC, HÀNG RÀO VÀNG (CÓ VA CHẠM KHÔNG THỂ ĐI QUA)
+            const gateY = startPos - 1500;
             
-            // 2 Cột màu đỏ đậm
-            const pillarLeft = scene.add.rectangle(startPos - 200, gateY, 40, 40, 0x8b0000).setStrokeStyle(2, 0x000000);
-            const pillarRight = scene.add.rectangle(startPos + 200, gateY, 40, 40, 0x8b0000).setStrokeStyle(2, 0x000000);
+            // 2 Cột đỏ đậm
+            const pillarLeft = scene.add.rectangle(startPos - 180, gateY, 40, 40, 0x8b0000).setStrokeStyle(2, 0x000000);
+            const pillarRight = scene.add.rectangle(startPos + 180, gateY, 40, 40, 0x8b0000).setStrokeStyle(2, 0x000000);
             
-            // Hàng rào màu vàng hai bên (Không thể đi qua)
-            const fenceLeft = scene.add.rectangle(startPos - 1200, gateY, 1960, 20, 0xffd700).setStrokeStyle(2, 0xb8860b);
-            const fenceRight = scene.add.rectangle(startPos + 1200, gateY, 1960, 20, 0xffd700).setStrokeStyle(2, 0xb8860b);
+            // Hàng rào vàng 2 bên cổng
+            const fenceLeft = scene.add.rectangle(startPos - 1200, gateY, 2000, 18, 0xffd700).setStrokeStyle(2, 0xb8860b);
+            const fenceRight = scene.add.rectangle(startPos + 1200, gateY, 2000, 18, 0xffd700).setStrokeStyle(2, 0xb8860b);
 
-            // Bật vật lý cản đường cho Cột và Hàng Rào
+            // Tạo nhóm vật thể đứng yên để cản đường
             const obstacles = scene.physics.add.staticGroup();
             obstacles.addMultiple([pillarLeft, pillarRight, fenceLeft, fenceRight]);
 
-            // 5. ĐƯỜNG BÊ TÔNG NGOÀI CỔNG VÀ HÀNG CÂY XANH
-            const roadWidth = 500;
-            const roadHeight = 3000;
-            // Đường bê tông xám rộng chạy từ cổng ra ngoài
-            const road = scene.add.rectangle(startPos, gateY - roadHeight / 2, roadWidth, roadHeight, 0x555555);
-            // Đường kẻ vạch sơn vàng ở giữa đường
-            const roadLine = scene.add.line(startPos, gateY - roadHeight / 2, 0, -roadHeight / 2, 0, roadHeight / 2, 0xffd700).setLineWidth(6);
-
-            // Hàng cây xanh dọc 2 bên đường bê tông
-            for (let y = gateY - 100; y > gateY - roadHeight; y -= 120) {
-                // Cây bên trái
-                scene.add.circle(startPos - roadWidth / 2 - 40, y, 30, 0x1e5631).setStrokeStyle(2, 0x0f381d);
-                // Cây bên phải
-                scene.add.circle(startPos + roadWidth / 2 + 40, y, 30, 0x1e5631).setStrokeStyle(2, 0x0f381d);
+            // 5. ĐƯỜNG BÊ TÔNG RỘNG CHO XE & HÀNG CÂY XANH DỌC ĐƯỜNG
+            const roadWidth = 450;
+            const roadHeight = 2500;
+            // Mặt đường xám
+            scene.add.rectangle(startPos, gateY - roadHeight / 2, roadWidth, roadHeight, 0x444444);
+            // Vạch đứt tim đường màu vàng
+            for (let ly = gateY; ly > gateY - roadHeight; ly -= 80) {
+                scene.add.rectangle(startPos, ly - 20, 8, 40, 0xffd700);
             }
 
-            // 6. KHỞI TẠO PLAYER (AVATAR CẮT TRÒN)
-            const avatarSprite = scene.add.image(0, 0, 'p_avatar').setDisplaySize(50, 50);
-            const maskShape = scene.make.graphics();
-            maskShape.fillStyle(0xffffff);
-            maskShape.fillCircle(0, 0, 25);
-            avatarSprite.setMask(maskShape.createGeometryMask());
+            // Trồng hàng cây xanh hai bên đường bê tông
+            for (let cy = gateY - 80; cy > gateY - roadHeight; cy -= 110) {
+                scene.add.circle(startPos - roadWidth / 2 - 35, cy, 28, 0x1e5631).setStrokeStyle(2, 0x0a2912);
+                scene.add.circle(startPos + roadWidth / 2 + 35, cy, 28, 0x1e5631).setStrokeStyle(2, 0x0a2912);
+            }
 
-            const avatarBorder = scene.add.graphics();
-            avatarBorder.lineStyle(3, 0x00e5ff, 1);
-            avatarBorder.strokeCircle(0, 0, 25);
+            // 6. KHỞI TẠO PLAYER (AVATAR TRÒN KHÔNG BỊ LỖI MÀN HÌNH ĐEN)
+            const playerBody = scene.add.circle(0, 0, 22, 0x00e5ff).setStrokeStyle(3, 0xffffff);
+            const playerEye = scene.add.circle(12, 0, 5, 0x000000);
 
-            const nameText = scene.add.text(0, -38, currentUser ? currentUser.username : 'Player', {
+            const nameText = scene.add.text(0, -38, currentUser ? (currentUser.global_name || currentUser.username) : 'Player', {
                 font: 'bold 14px Rajdhani', fill: '#ffffff', stroke: '#000000', strokeThickness: 4
             }).setOrigin(0.5);
 
-            // Khung chat trên đầu (Bubble Chat kiểu Roblox)
+            // Bubble Chat kiểu Roblox
             speechBubble = scene.add.container(0, -75).setVisible(false);
             const bubbleBg = scene.add.graphics();
             const bubbleText = scene.add.text(0, 0, '', {
@@ -402,21 +395,13 @@
             speechBubble.bubbleBg = bubbleBg;
             speechBubble.bubbleText = bubbleText;
 
-            // Spawn nhân vật trên Sân Bê Tông Trắng
-            playerContainer = scene.add.container(startPos, startPos + 100, [avatarSprite, avatarBorder, nameText, speechBubble]);
-            
-            // Cập nhật Mask theo nhân vật
-            scene.events.on('postupdate', () => {
-                if (playerContainer) {
-                    maskShape.x = playerContainer.x;
-                    maskShape.y = playerContainer.y;
-                }
-            });
+            // Spawn nhân vật tại Sân Bê Tông Trắng
+            playerContainer = scene.add.container(startPos, startPos + 80, [playerBody, playerEye, nameText, speechBubble]);
 
             scene.physics.world.enable(playerContainer);
             playerContainer.body.setCollideWorldBounds(true);
 
-            // Thêm va chạm giữa Player và Hàng Rào/Cột Gác
+            // Bật va chạm giữa Player và Hàng rào / Cột gác
             scene.physics.add.collider(playerContainer, obstacles);
 
             // Camera Follow
@@ -424,7 +409,8 @@
             cam.startFollow(playerContainer, true, 0.1, 0.1);
             cam.setBounds(0, 0, MAP_SIZE, MAP_SIZE);
             cam.setZoom(parseFloat(document.getElementById('setZoom').value));
-        }
+                }
+                
         
         function initJoystick() {
             const zone = document.getElementById('joystick-zone');
