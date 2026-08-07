@@ -1271,12 +1271,13 @@ function initJoystick() {
     });
 
     joystick.on("move", (_, d) => {
-    joystick.vector = d.vector;
-});
+        joystick.vector = d.vector;
+    });
 
-joystick.on("end", () => {
-    joystick.vector = { x: 0, y: 0 };
-});
+    joystick.on("end", () => {
+        joystick.vector = { x: 0, y: 0 };
+    });
+        }
 
 
 function addMessage(text, type = 'normal') {
