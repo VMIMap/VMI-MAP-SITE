@@ -287,20 +287,97 @@
             scene.load.image('p_avatar', avUrl);
         }
 
-        function createScene() {
+                function createScene() {
             // CẤU HÌNH MAP SUPER LARGE 80,000 x 80,000
             const MAP_SIZE = 80000;
             scene.physics.world.setBounds(0, 0, MAP_SIZE, MAP_SIZE);
 
-            // Nền Map Grid
-            const bg = scene.add.graphics();
-            bg.fillStyle(0x131a29, 1);
-            bg.fillRect(0, 0, MAP_SIZE, MAP_SIZE);
-            bg.lineStyle(3, 0x00e5ff, 0.12);
-            for (let x = 0; x <= MAP_SIZE; x += 120) bg.lineBetween(x, 0, x, MAP_SIZE);
-            for (let y = 0; y <= MAP_SIZE; y += 120) bg.lineBetween(0, y, MAP_SIZE, y);
+            const startPos = MAP_SIZE / 2; // Tọa độ tâm Spawn (40000, 40000)
 
-            // TẠO AVATAR HÌNH TRÒN SẮC NÉT
+            // 1. NỀN CỎ XANH LÁ CÂY NHẠT
+            const bg = scene.add.graphics();
+            bg.fillStyle(0x4a7c59, 1); // Xanh lá nhạt
+            bg.fillRect(0, 0, MAP_SIZE, MAP_SIZE);
+            bg.lineStyle(2, 0x3d6b4a, 0.3);
+            for (let x = 0; x <= MAP_SIZE; x += 150) bg.lineBetween(x, 0, x, MAP_SIZE);
+            for (let y = 0; y <= MAP_SIZE; y += 150) bg.lineBetween(0, y, MAP_SIZE, y);
+
+            // 2. KHU VỰC SPAWN (SÂN BÊ TÔNG TRẮNG & CỘT CỜ)
+            const spawnPlatform = scene.add.rectangle(startPos, startPos, 600, 600, 0xe0e0e0).setStrokeStyle(4, 0xcccccc);
+
+            // Cột cờ (Interactive - Bấm để kéo lên/xuống)
+            const flagBase = scene.add.circle(startPos, startPos, 25, 0x808080).setStrokeStyle(3, 0x333333);
+            const flagPole = scene.add.line(startPos, startPos, 0, 0, 0, -120, 0xffffff).setLineWidth(4);
+            const flag = scene.add.rectangle(startPos + 25, startPos - 30, 50, 30, 0xda251d); // Cờ đỏ
+            const flagStar = scene.add.polygon(startPos + 25, startPos - 30, [0,-6, 2,-2, 6,-2, 3,1, 4,5, 0,3, -4,5, -3,1, -6,-2, -2,-2], 0xffff00); // Sao vàng
+            
+            let isFlagUp = false; // Trạng thái cờ
+            const flagGroup = scene.add.container(0, 0, [flag, flagStar]);
+
+            // Cho phép bấm vào cột cờ để kéo
+            flagBase.setInteractive({ cursor: 'pointer' });
+            flagBase.on('pointerdown', () => {
+                isFlagUp = !isFlagUp;
+                scene.tweens.add({
+                    targets: flagGroup,
+                    y: isFlagUp ? -80 : 0,
+                    duration: 1500,
+                    ease: 'Power2'
+                });
+                showRobloxBubbleChat(isFlagUp ? "Đã kéo cờ lên!" : "Đã hạ cờ xuống!");
+            });
+
+            // 3. KHU VỰC PAD ĐỨNG (6 CỤM - MỖI CỤM 8 NGANG x 6 DÀI)
+            const padGroup = scene.add.group();
+            const clusterOffsetX = [-500, 0, 500, -500, 0, 500];
+            const clusterOffsetY = [-900, -900, -900, -1400, -1400, -1400];
+
+            for (let c = 0; c < 6; c++) {
+                const baseX = startPos + clusterOffsetX[c];
+                const baseY = startPos + clusterOffsetY[c];
+
+                for (let row = 0; row < 6; row++) {
+                    for (let col = 0; col < 8; col++) {
+                        const px = baseX + (col - 3.5) * 45;
+                        const py = baseY + (row - 2.5) * 45;
+                        const pad = scene.add.rectangle(px, py, 35, 35, 0xffffff, 0.85).setStrokeStyle(2, 0x00e5ff);
+                        padGroup.add(pad);
+                    }
+                }
+            }
+
+            // 4. CỔNG GÁC, HÀNG RÀO VÀNG VÀ VẬT LÝ NỔI (ĐI THẲNG TỪ SPAWN QUA PAD)
+            const gateY = startPos - 1900; // Vị trí cổng gác phía trên
+            
+            // 2 Cột màu đỏ đậm
+            const pillarLeft = scene.add.rectangle(startPos - 200, gateY, 40, 40, 0x8b0000).setStrokeStyle(2, 0x000000);
+            const pillarRight = scene.add.rectangle(startPos + 200, gateY, 40, 40, 0x8b0000).setStrokeStyle(2, 0x000000);
+            
+            // Hàng rào màu vàng hai bên (Không thể đi qua)
+            const fenceLeft = scene.add.rectangle(startPos - 1200, gateY, 1960, 20, 0xffd700).setStrokeStyle(2, 0xb8860b);
+            const fenceRight = scene.add.rectangle(startPos + 1200, gateY, 1960, 20, 0xffd700).setStrokeStyle(2, 0xb8860b);
+
+            // Bật vật lý cản đường cho Cột và Hàng Rào
+            const obstacles = scene.physics.add.staticGroup();
+            obstacles.addMultiple([pillarLeft, pillarRight, fenceLeft, fenceRight]);
+
+            // 5. ĐƯỜNG BÊ TÔNG NGOÀI CỔNG VÀ HÀNG CÂY XANH
+            const roadWidth = 500;
+            const roadHeight = 3000;
+            // Đường bê tông xám rộng chạy từ cổng ra ngoài
+            const road = scene.add.rectangle(startPos, gateY - roadHeight / 2, roadWidth, roadHeight, 0x555555);
+            // Đường kẻ vạch sơn vàng ở giữa đường
+            const roadLine = scene.add.line(startPos, gateY - roadHeight / 2, 0, -roadHeight / 2, 0, roadHeight / 2, 0xffd700).setLineWidth(6);
+
+            // Hàng cây xanh dọc 2 bên đường bê tông
+            for (let y = gateY - 100; y > gateY - roadHeight; y -= 120) {
+                // Cây bên trái
+                scene.add.circle(startPos - roadWidth / 2 - 40, y, 30, 0x1e5631).setStrokeStyle(2, 0x0f381d);
+                // Cây bên phải
+                scene.add.circle(startPos + roadWidth / 2 + 40, y, 30, 0x1e5631).setStrokeStyle(2, 0x0f381d);
+            }
+
+            // 6. KHỞI TẠO PLAYER (AVATAR CẮT TRÒN)
             const avatarSprite = scene.add.image(0, 0, 'p_avatar').setDisplaySize(50, 50);
             const maskShape = scene.make.graphics();
             maskShape.fillStyle(0xffffff);
@@ -325,11 +402,10 @@
             speechBubble.bubbleBg = bubbleBg;
             speechBubble.bubbleText = bubbleText;
 
-            // Spawn chính giữa map 80,000
-            const startPos = MAP_SIZE / 2;
-            playerContainer = scene.add.container(startPos, startPos, [avatarSprite, avatarBorder, nameText, speechBubble]);
+            // Spawn nhân vật trên Sân Bê Tông Trắng
+            playerContainer = scene.add.container(startPos, startPos + 100, [avatarSprite, avatarBorder, nameText, speechBubble]);
             
-            // Mask di chuyển theo Container
+            // Cập nhật Mask theo nhân vật
             scene.events.on('postupdate', () => {
                 if (playerContainer) {
                     maskShape.x = playerContainer.x;
@@ -340,52 +416,16 @@
             scene.physics.world.enable(playerContainer);
             playerContainer.body.setCollideWorldBounds(true);
 
+            // Thêm va chạm giữa Player và Hàng Rào/Cột Gác
+            scene.physics.add.collider(playerContainer, obstacles);
+
             // Camera Follow
             const cam = scene.cameras.main;
             cam.startFollow(playerContainer, true, 0.1, 0.1);
             cam.setBounds(0, 0, MAP_SIZE, MAP_SIZE);
             cam.setZoom(parseFloat(document.getElementById('setZoom').value));
         }
-
-        function updateScene() {
-            if (!playerContainer || isEditHUD) return;
-            const speed = 260;
-            playerContainer.body.setVelocity(moveVector.x * speed, moveVector.y * speed);
-
-            if (moveVector.x !== 0 || moveVector.y !== 0) {
-                const angle = Math.atan2(moveVector.y, moveVector.x);
-                playerContainer.setRotation(angle);
-                if (speechBubble) speechBubble.setRotation(-angle); // Giữ tin nhắn luôn nằm thẳng
-            }
-        }
-
-        function showRobloxBubbleChat(msg) {
-            if (!speechBubble) return;
-            const txt = speechBubble.bubbleText;
-            const bg = speechBubble.bubbleBg;
-
-            txt.setText(msg);
-            const w = txt.width + 16;
-            const h = txt.height + 10;
-
-            bg.clear();
-            bg.fillStyle(0xffffff, 0.95);
-            bg.fillRoundedRect(-w/2, -h/2, w, h, 8);
-            bg.lineStyle(2, 0x00e5ff, 1);
-            bg.strokeRoundedRect(-w/2, -h/2, w, h, 8);
-
-            speechBubble.setVisible(true);
-            speechBubble.setAlpha(1);
-
-            if (speechBubble.timer) speechBubble.timer.remove();
-            speechBubble.timer = scene.time.delayedCall(5000, () => {
-                scene.tweens.add({
-                    targets: speechBubble, alpha: 0, duration: 500,
-                    onComplete: () => speechBubble.setVisible(false)
-                });
-            });
-        }
-
+        
         function initJoystick() {
             const zone = document.getElementById('joystick-zone');
             zone.innerHTML = '';
