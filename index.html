@@ -287,121 +287,130 @@
             scene.load.image('p_avatar', avUrl);
         }
 
+                function createScene() {
+            // KÍCH THƯỚC MAP TỐI ƯU CHO MOBILE (9,600 x 9,600 px)
+            const MAP_SIZE = 9600;
+            scene.physics.world.setBounds(0, 0, MAP_SIZE, MAP_SIZE);
 
-        function createScene() {
-    // KÍCH THƯỚC MAP TỐI ƯU CHO MOBILE (9,600 x 9,600 px)
-    const MAP_SIZE = 9600;
-    scene.physics.world.setBounds(0, 0, MAP_SIZE, MAP_SIZE);
+            const startPos = MAP_SIZE / 2; // Tọa độ Spawn ở trung tâm map (4800, 4800)
 
-    const startPos = MAP_SIZE / 2; // Tọa độ Spawn ở trung tâm map (4800, 4800)
+            // 1. NỀN CỎ XANH LÁ NHẠT + LƯỚI ĐƯỜNG KẺ
+            const bg = scene.add.graphics();
+            bg.fillStyle(0x5c8a67, 1); // Màu cỏ xanh nhạt dịu mắt
+            bg.fillRect(0, 0, MAP_SIZE, MAP_SIZE);
+            bg.lineStyle(2, 0x4e7858, 0.3);
+            for (let x = 0; x <= MAP_SIZE; x += 120) bg.lineBetween(x, 0, x, MAP_SIZE);
+            for (let y = 0; y <= MAP_SIZE; y += 120) bg.lineBetween(0, y, MAP_SIZE, y);
 
-    // 1. NỀN CỎ XANH LÁ NHẠT + LƯỚI ĐƯỜNG KẺ
-    const bg = scene.add.graphics();
-    bg.fillStyle(0x5c8a67, 1);
-    bg.fillRect(0, 0, MAP_SIZE, MAP_SIZE);
-    bg.lineStyle(2, 0x4e7858, 0.3);
-    for (let x = 0; x <= MAP_SIZE; x += 120) bg.lineBetween(x, 0, x, MAP_SIZE);
-    for (let y = 0; y <= MAP_SIZE; y += 120) bg.lineBetween(0, y, MAP_SIZE, y);
+            // 2. KHU VỰC SPAWN (SÂN BÊ TÔNG TRẮNG & CỘT CỜ TRỰC QUAN)
+            const spawnPlatform = scene.add.rectangle(startPos, startPos, 500, 500, 0xeeeeee).setStrokeStyle(4, 0xcccccc);
 
-    // 2. KHU VỰC SPAWN (SÂN BÊ TÔNG TRẮNG & CỘT CỜ TRỰC QUAN)
-    const spawnPlatform = scene.add.rectangle(startPos, startPos, 500, 500, 0xeeeeee).setStrokeStyle(4, 0xcccccc);
+            // Bệ và Cột cờ
+            const flagBase = scene.add.circle(startPos, startPos, 22, 0x777777).setStrokeStyle(3, 0x333333);
+            const flagPole = scene.add.line(startPos, startPos, 0, 0, 0, -100, 0xffffff).setLineWidth(4);
+            const flag = scene.add.rectangle(startPos + 22, startPos - 25, 44, 26, 0xda251d); // Lá cờ đỏ
+            const flagStar = scene.add.polygon(startPos + 22, startPos - 25, [0,-5, 2,-1, 5,-1, 2,1, 3,4, 0,2, -3,4, -2,1, -5,-1, -2,-1], 0xffff00); // Sao vàng
+            
+            let isFlagUp = false;
+            const flagGroup = scene.add.container(0, 0, [flag, flagStar]);
 
-    const flagBase = scene.add.circle(startPos, startPos, 22, 0x777777).setStrokeStyle(3, 0x333333);
-    const flagPole = scene.add.line(startPos, startPos, 0, 0, 0, -100, 0xffffff).setLineWidth(4);
-    const flag = scene.add.rectangle(startPos + 22, startPos - 25, 44, 26, 0xda251d);
-    const flagStar = scene.add.polygon(startPos + 22, startPos - 25, [0,-5, 2,-1, 5,-1, 2,1, 3,4, 0,2, -3,4, -2,1, -5,-1, -2,-1], 0xffff00);
+            // Bấm vào cột cờ để kéo lên / hạ xuống
+            flagBase.setInteractive({ cursor: 'pointer' });
+            flagBase.on('pointerdown', () => {
+                isFlagUp = !isFlagUp;
+                scene.tweens.add({
+                    targets: flagGroup,
+                    y: isFlagUp ? -65 : 0,
+                    duration: 1200,
+                    ease: 'Power2'
+                });
+                if (typeof showRobloxBubbleChat === 'function') {
+                    showRobloxBubbleChat(isFlagUp ? "Đã kéo cờ!" : "Đã hạ cờ!");
+                }
+            });
 
-    let isFlagUp = false;
-    const flagGroup = scene.add.container(0, 0, [flag, flagStar]);
+            // 3. KHU VỰC PAD ĐỨNG (6 CỤM - MỖI CỤM 8 NGANG x 6 DÀI)
+            const clusterOffsetX = [-400, 0, 400, -400, 0, 400];
+            const clusterOffsetY = [-700, -700, -700, -1100, -1100, -1100];
 
-    flagBase.setInteractive({ cursor: 'pointer' });
-    flagBase.on('pointerdown', () => {
-        isFlagUp = !isFlagUp;
-        scene.tweens.add({
-            targets: flagGroup,
-            y: isFlagUp ? -65 : 0,
-            duration: 1200,
-            ease: 'Power2'
-        });
-        if (typeof showRobloxBubbleChat === 'function') {
-            showRobloxBubbleChat(isFlagUp ? "Đã kéo cờ!" : "Đã hạ cờ!");
-        }
-    });
+            for (let c = 0; c < 6; c++) {
+                const baseX = startPos + clusterOffsetX[c];
+                const baseY = startPos + clusterOffsetY[c];
 
-    // 3. KHU VỰC PAD ĐỨNG (6 CỤM - MỖI CỤM 8 NGANG x 6 DÀI)
-    const clusterOffsetX = [-400, 0, 400, -400, 0, 400];
-    const clusterOffsetY = [-700, -700, -700, -1100, -1100, -1100];
-
-    for (let c = 0; c < 6; c++) {
-        const baseX = startPos + clusterOffsetX[c];
-        const baseY = startPos + clusterOffsetY[c];
-
-        for (let row = 0; row < 6; row++) {
-            for (let col = 0; col < 8; col++) {
-                const px = baseX + (col - 3.5) * 40;
-                const py = baseY + (row - 2.5) * 40;
-                scene.add.rectangle(px, py, 30, 30, 0xffffff, 0.9).setStrokeStyle(2, 0x00e5ff);
+                for (let row = 0; row < 6; row++) {
+                    for (let col = 0; col < 8; col++) {
+                        const px = baseX + (col - 3.5) * 40;
+                        const py = baseY + (row - 2.5) * 40;
+                        scene.add.rectangle(px, py, 30, 30, 0xffffff, 0.9).setStrokeStyle(2, 0x00e5ff);
+                    }
+                }
             }
+
+            // 4. CỔNG GÁC, HÀNG RÀO VÀNG (CÓ VA CHẠM KHÔNG THỂ ĐI QUA)
+            const gateY = startPos - 1500;
+            
+            // 2 Cột đỏ đậm
+            const pillarLeft = scene.add.rectangle(startPos - 180, gateY, 40, 40, 0x8b0000).setStrokeStyle(2, 0x000000);
+            const pillarRight = scene.add.rectangle(startPos + 180, gateY, 40, 40, 0x8b0000).setStrokeStyle(2, 0x000000);
+            
+            // Hàng rào vàng 2 bên cổng
+            const fenceLeft = scene.add.rectangle(startPos - 1200, gateY, 2000, 18, 0xffd700).setStrokeStyle(2, 0xb8860b);
+            const fenceRight = scene.add.rectangle(startPos + 1200, gateY, 2000, 18, 0xffd700).setStrokeStyle(2, 0xb8860b);
+
+            // Tạo nhóm vật thể đứng yên để cản đường
+            const obstacles = scene.physics.add.staticGroup();
+            obstacles.addMultiple([pillarLeft, pillarRight, fenceLeft, fenceRight]);
+
+            // 5. ĐƯỜNG BÊ TÔNG RỘNG CHO XE & HÀNG CÂY XANH DỌC ĐƯỜNG
+            const roadWidth = 450;
+            const roadHeight = 2500;
+            // Mặt đường xám
+            scene.add.rectangle(startPos, gateY - roadHeight / 2, roadWidth, roadHeight, 0x444444);
+            // Vạch đứt tim đường màu vàng
+            for (let ly = gateY; ly > gateY - roadHeight; ly -= 80) {
+                scene.add.rectangle(startPos, ly - 20, 8, 40, 0xffd700);
+            }
+
+            // Trồng hàng cây xanh hai bên đường bê tông
+            for (let cy = gateY - 80; cy > gateY - roadHeight; cy -= 110) {
+                scene.add.circle(startPos - roadWidth / 2 - 35, cy, 28, 0x1e5631).setStrokeStyle(2, 0x0a2912);
+                scene.add.circle(startPos + roadWidth / 2 + 35, cy, 28, 0x1e5631).setStrokeStyle(2, 0x0a2912);
+            }
+
+            // 6. KHỞI TẠO PLAYER (AVATAR TRÒN KHÔNG BỊ LỖI MÀN HÌNH ĐEN)
+            const playerBody = scene.add.circle(0, 0, 22, 0x00e5ff).setStrokeStyle(3, 0xffffff);
+            const playerEye = scene.add.circle(12, 0, 5, 0x000000);
+
+            const nameText = scene.add.text(0, -38, currentUser ? (currentUser.global_name || currentUser.username) : 'Player', {
+                font: 'bold 14px Rajdhani', fill: '#ffffff', stroke: '#000000', strokeThickness: 4
+            }).setOrigin(0.5);
+
+            // Bubble Chat kiểu Roblox
+            speechBubble = scene.add.container(0, -75).setVisible(false);
+            const bubbleBg = scene.add.graphics();
+            const bubbleText = scene.add.text(0, 0, '', {
+                font: '600 13px Rajdhani', fill: '#000000', align: 'center', wordWrap: { width: 180 }
+            }).setOrigin(0.5);
+            speechBubble.add([bubbleBg, bubbleText]);
+            speechBubble.bubbleBg = bubbleBg;
+            speechBubble.bubbleText = bubbleText;
+
+            // Spawn nhân vật tại Sân Bê Tông Trắng
+            playerContainer = scene.add.container(startPos, startPos + 80, [playerBody, playerEye, nameText, speechBubble]);
+
+            scene.physics.world.enable(playerContainer);
+            playerContainer.body.setCollideWorldBounds(true);
+
+            // Bật va chạm giữa Player và Hàng rào / Cột gác
+            scene.physics.add.collider(playerContainer, obstacles);
+
+            // Camera Follow
+            const cam = scene.cameras.main;
+            cam.startFollow(playerContainer, true, 0.1, 0.1);
+            cam.setBounds(0, 0, MAP_SIZE, MAP_SIZE);
+            cam.setZoom(parseFloat(document.getElementById('setZoom').value));
         }
-    }
 
-    // 4. CỔNG GÁC, HÀNG RÀO VÀNG (CÓ VA CHẠM KHÔNG THỂ ĐI QUA)
-    const gateY = startPos - 1500;
-
-    const pillarLeft = scene.add.rectangle(startPos - 180, gateY, 40, 40, 0x8b0000).setStrokeStyle(2, 0x000000);
-    const pillarRight = scene.add.rectangle(startPos + 180, gateY, 40, 40, 0x8b0000).setStrokeStyle(2, 0x000000);
-
-    const fenceLeft = scene.add.rectangle(startPos - 1200, gateY, 2000, 18, 0xffd700).setStrokeStyle(2, 0xb8860b);
-    const fenceRight = scene.add.rectangle(startPos + 1200, gateY, 2000, 18, 0xffd700).setStrokeStyle(2, 0xb8860b);
-
-    const obstacles = scene.physics.add.staticGroup();
-    obstacles.addMultiple([pillarLeft, pillarRight, fenceLeft, fenceRight]);
-
-    // 5. ĐƯỜNG BÊ TÔNG RỘNG CHO XE & HÀNG CÂY XANH DỌC ĐƯỜNG
-    const roadWidth = 450;
-    const roadHeight = 2500;
-    scene.add.rectangle(startPos, gateY - roadHeight / 2, roadWidth, roadHeight, 0x444444);
-    for (let ly = gateY; ly > gateY - roadHeight; ly -= 80) {
-        scene.add.rectangle(startPos, ly - 20, 8, 40, 0xffd700);
-    }
-
-    for (let cy = gateY - 80; cy > gateY - roadHeight; cy -= 110) {
-        scene.add.circle(startPos - roadWidth / 2 - 35, cy, 28, 0x1e5631).setStrokeStyle(2, 0x0a2912);
-        scene.add.circle(startPos + roadWidth / 2 + 35, cy, 28, 0x1e5631).setStrokeStyle(2, 0x0a2912);
-    }
-
-    // 6. KHỞI TẠO PLAYER
-    const playerBody = scene.add.circle(0, 0, 22, 0x00e5ff).setStrokeStyle(3, 0xffffff);
-    const playerEye = scene.add.circle(12, 0, 5, 0x000000);
-
-    const nameText = scene.add.text(0, -38, currentUser ? (currentUser.global_name || currentUser.username) : 'Player', {
-        font: 'bold 14px Rajdhani', fill: '#ffffff', stroke: '#000000', strokeThickness: 4
-    }).setOrigin(0.5);
-
-    speechBubble = scene.add.container(0, -75).setVisible(false);
-    const bubbleBg = scene.add.graphics();
-    const bubbleText = scene.add.text(0, 0, '', {
-        font: '600 13px Rajdhani', fill: '#000000', align: 'center', wordWrap: { width: 180 }
-    }).setOrigin(0.5);
-    speechBubble.add([bubbleBg, bubbleText]);
-    speechBubble.bubbleBg = bubbleBg;
-    speechBubble.bubbleText = bubbleText;
-
-    playerContainer = scene.add.container(startPos, startPos + 80, [playerBody, playerEye, nameText, speechBubble]);
-
-    scene.physics.world.enable(playerContainer);
-    playerContainer.body.setCollideWorldBounds(true);
-
-    scene.physics.add.collider(playerContainer, obstacles);
-
-    const cam = scene.cameras.main;
-    cam.startFollow(playerContainer, true, 0.1, 0.1);
-    cam.setBounds(0, 0, MAP_SIZE, MAP_SIZE);
-    cam.setZoom(parseFloat(document.getElementById('setZoom').value));
-                                            }
-
-                
-        
         function initJoystick() {
             const zone = document.getElementById('joystick-zone');
             zone.innerHTML = '';
@@ -436,7 +445,7 @@
             if (!isEditHUD) document.getElementById('chatPanel').classList.toggle('hidden-chat');
         };
 
-                // Gửi Chat + Nổi chữ Roblox trên đầu
+        // Gửi Chat + Nổi chữ Roblox trên đầu
         document.getElementById('btnSendChat').onclick = () => {
             const input = document.getElementById('chatInput');
             const val = input.value.trim();
@@ -446,7 +455,7 @@
             item.innerHTML = `<b style="color:var(--cyan);">${currentUser ? currentUser.username : 'Khách'}:</b> ${val}`;
             document.getElementById('chatBody').appendChild(item);
 
-                        showRobloxBubbleChat(val);
+            showRobloxBubbleChat(val);
             input.value = '';
         };
 
@@ -507,6 +516,25 @@
                 document.onmouseup = null; document.onmousemove = null;
                 document.ontouchend = null; document.ontouchmove = null;
             }
+        }
+
+        function updateScene() {
+            if (!playerContainer || !playerContainer.body) return;
+            const speed = 220;
+            playerContainer.body.setVelocity(moveVector.x * speed, moveVector.y * speed);
+        }
+
+        function showRobloxBubbleChat(text) {
+            if (!speechBubble) return;
+            speechBubble.bubbleText.setText(text);
+            const w = speechBubble.bubbleText.width + 20;
+            const h = speechBubble.bubbleText.height + 14;
+            speechBubble.bubbleBg.clear();
+            speechBubble.bubbleBg.fillStyle(0xffffff, 1);
+            speechBubble.bubbleBg.fillRoundedRect(-w / 2, -h / 2, w, h, 8);
+            speechBubble.setVisible(true);
+            clearTimeout(speechBubble._t);
+            speechBubble._t = setTimeout(() => speechBubble.setVisible(false), 3000);
         }
 
         window.onload = checkDiscordAuth;
