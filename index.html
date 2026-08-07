@@ -140,7 +140,7 @@
                 
                 <div class="set-row">
                     <label>Độ thu phóng (Camera):</label>
-                    <input type="range" id="setZoom" min="0.4" max="1.5" step="0.05" value="0.8">
+                    <input type="range" id="setZoom" min="0.3" max="1.5" step="0.05" value="0.8">
                 </div>
                 <div class="set-row">
                     <label>Âm thanh Tổng:</label>
@@ -167,7 +167,7 @@
     </div>
 
     <script>
-        // --- 1. DISCORD OAUTH2 THẬT ---
+        // --- 1. DISCORD OAUTH2 ---
         const CLIENT_ID = '1534238453871673414'; 
         const REDIRECT_URI = window.location.origin + window.location.pathname;
 
@@ -222,7 +222,7 @@
             location.reload();
         };
 
-        // --- 2. QUẢN LÝ MAP SẢNH ---
+        // --- 2. SẢNH MAP ---
         const MAPS = [
             { id: 'm1', name: 'KHU HUẤN LUYỆN' },
             { id: 'm2', name: 'DIỄU BINH' },
@@ -245,9 +245,10 @@
             mapRow.appendChild(card);
         });
 
-        // --- 3. PHASER ENGINE & GAME LOGIC ---
+        // --- 3. GAME ENGINE & ROBLOX BUBBLE CHAT ---
         let game = null, scene = null, playerContainer = null, joystick = null;
         let moveVector = { x: 0, y: 0 };
+        let speechBubble = null;
 
         document.getElementById('btnEnterGame').onclick = () => {
             document.getElementById('screen-menu').style.display = 'none';
@@ -256,7 +257,7 @@
         };
 
         function initGame() {
-            if (game) game.destroy(true);
+            if (game) { game.destroy(true); game = null; }
 
             const renderScale = parseFloat(document.getElementById('setGraphics').value);
 
@@ -265,64 +266,124 @@
                 parent: 'phaser-container',
                 width: window.innerWidth,
                 height: window.innerHeight,
-                resolution: renderScale, // Chỉnh độ nét Render
-                backgroundColor: '#141d2b', // Đã tăng độ sáng Map
+                resolution: renderScale,
+                backgroundColor: '#101726',
                 physics: { default: 'arcade' },
-                scene: { create: createScene, update: updateScene }
+                scene: { preload: preloadScene, create: createScene, update: updateScene }
             };
 
             game = new Phaser.Game(config);
             initJoystick();
         }
 
-        function createScene() {
+        function preloadScene() {
             scene = this;
-            const MAP_SIZE = 2500;
-            scene.physics.world.setBounds(0, 0, MAP_SIZE, MAP_SIZE);
+            if (scene.textures.exists('p_avatar')) scene.textures.remove('p_avatar');
 
-            // Tăng độ sáng môi trường map
-            const bg = scene.add.graphics();
-            bg.fillStyle(0x1a2638, 1);
-            bg.fillRect(0, 0, MAP_SIZE, MAP_SIZE);
-            bg.lineStyle(2, 0x00e5ff, 0.15);
-            for (let x = 0; x <= MAP_SIZE; x += 80) bg.lineBetween(x, 0, x, MAP_SIZE);
-            for (let y = 0; y <= MAP_SIZE; y += 80) bg.lineBetween(0, y, MAP_SIZE, y);
-
-            // Load & Vẽ Avatar nét
             const avUrl = currentUser && currentUser.avatar 
                 ? `https://cdn.discordapp.com/avatars/${currentUser.id}/${currentUser.avatar}.png?size=256`
                 : `https://cdn.discordapp.com/embed/avatars/0.png`;
 
             scene.load.image('p_avatar', avUrl);
-            scene.load.once('complete', () => {
-                const circleMask = scene.add.graphics().fillCircle(0, 0, 20);
-                const avatarSprite = scene.add.image(0, 0, 'p_avatar').setDisplaySize(40, 40);
-                
-                const nameText = scene.add.text(0, -32, currentUser ? currentUser.username : 'Player', {
-                    font: 'bold 13px Rajdhani', fill: '#ffffff', stroke: '#000000', strokeThickness: 3
-                }).setOrigin(0.5);
+        }
 
-                playerContainer = scene.add.container(MAP_SIZE / 2, MAP_SIZE / 2, [avatarSprite, nameText]);
-                scene.physics.world.enable(playerContainer);
-                playerContainer.body.setCollideWorldBounds(true);
+        function createScene() {
+            // CẤU HÌNH MAP SUPER LARGE 80,000 x 80,000
+            const MAP_SIZE = 80000;
+            scene.physics.world.setBounds(0, 0, MAP_SIZE, MAP_SIZE);
 
-                const cam = scene.cameras.main;
-                cam.startFollow(playerContainer, true, 0.1, 0.1);
-                cam.setBounds(0, 0, MAP_SIZE, MAP_SIZE);
-                cam.setZoom(parseFloat(document.getElementById('setZoom').value));
+            // Nền Map Grid
+            const bg = scene.add.graphics();
+            bg.fillStyle(0x131a29, 1);
+            bg.fillRect(0, 0, MAP_SIZE, MAP_SIZE);
+            bg.lineStyle(3, 0x00e5ff, 0.12);
+            for (let x = 0; x <= MAP_SIZE; x += 120) bg.lineBetween(x, 0, x, MAP_SIZE);
+            for (let y = 0; y <= MAP_SIZE; y += 120) bg.lineBetween(0, y, MAP_SIZE, y);
+
+            // TẠO AVATAR HÌNH TRÒN SẮC NÉT
+            const avatarSprite = scene.add.image(0, 0, 'p_avatar').setDisplaySize(50, 50);
+            const maskShape = scene.make.graphics();
+            maskShape.fillStyle(0xffffff);
+            maskShape.fillCircle(0, 0, 25);
+            avatarSprite.setMask(maskShape.createGeometryMask());
+
+            const avatarBorder = scene.add.graphics();
+            avatarBorder.lineStyle(3, 0x00e5ff, 1);
+            avatarBorder.strokeCircle(0, 0, 25);
+
+            const nameText = scene.add.text(0, -38, currentUser ? currentUser.username : 'Player', {
+                font: 'bold 14px Rajdhani', fill: '#ffffff', stroke: '#000000', strokeThickness: 4
+            }).setOrigin(0.5);
+
+            // Khung chat trên đầu (Bubble Chat kiểu Roblox)
+            speechBubble = scene.add.container(0, -75).setVisible(false);
+            const bubbleBg = scene.add.graphics();
+            const bubbleText = scene.add.text(0, 0, '', {
+                font: '600 13px Rajdhani', fill: '#000000', align: 'center', wordWrap: { width: 180 }
+            }).setOrigin(0.5);
+            speechBubble.add([bubbleBg, bubbleText]);
+            speechBubble.bubbleBg = bubbleBg;
+            speechBubble.bubbleText = bubbleText;
+
+            // Spawn chính giữa map 80,000
+            const startPos = MAP_SIZE / 2;
+            playerContainer = scene.add.container(startPos, startPos, [avatarSprite, avatarBorder, nameText, speechBubble]);
+            
+            // Mask di chuyển theo Container
+            scene.events.on('postupdate', () => {
+                if (playerContainer) {
+                    maskShape.x = playerContainer.x;
+                    maskShape.y = playerContainer.y;
+                }
             });
-            scene.load.start();
+
+            scene.physics.world.enable(playerContainer);
+            playerContainer.body.setCollideWorldBounds(true);
+
+            // Camera Follow
+            const cam = scene.cameras.main;
+            cam.startFollow(playerContainer, true, 0.1, 0.1);
+            cam.setBounds(0, 0, MAP_SIZE, MAP_SIZE);
+            cam.setZoom(parseFloat(document.getElementById('setZoom').value));
         }
 
         function updateScene() {
             if (!playerContainer || isEditHUD) return;
-            const speed = 220;
+            const speed = 260;
             playerContainer.body.setVelocity(moveVector.x * speed, moveVector.y * speed);
 
             if (moveVector.x !== 0 || moveVector.y !== 0) {
                 const angle = Math.atan2(moveVector.y, moveVector.x);
                 playerContainer.setRotation(angle);
+                if (speechBubble) speechBubble.setRotation(-angle); // Giữ tin nhắn luôn nằm thẳng
             }
+        }
+
+        function showRobloxBubbleChat(msg) {
+            if (!speechBubble) return;
+            const txt = speechBubble.bubbleText;
+            const bg = speechBubble.bubbleBg;
+
+            txt.setText(msg);
+            const w = txt.width + 16;
+            const h = txt.height + 10;
+
+            bg.clear();
+            bg.fillStyle(0xffffff, 0.95);
+            bg.fillRoundedRect(-w/2, -h/2, w, h, 8);
+            bg.lineStyle(2, 0x00e5ff, 1);
+            bg.strokeRoundedRect(-w/2, -h/2, w, h, 8);
+
+            speechBubble.setVisible(true);
+            speechBubble.setAlpha(1);
+
+            if (speechBubble.timer) speechBubble.timer.remove();
+            speechBubble.timer = scene.time.delayedCall(5000, () => {
+                scene.tweens.add({
+                    targets: speechBubble, alpha: 0, duration: 500,
+                    onComplete: () => speechBubble.setVisible(false)
+                });
+            });
         }
 
         function initJoystick() {
@@ -342,7 +403,7 @@
             joystick.on('end', () => { moveVector = { x: 0, y: 0 }; });
         }
 
-        // --- 4. CÀI ĐẶT & CHỈNH HUD ---
+        // --- 4. CÀI ĐẶT & HUD ---
         const settingsOverlay = document.getElementById('settingsOverlay');
         document.getElementById('btnOpenSettings').onclick = () => settingsOverlay.classList.add('open');
         
@@ -350,27 +411,30 @@
             settingsOverlay.classList.remove('open');
             if (isEditHUD) toggleEditHUD(false);
 
-            // Cập nhật Zoom & Alpha HUD
             if (scene) scene.cameras.main.setZoom(parseFloat(document.getElementById('setZoom').value));
             document.documentElement.style.setProperty('--hud-alpha', document.getElementById('setHudAlpha').value);
         };
 
-        // Nút Chat ẩn hoàn toàn
+        // Ẩn/Hiện Chat
         document.getElementById('btnToggleChat').onclick = () => {
             if (!isEditHUD) document.getElementById('chatPanel').classList.toggle('hidden-chat');
         };
 
-        // Gửi Chat
+                // Gửi Chat + Nổi chữ Roblox trên đầu
         document.getElementById('btnSendChat').onclick = () => {
             const input = document.getElementById('chatInput');
-            if (!input.value.trim()) return;
+            const val = input.value.trim();
+            if (!val) return;
+
             const item = document.createElement('div');
-            item.innerHTML = `<b style="color:var(--cyan);">${currentUser ? currentUser.username : 'Khách'}:</b> ${input.value}`;
+            item.innerHTML = `<b style="color:var(--cyan);">${currentUser ? currentUser.username : 'Khách'}:</b> ${val}`;
             document.getElementById('chatBody').appendChild(item);
+
+                        showRobloxBubbleChat(val);
             input.value = '';
         };
 
-        // Rời Map
+        // Rời Map mượt mà
         document.getElementById('btnLeaveMap').onclick = () => {
             settingsOverlay.classList.remove('open');
             if (game) { game.destroy(true); game = null; }
@@ -378,7 +442,7 @@
             document.getElementById('screen-menu').style.display = 'flex';
         };
 
-        // Bật/Tắt Chỉnh vị trí HUD
+        // Chỉnh HUD
         document.getElementById('btnEditHUD').onclick = () => {
             settingsOverlay.classList.remove('open');
             toggleEditHUD(true);
@@ -413,7 +477,7 @@
                 document.ontouchmove = elementDrag;
             }
 
-                        function elementDrag(e) {
+            function elementDrag(e) {
                 const clientX = e.touches ? e.touches[0].clientX : e.clientX;
                 const clientY = e.touches ? e.touches[0].clientY : e.clientY;
                 p1 = p3 - clientX; p2 = p4 - clientY;
