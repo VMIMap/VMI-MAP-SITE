@@ -819,7 +819,7 @@
     </div>
 
     <!-- ================= GAME ================= -->
-    <div id="screen-game" style="display:none;">
+    <div id="screen-game">
 
         <canvas id="gameCanvas"></canvas>
 
@@ -938,6 +938,7 @@
     </div>
 </div>
     <script>
+        
         document.addEventListener('DOMContentLoaded', async () => {
             const CLIENT_ID = '1534238453871673414';
             const REDIRECT_URI = window.location.origin + window.location.pathname;
@@ -1035,7 +1036,6 @@
                     const s = localStorage.getItem('vmi_settings');
                     if (s) settings = { ...settings, ...JSON.parse(s) };
                 } catch {}
-                // đảm bảo zoom mặc định 0.70 nếu chưa có
                 if (!localStorage.getItem('vmi_settings')) {
                     settings.zoom = 0.70;
                     saveSettings();
@@ -1238,7 +1238,6 @@ function updateScene() {
 
     playerContainer.body.setVelocity(vx, vy);
 
-    // FPS counter
     frameCount++;
     const now = performance.now();
 
@@ -1251,10 +1250,6 @@ function updateScene() {
         if (fpsEl) {
             fpsEl.textContent = `FPS: ${fpsVal}`;
         }
-    }
-}
-
-
 function initJoystick() {
     if (joystick) return;
 
@@ -1277,8 +1272,7 @@ function initJoystick() {
     joystick.on("end", () => {
         joystick.vector = { x: 0, y: 0 };
     });
-        }
-
+}
 
 function addMessage(text, type = 'normal') {
     const div = document.createElement('div');
@@ -1565,3 +1559,5 @@ window._audioCtx = { gain: { value: settings.sound / 100 } };
 </script>
 </body>
 </html>
+    }
+                                  }
