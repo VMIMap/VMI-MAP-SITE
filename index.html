@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>SERVER GAME VMI</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet" />
-
-    <!-- ==================== PHẦN 2: CSS ==================== -->
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.10.1/nipplejs.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-user-select: none; }
         :root {
@@ -21,7 +21,8 @@
             --hud-alpha: 0.9;
         }
         html, body { width: 100vw; height: 100vh; overflow: hidden; background: var(--bg); font-family: 'Rajdhani', sans-serif; color: var(--text); }
-
+        
+        /* GENERAL UI */
         .panel { background: var(--panel); border: 1px solid var(--line); backdrop-filter: blur(8px); }
         .btn {
             font-family: 'Orbitron', sans-serif; font-size: 12px; color: #fff; background: rgba(0, 229, 255, 0.1);
@@ -31,17 +32,19 @@
         .btn.danger { border-color: var(--red); background: rgba(255, 59, 59, 0.2); color: #fff; }
         .btn:disabled { opacity: 0.3; cursor: not-allowed; }
 
+        /* SẢNH (LOBBY) */
         #screen-menu {
             position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
             z-index: 10; padding: 15px; background: radial-gradient(circle, #1a2333 0%, #0b0e14 100%);
         }
         .lobby-box { width: 100%; max-width: 750px; display: flex; flex-direction: column; gap: 15px; align-items: center; }
         .title { font-family: 'Orbitron', sans-serif; font-size: 28px; color: var(--gold); text-shadow: 0 0 10px var(--gold); }
-
+        
         .profile-card { display: flex; align-items: center; gap: 12px; padding: 10px 20px; width: 100%; max-width: 400px; justify-content: center; }
         .avatar { width: 48px; height: 48px; border-radius: 50%; border: 2px solid var(--cyan); overflow: hidden; background: #000; }
         .avatar img { width: 100%; height: 100%; object-fit: cover; }
 
+        /* MAP NẰM NGANG */
         .map-row { display: flex; flex-direction: row; gap: 10px; width: 100%; overflow-x: auto; padding: 5px; justify-content: center; }
         .map-card {
             flex: 1; min-width: 120px; max-width: 160px; height: 70px; padding: 10px; cursor: pointer;
@@ -50,6 +53,7 @@
         }
         .map-card.selected { border-color: var(--green); background: rgba(57, 255, 136, 0.15); transform: scale(1.05); }
 
+        /* IN-GAME HUD */
         #screen-game { position: absolute; inset: 0; display: none; z-index: 5; background: #000; }
         #screen-game.active { display: block; }
         #phaser-container { width: 100%; height: 100%; }
@@ -60,6 +64,7 @@
 
         #joystick-zone { bottom: 20px; left: 20px; width: 120px; height: 120px; }
 
+        /* CHAT */
         #chatPanel {
             bottom: 20px; right: 20px; width: 260px; height: 160px; display: flex; flex-direction: column;
             background: var(--panel); border: 1px solid var(--line); transition: opacity 0.2s;
@@ -69,18 +74,19 @@
         .chat-input { display: flex; border-top: 1px solid var(--line); }
         .chat-input input { flex: 1; background: transparent; border: none; color: #fff; padding: 5px; font-size: 11px; outline: none; }
 
+        /* SETTINGS OVERLAY */
         .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: none; align-items: center; justify-content: center; z-index: 100; }
         .overlay.open { display: flex; }
         .setting-box { width: 90%; max-width: 420px; padding: 20px; display: flex; flex-direction: column; gap: 12px; max-height: 90vh; overflow-y: auto; }
         .set-row { display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
         .set-row input[type=range], .set-row select { width: 50%; }
 
+        /* CHẾ ĐỘ EDIT HUD */
         .edit-hud-mode .hud-element { border: 2px dashed var(--gold) !important; cursor: move; }
     </style>
 </head>
 <body>
     <div id="app">
-        <!-- ==================== PHẦN 1: HTML ==================== -->
         <!-- SẢNH GAME (LOBBY) -->
         <div id="screen-menu">
             <div class="lobby-box">
@@ -160,40 +166,41 @@
         </div>
     </div>
 
-    <!-- Hộp lỗi (hiển thị khi có lỗi) -->
     <div id="errBox" style="display:none; position:fixed; inset:0; z-index:9999; background:#1a0000; color:#ff5555; padding:16px; font-family:monospace; font-size:13px; overflow:auto; white-space:pre-wrap;"></div>
-
-    <!-- ==================== THƯ VIỆN ==================== -->
-    <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.10.1/nipplejs.min.js"></script>
-
-    <!-- ==================== PHẦN 3: CONFIG ==================== -->
     <script>
-        const CONFIG = {
-            DISCORD_CLIENT_ID: '1534238453871673414',
-            REDIRECT_URI: window.location.origin + window.location.pathname,
-            MAPS: [
-                { id: 'm1', name: 'KHU HUẤN LUYỆN' },
-                { id: 'm2', name: 'DIỄU BINH' },
-                { id: 'm3', name: 'THAO TRƯỜNG' },
-                { id: 'm4', name: 'SỰ KIỆN' }
-            ]
-        };
-    </script>
+        window.addEventListener('error', function (e) {
+            const box = document.getElementById('errBox');
+            box.style.display = 'block';
+            box.textContent += 'LỖI: ' + e.message + '\n   Tại dòng: ' + e.lineno + ':' + e.colno + '\n\n';
+        });
 
-    <!-- ==================== PHẦN 4: MAIN SCRIPT ==================== -->
-    <script>
-        // ============================================================
-        //  MAIN LOGIC
-        // ============================================================
+        // --- ÂM THANH CLICK KIỂU CÔNG NGHỆ CHO CÁC NÚT ---
+        function playClickSound() {
+            try {
+                const ctx = window.__audioCtx || (window.__audioCtx = new (window.AudioContext || window.webkitAudioContext)());
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(1400, ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(900, ctx.currentTime + 0.07);
+                gain.gain.value = 0.05;
+                osc.connect(gain).connect(ctx.destination);
+                osc.start();
+                gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.09);
+                osc.stop(ctx.currentTime + 0.1);
+            } catch (e) {}
+        }
+        document.addEventListener('click', (e) => {
+            if (e.target.closest && e.target.closest('.btn, .map-card')) playClickSound();
+        });
+
+        // --- 1. DISCORD OAUTH2 ---
+        const CLIENT_ID = '1534238453871673414'; 
+        const REDIRECT_URI = window.location.origin + window.location.pathname;
+
         let currentUser = null;
         let isEditHUD = false;
-        let selectedMap = CONFIG.MAPS[0];
-        let game = null, scene = null, playerContainer = null, joystick = null;
-        let moveVector = { x: 0, y: 0 };
-        let speechBubble = null;
 
-        // ----------------- Discord OAuth -----------------
         function checkDiscordAuth() {
             const fragment = new URLSearchParams(window.location.hash.slice(1));
             const accessToken = fragment.get('access_token');
@@ -233,7 +240,7 @@
         }
 
         document.getElementById('btnLogin').onclick = () => {
-            const url = `https://discord.com/oauth2/authorize?client_id=${CONFIG.DISCORD_CLIENT_ID}&response_type=token&redirect_uri=${encodeURIComponent(CONFIG.REDIRECT_URI)}&scope=identify`;
+            const url = `https://discord.com/oauth2/authorize?client_id=${CLIENT_ID}&response_type=token&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=identify`;
             window.location.href = url;
         };
 
@@ -242,9 +249,17 @@
             location.reload();
         };
 
-        // ----------------- Lobby Map Selection -----------------
+        // --- 2. SẢNH MAP ---
+        const MAPS = [
+            { id: 'm1', name: 'KHU HUẤN LUYỆN' },
+            { id: 'm2', name: 'DIỄU BINH' },
+            { id: 'm3', name: 'THAO TRƯỜNG' },
+            { id: 'm4', name: 'SỰ KIỆN' }
+        ];
+        let selectedMap = MAPS[0];
+
         const mapRow = document.getElementById('mapRow');
-        CONFIG.MAPS.forEach(m => {
+        MAPS.forEach(m => {
             const card = document.createElement('div');
             card.className = 'map-card' + (m.id === selectedMap.id ? ' selected' : '');
             card.innerHTML = `<div style="font-weight:bold; font-size:12px;">${m.name}</div>`;
@@ -257,13 +272,17 @@
             mapRow.appendChild(card);
         });
 
+        // --- 3. GAME ENGINE & ROBLOX BUBBLE CHAT ---
+        let game = null, scene = null, playerContainer = null, joystick = null;
+        let moveVector = { x: 0, y: 0 };
+        let speechBubble = null;
+
         document.getElementById('btnEnterGame').onclick = () => {
             document.getElementById('screen-menu').style.display = 'none';
             document.getElementById('screen-game').classList.add('active');
             initGame();
         };
 
-        // ----------------- Phaser Game -----------------
         function initGame() {
             try {
                 if (typeof Phaser === 'undefined') {
@@ -302,44 +321,75 @@
                 : `https://cdn.discordapp.com/embed/avatars/0.png`;
 
             scene.load.image('p_avatar', avUrl);
+            scene.load.image('flag_vn', 'https://flagcdn.com/h240/vn.png');
+            scene.load.image('tank_t90', 'https://commons.wikimedia.org/wiki/Special:FilePath/T-90_tank.svg?width=300');
+            scene.load.image('btr_apc', 'https://commons.wikimedia.org/wiki/Special:FilePath/BTR-4 silhouette.png?width=300');
         }
 
-        function createScene() {
-            const MAP_SIZE = 9600;
+                function createScene() {
+            // KÍCH THƯỚC MAP LỚN (450,000 x 450,000 px)
+            const MAP_SIZE = 450000;
             scene.physics.world.setBounds(0, 0, MAP_SIZE, MAP_SIZE);
-            const startPos = MAP_SIZE / 2;
 
-            // 1. Background grass + grid
-            const bg = scene.add.graphics();
-            bg.fillStyle(0x5c8a67, 1);
-            bg.fillRect(0, 0, MAP_SIZE, MAP_SIZE);
-            bg.lineStyle(2, 0x4e7858, 0.3);
-            for (let x = 0; x <= MAP_SIZE; x += 120) bg.lineBetween(x, 0, x, MAP_SIZE);
-            for (let y = 0; y <= MAP_SIZE; y += 120) bg.lineBetween(0, y, MAP_SIZE, y);
+            const startPos = MAP_SIZE / 2; // Tâm map
 
-            // 2. Spawn platform & flag
+            // 1. NỀN: ĐẤT BÙN NGOÀI RÌA + LÕI CỎ XANH (KHÔNG LƯỚI)
+            scene.add.rectangle(startPos, startPos, MAP_SIZE, MAP_SIZE, 0x6b5335).setOrigin(0.5);
+            const GRASS_CORE = 60000;
+            const wallHalf = GRASS_CORE / 2; // 30,000 - nửa cạnh vùng doanh trại có tường bao
+            scene.add.rectangle(startPos, startPos, GRASS_CORE, GRASS_CORE, 0x5c8a67).setOrigin(0.5);
+
+            const obstacles = scene.physics.add.staticGroup();
+            const roadHalf = 300;
+            const roadWidth = roadHalf * 2;
+            const pillarOffset = roadHalf + 40;
+
+            // 2. TƯỜNG BAO DOANH TRẠI (4 CẠNH, CÓ CÂY DỌC TƯỜNG, CHỪA CỔNG CHÍNH PHÍA TRÊN)
+            const wallColor = 0xb0a890, wallStroke = 0x6b5a42, wallThick = 140;
+            // Tường trên: 2 đoạn 2 bên cổng
+            const topWallLen = wallHalf - pillarOffset;
+            const wLeft = scene.add.rectangle(startPos - pillarOffset - topWallLen / 2, startPos - wallHalf, topWallLen, wallThick, wallColor).setStrokeStyle(3, wallStroke);
+            const wRight = scene.add.rectangle(startPos + pillarOffset + topWallLen / 2, startPos - wallHalf, topWallLen, wallThick, wallColor).setStrokeStyle(3, wallStroke);
+            const wBottom = scene.add.rectangle(startPos, startPos + wallHalf, GRASS_CORE, wallThick, wallColor).setStrokeStyle(3, wallStroke);
+            const wLeftSide = scene.add.rectangle(startPos - wallHalf, startPos, wallThick, GRASS_CORE, wallColor).setStrokeStyle(3, wallStroke);
+            const wRightSide = scene.add.rectangle(startPos + wallHalf, startPos, wallThick, GRASS_CORE, wallColor).setStrokeStyle(3, wallStroke);
+            obstacles.addMultiple([wLeft, wRight, wBottom, wLeftSide, wRightSide]);
+
+            // Cây dọc theo tường (mặt trong)
+            for (let tx = startPos - wallHalf + 200; tx < startPos + wallHalf; tx += 900) {
+                scene.add.circle(tx, startPos + wallHalf - 220, 30, 0x1e5631).setStrokeStyle(2, 0x0a2912);
+                scene.add.circle(tx, startPos - wallHalf + 220, 30, 0x1e5631).setStrokeStyle(2, 0x0a2912);
+            }
+            for (let ty = startPos - wallHalf + 200; ty < startPos + wallHalf; ty += 900) {
+                scene.add.circle(startPos - wallHalf + 220, ty, 30, 0x1e5631).setStrokeStyle(2, 0x0a2912);
+                scene.add.circle(startPos + wallHalf - 220, ty, 30, 0x1e5631).setStrokeStyle(2, 0x0a2912);
+            }
+
+            // 3. KHU VỰC SPAWN (SÂN BÊ TÔNG TRẮNG & CỘT CỜ ĐẸP HƠN)
             scene.add.rectangle(startPos, startPos, 500, 500, 0xeeeeee).setStrokeStyle(4, 0xcccccc);
-            const flagBase = scene.add.circle(startPos, startPos, 22, 0x777777).setStrokeStyle(3, 0x333333);
-            const flagPole = scene.add.line(startPos, startPos, 0, 0, 0, -100, 0xffffff).setLineWidth(4);
-            const flag = scene.add.rectangle(startPos + 22, startPos - 25, 44, 26, 0xda251d);
-            const flagStar = scene.add.polygon(startPos + 22, startPos - 25, [0,-5, 2,-1, 5,-1, 2,1, 3,4, 0,2, -3,4, -2,1, -5,-1, -2,-1], 0xffff00);
+            scene.add.circle(startPos, startPos, 170, 0xdddddd, 0).setStrokeStyle(3, 0xcccccc); // Vòng gạch quảng trường quanh cột cờ
+
+            const flagBase = scene.add.circle(startPos, startPos, 24, 0x777777).setStrokeStyle(3, 0x333333);
+            scene.add.rectangle(startPos + 2, startPos - 55, 9, 110, 0x888888).setOrigin(0.5, 1); // Bóng trụ
+            scene.add.rectangle(startPos, startPos - 55, 9, 110, 0xf2f2f2).setOrigin(0.5, 1); // Thân trụ chính
+            scene.add.rectangle(startPos - 2, startPos - 55, 3, 110, 0xffffff).setOrigin(0.5, 1); // Vệt sáng giả 3D
+            scene.add.circle(startPos, startPos - 3, 4, 0xda251d); // Vòng đỏ chân cột
+            scene.add.circle(startPos, startPos - 110, 7, 0xffd700).setStrokeStyle(2, 0xb8860b); // Chóp vàng đỉnh cột
+
+            const flagImg = scene.add.image(startPos + 28, startPos - 28, 'flag_vn').setDisplaySize(56, 38);
             let isFlagUp = false;
-            const flagGroup = scene.add.container(0, 0, [flag, flagStar]);
+            const flagGroup = scene.add.container(0, 0, [flagImg]);
+
             flagBase.setInteractive({ cursor: 'pointer' });
             flagBase.on('pointerdown', () => {
                 isFlagUp = !isFlagUp;
-                scene.tweens.add({
-                    targets: flagGroup,
-                    y: isFlagUp ? -65 : 0,
-                    duration: 1200,
-                    ease: 'Power2'
-                });
+                scene.tweens.add({ targets: flagGroup, y: isFlagUp ? -72 : 0, duration: 1200, ease: 'Power2' });
                 if (typeof showRobloxBubbleChat === 'function') {
                     showRobloxBubbleChat(isFlagUp ? "Đã kéo cờ!" : "Đã hạ cờ!");
                 }
             });
 
-            // 3. Clusters of pads (6 clusters, 8x6 each)
+            // 4. KHU VỰC PAD ĐỨNG (6 CỤM)
             const clusterOffsetX = [-400, 0, 400, -400, 0, 400];
             const clusterOffsetY = [-700, -700, -700, -1100, -1100, -1100];
             for (let c = 0; c < 6; c++) {
@@ -349,212 +399,331 @@
                     for (let col = 0; col < 8; col++) {
                         const px = baseX + (col - 3.5) * 40;
                         const py = baseY + (row - 2.5) * 40;
-                        scene.add.rectangle(px, py, 30, 30, 0xffffff, 0.9).setStrokeStyle(2, 0x00e5ff);
+                        scene.add.rectangle(px, py, 30, 30, 0xffffff, 0.9).setStrokeStyle(2, 0xffffff);
                     }
                 }
             }
 
-            // 4. Gate and fences (obstacles)
-            const gateY = startPos - 1500;
-            const pillarLeft = scene.add.rectangle(startPos - 180, gateY, 40, 40, 0x8b0000).setStrokeStyle(2, 0x000000);
-            const pillarRight = scene.add.rectangle(startPos + 180, gateY, 40, 40, 0x8b0000).setStrokeStyle(2, 0x000000);
-            const fenceLeft = scene.add.rectangle(startPos - 1200, gateY, 2000, 18, 0xffd700).setStrokeStyle(2, 0xb8860b);
-            const fenceRight = scene.add.rectangle(startPos + 1200, gateY, 2000, 18, 0xffd700).setStrokeStyle(2, 0xb8860b);
-
-            const obstacles = scene.physics.add.staticGroup();
-            obstacles.addMultiple([pillarLeft, pillarRight, fenceLeft, fenceRight]);
-
-            // 5. Concrete road and trees
-            const roadWidth = 450;
-            const roadHeight = 2500;
-            scene.add.rectangle(startPos, gateY - roadHeight / 2, roadWidth, roadHeight, 0x444444);
-            for (let ly = gateY; ly > gateY - roadHeight; ly -= 80) {
-                scene.add.rectangle(startPos, ly - 20, 8, 40, 0xffd700);
+            // 4b. NHÀ CHÍNH (KIỂU HỘI TRƯỜNG/NHÀ QUỐC HỘI) PHÍA SAU KHU PAD
+            const hqY = startPos - 1750;
+            scene.add.rectangle(startPos, hqY, 1300, 260, 0xe8e3d8).setStrokeStyle(4, 0x9c9484);
+            scene.add.triangle(startPos, hqY - 130, -420, 60, 420, 60, 0, -100, 0xc94a3b).setStrokeStyle(3, 0x7a2c22);
+            for (let colX = -560; colX <= 560; colX += 140) {
+                scene.add.rectangle(startPos + colX, hqY + 40, 28, 180, 0xffffff).setStrokeStyle(2, 0xbdb6a6);
             }
-            for (let cy = gateY - 80; cy > gateY - roadHeight; cy -= 110) {
+            scene.add.rectangle(startPos, hqY + 145, 1360, 30, 0xcfc7b4).setStrokeStyle(2, 0x9c9484);
+            scene.add.text(startPos, hqY - 175, 'HỘI TRƯỜNG TRUNG TÂM', {
+                font: 'bold 20px Orbitron', fill: '#8b0000', stroke: '#ffffff', strokeThickness: 3
+            }).setOrigin(0.5);
+            const hqObstacle = scene.add.rectangle(startPos, hqY, 1300, 260, 0xe8e3d8, 0);
+            obstacles.add(hqObstacle);
+
+            // 5. CỔNG CHÍNH TRÊN TƯỜNG BAO (BẤM MỞ/ĐÓNG - THANH CHẮN KIỂU BOOM BARRIER)
+            const gateY = startPos - wallHalf;
+            const pillarLeft = scene.add.rectangle(startPos - pillarOffset, gateY, 44, 160, 0x8b0000).setStrokeStyle(3, 0x000000);
+            const pillarRight = scene.add.rectangle(startPos + pillarOffset, gateY, 44, 160, 0x8b0000).setStrokeStyle(3, 0x000000);
+            scene.add.rectangle(startPos - pillarOffset, gateY - 85, 56, 16, 0xffd700).setStrokeStyle(2, 0xb8860b);
+            scene.add.rectangle(startPos + pillarOffset, gateY - 85, 56, 16, 0xffd700).setStrokeStyle(2, 0xb8860b);
+            scene.add.rectangle(startPos, gateY - 100, pillarOffset * 2 + 40, 20, 0x8b0000).setStrokeStyle(2, 0x000000);
+            scene.add.text(startPos, gateY - 132, 'DOANH TRẠI VMI', {
+                font: 'bold 22px Orbitron', fill: '#ffd700', stroke: '#000000', strokeThickness: 4
+            }).setOrigin(0.5);
+            obstacles.addMultiple([pillarLeft, pillarRight]);
+
+            let isGateOpen = false;
+            const barrierBody = scene.add.rectangle(startPos, gateY, roadWidth - 20, 16, 0xffffff, 0);
+            scene.physics.add.existing(barrierBody, true);
+            obstacles.add(barrierBody);
+
+            const barContainer = scene.add.container(startPos - pillarOffset + 22, gateY, []);
+            const barVisual = scene.add.rectangle(roadWidth / 2, 0, roadWidth - 20, 16, 0xffffff).setStrokeStyle(2, 0xb00000).setOrigin(0, 0.5);
+            barContainer.add(barVisual);
+            for (let s = 20; s < roadWidth - 20; s += 60) {
+                barContainer.add(scene.add.rectangle(s, 0, 30, 16, 0xda251d).setOrigin(0, 0.5));
+            }
+            barVisual.setInteractive({ cursor: 'pointer' });
+            barVisual.on('pointerdown', () => {
+                isGateOpen = !isGateOpen;
+                scene.tweens.add({ targets: barContainer, angle: isGateOpen ? -80 : 0, duration: 700, ease: 'Power2' });
+                if (isGateOpen) { obstacles.remove(barrierBody, false, false); }
+                else { obstacles.add(barrierBody); }
+                if (typeof showRobloxBubbleChat === 'function') {
+                    showRobloxBubbleChat(isGateOpen ? "Đã mở cổng!" : "Đã đóng cổng!");
+                }
+            });
+
+            // 6. ĐƯỜNG NỘI BỘ TỪ KHU PAD ĐẾN CỔNG
+            const roadInnerTop = startPos - 1300;
+            scene.add.rectangle(startPos, (roadInnerTop + gateY) / 2, roadWidth, roadInnerTop - gateY, 0x4a4a4a).setStrokeStyle(4, 0x2e2e2e);
+            for (let ly = roadInnerTop; ly > gateY; ly -= 160) {
+                scene.add.rectangle(startPos, ly - 40, 8, 60, 0xffd700);
+            }
+            scene.add.rectangle(startPos - roadWidth / 2 + 6, (roadInnerTop + gateY) / 2, 6, roadInnerTop - gateY, 0xffffff, 0.9);
+            scene.add.rectangle(startPos + roadWidth / 2 - 6, (roadInnerTop + gateY) / 2, 6, roadInnerTop - gateY, 0xffffff, 0.9);
+
+            // 6b. NHÁNH RẼ PHẢI (NỘI BỘ) DẪN TỚI CÔNG VIÊN
+            const branchWidth = 400;
+            const branchY = startPos - 12000;
+            const branchLen = 7000;
+            const branchX = startPos + roadWidth / 2 + branchLen / 2;
+            scene.add.rectangle(branchX, branchY, branchLen, branchWidth, 0x4a4a4a).setStrokeStyle(4, 0x2e2e2e);
+            for (let bx = startPos + roadWidth / 2; bx < startPos + roadWidth / 2 + branchLen; bx += 160) {
+                scene.add.rectangle(bx + 40, branchY, 60, 8, 0xffd700);
+            }
+
+            // 6c. NHÁNH RẼ TRÁI (NỘI BỘ) DẪN TỚI KHU XE QUÂN SỰ
+            const branch2Y = startPos - 20000;
+            const branch2Len = 8000;
+            const branch2X = startPos - roadWidth / 2 - branch2Len / 2;
+            scene.add.rectangle(branch2X, branch2Y, branch2Len, branchWidth, 0x4a4a4a).setStrokeStyle(4, 0x2e2e2e);
+            for (let bx2 = startPos - roadWidth / 2; bx2 > startPos - roadWidth / 2 - branch2Len; bx2 -= 160) {
+                scene.add.rectangle(bx2 - 40, branch2Y, 60, 8, 0xffd700);
+            }
+
+            // 7. ĐƯỜNG NGOÀI CỔNG KÉO DÀI RA XA + THÊM NHÁNH RẼ
+            const roadOuterLen = 45000;
+            const roadOuterTop = gateY - roadOuterLen;
+            scene.add.rectangle(startPos, gateY - roadOuterLen / 2, roadWidth, roadOuterLen, 0x4a4a4a).setStrokeStyle(4, 0x2e2e2e);
+            for (let ly2 = gateY; ly2 > roadOuterTop; ly2 -= 160) {
+                scene.add.rectangle(startPos, ly2 - 40, 8, 60, 0xffd700);
+            }
+            for (let ly3 = gateY; ly3 > roadOuterTop; ly3 -= 200) {
+                scene.add.rectangle(startPos - roadWidth / 4, ly3 - 50, 6, 60, 0xffffff, 0.85);
+                scene.add.rectangle(startPos + roadWidth / 4, ly3 - 50, 6, 60, 0xffffff, 0.85);
+            }
+            scene.add.rectangle(startPos - roadWidth / 2 + 6, gateY - roadOuterLen / 2, 6, roadOuterLen, 0xffffff, 0.9);
+            scene.add.rectangle(startPos + roadWidth / 2 - 6, gateY - roadOuterLen / 2, 6, roadOuterLen, 0xffffff, 0.9);
+            for (let cy = gateY - 300; cy > roadOuterTop; cy -= 400) {
                 scene.add.circle(startPos - roadWidth / 2 - 35, cy, 28, 0x1e5631).setStrokeStyle(2, 0x0a2912);
                 scene.add.circle(startPos + roadWidth / 2 + 35, cy, 28, 0x1e5631).setStrokeStyle(2, 0x0a2912);
             }
+            const branch3Y = gateY - 25000;
+            const branch3Len = 6000;
+            const branch3X = startPos - roadWidth / 2 - branch3Len / 2;
+            scene.add.rectangle(branch3X, branch3Y, branch3Len, branchWidth, 0x4a4a4a).setStrokeStyle(4, 0x2e2e2e);
+            for (let bx3 = startPos - roadWidth / 2; bx3 > startPos - roadWidth / 2 - branch3Len; bx3 -= 160) {
+                scene.add.rectangle(bx3 - 40, branch3Y, 60, 8, 0xffd700);
+            }
 
-            // 6. Player (avatar + bubble)
-// Tạo thân nhân vật: hình tròn màu xanh lam, viền trắng
-const playerBody = scene.add.circle(0, 0, 22, 0x00e5ff).setStrokeStyle(3, 0xffffff);
-// Mắt nhân vật: hình tròn nhỏ màu đen, đặt lệch sang phải 12px
-const playerEye = scene.add.circle(12, 0, 5, 0x000000);
-// Tên hiển thị trên đầu, lấy từ currentUser hoặc mặc định "Player"
-const nameText = scene.add.text(0, -38, currentUser ? (currentUser.global_name || currentUser.username) : 'Player', {
-    font: 'bold 14px Rajdhani',
-    fill: '#ffffff',
-    stroke: '#000000',
-    strokeThickness: 4
-}).setOrigin(0.5);
+            // 8. CÔNG VIÊN CUỐI NHÁNH PHẢI (6 GHẾ + NHIỀU CÂY)
+            const parkX = branchX + branchLen / 2 + 800;
+            const parkY = branchY;
+            scene.add.rectangle(parkX, parkY, 1500, 1500, 0x6fa87b).setStrokeStyle(4, 0x4e7858);
+            scene.add.circle(parkX, parkY, 130, 0x88bd93).setStrokeStyle(3, 0x4e7858);
+            scene.add.text(parkX, parkY - 250, 'CÔNG VIÊN', {
+                font: 'bold 18px Orbitron', fill: '#ffffff', stroke: '#000000', strokeThickness: 4
+            }).setOrigin(0.5);
+            const parkTreeOffsets = [[-600,-600],[600,-600],[-600,600],[600,600],[0,-680],[0,680],[-680,0],[680,0]];
+            parkTreeOffsets.forEach(([tx, ty]) => {
+                scene.add.circle(parkX + tx, parkY + ty, 32, 0x1e5631).setStrokeStyle(2, 0x0a2912);
+            });
 
-// Tạo bong bóng chat (giống Roblox) – ban đầu ẩn
-speechBubble = scene.add.container(0, -75).setVisible(false);
-// Nền trắng bo tròn cho bong bóng
-const bubbleBg = scene.add.graphics();
-// Chữ bên trong bong bóng
-const bubbleText = scene.add.text(0, 0, '', {
-    font: '600 13px Rajdhani',
-    fill: '#000000',
-    align: 'center',
-    wordWrap: { width: 180 }
-}).setOrigin(0.5);
-// Thêm background và text vào container
-speechBubble.add([bubbleBg, bubbleText]);
-// Lưu tham chiếu để cập nhật sau này
-speechBubble.bubbleBg = bubbleBg;
-speechBubble.bubbleText = bubbleText;
+            const benchOffsets = [[-350,-350],[0,-420],[350,-350],[-350,350],[0,420],[350,350]];
+            const parkObstacles = scene.physics.add.staticGroup();
+            benchOffsets.forEach(([ox, oy]) => {
+                const bx = parkX + ox, by = parkY + oy;
+                const seat = scene.add.rectangle(bx, by, 60, 22, 0x8a5a34).setStrokeStyle(2, 0x4a2c18);
+                scene.add.rectangle(bx, by - 14, 60, 8, 0x6f462a).setStrokeStyle(2, 0x4a2c18);
+                parkObstacles.add(seat);
+            });
 
-// Gom tất cả thành một container (nhân vật + tên + bong bóng)
-playerContainer = scene.add.container(startPos, startPos + 80, [playerBody, playerEye, nameText, speechBubble]);
-// Kích hoạt vật lý cho container
-scene.physics.world.enable(playerContainer);
-// Giới hạn di chuyển trong biên map
-playerContainer.body.setCollideWorldBounds(true);
-// Thiết lập va chạm với các vật cản (hàng rào, cột cổng)
-scene.physics.add.collider(playerContainer, obstacles);
+            // 9. KHU XE QUÂN SỰ CUỐI NHÁNH TRÁI (TĂNG T-90 + XE BỌC THÉP BTR)
+            const tankGarageX = branch2X - branch2Len / 2 - 950;
+            const tankGarageY = branch2Y;
+            const hangar = scene.add.rectangle(tankGarageX, tankGarageY, 1100, 340, 0xb9ab8f).setStrokeStyle(4, 0x6b5a42);
+            scene.add.rectangle(tankGarageX, tankGarageY - 185, 1140, 40, 0x5c4a34).setStrokeStyle(3, 0x3a2e1f);
+            scene.add.text(tankGarageX, tankGarageY - 220, 'KHU XE QUÂN SỰ', {
+                font: 'bold 18px Orbitron', fill: '#ffffff', stroke: '#000000', strokeThickness: 4
+            }).setOrigin(0.5);
+            [-360, -120, 120, 360].forEach((tx, i) => {
+                if (i % 2 === 0) scene.add.image(tankGarageX + tx, tankGarageY + 20, 'tank_t90').setDisplaySize(200, 155);
+                else scene.add.image(tankGarageX + tx, tankGarageY + 20, 'btr_apc').setDisplaySize(200, 100);
+            });
+            const tankObstacles = scene.physics.add.staticGroup();
+            tankObstacles.add(hangar);
 
-// Camera Follow
-const cam = scene.cameras.main;
-cam.startFollow(playerContainer, true, 0.1, 0.1);
-cam.setBounds(0, 0, MAP_SIZE, MAP_SIZE);
-cam.setZoom(parseFloat(document.getElementById('setZoom').value));
-} // Kết thúc hàm createScene()
+            // 10. NHÀ XE Ô TÔ CẠNH ĐƯỜNG NỘI BỘ - CÓ 5 ĐIỂM SPAWN BÊN TRONG
+            const garageX = startPos + roadWidth / 2 + 260;
+            const garageY = startPos - 900;
+            const garageBody = scene.add.rectangle(garageX, garageY, 280, 200, 0xd9d2c5).setStrokeStyle(3, 0x8a8073);
+            scene.add.triangle(garageX, garageY - 120, -150, 20, 150, 20, 0, -55, 0x7a4b3a).setStrokeStyle(2, 0x4a2c22);
+            scene.add.rectangle(garageX, garageY + 55, 100, 80, 0x33363d).setStrokeStyle(2, 0x111111);
+            scene.add.text(garageX, garageY - 155, 'NHÀ XE', {
+                font: 'bold 16px Orbitron', fill: '#ffffff', stroke: '#000000', strokeThickness: 3
+            }).setOrigin(0.5);
+            const garageObstacles = scene.physics.add.staticGroup();
+            garageObstacles.add(garageBody);
 
-// ----------------- updateScene -----------------
-function updateScene() {
-    if (!playerContainer || !playerContainer.body) return;
-    const speed = 220;
-    playerContainer.body.setVelocity(moveVector.x * speed, moveVector.y * speed);
-}
+            const spawnPoints = [
+                [garageX - 90, garageY + 60], [garageX - 45, garageY + 70],
+                [garageX, garageY + 80], [garageX + 45, garageY + 70],
+                [garageX + 90, garageY + 60]
+            ];
+            const chosenSpawn = spawnPoints[Math.floor(Math.random() * spawnPoints.length)];
 
-// ----------------- Joystick -----------------
-function initJoystick() {
-    const zone = document.getElementById('joystick-zone');
-    zone.innerHTML = '';
-    joystick = nipplejs.create({
-        zone: zone, mode: 'static',
-        position: { left: '60px', top: '60px' },
-        size: 100, color: '#00e5ff'
-    });
+            // 11. KHỞI TẠO PLAYER (AVATAR ẢNH THẬT, VIỀN TRÒN TRẮNG)
+            const playerAvatar = scene.add.image(0, 0, 'p_avatar').setDisplaySize(42, 42);
+            const playerRing = scene.add.circle(0, 0, 22, 0xffffff, 0).setStrokeStyle(3, 0xffffff);
+            const avatarMaskGfx = scene.add.graphics();
+            avatarMaskGfx.fillStyle(0xffffff);
+            avatarMaskGfx.fillCircle(0, 0, 21);
+            avatarMaskGfx.setVisible(false);
+            try { playerAvatar.setMask(avatarMaskGfx.createGeometryMask()); } catch (e) {}
 
-    joystick.on('move', (evt, data) => {
-        if (!isEditHUD && data && data.vector) {
-            moveVector = { x: data.vector.x, y: -data.vector.y };
+            const nameText = scene.add.text(0, -38, currentUser ? (currentUser.global_name || currentUser.username) : 'Player', {
+                font: 'bold 14px Rajdhani', fill: '#ffffff', stroke: '#000000', strokeThickness: 4
+            }).setOrigin(0.5);
+
+            speechBubble = scene.add.container(0, -75).setVisible(false);
+            const bubbleBg = scene.add.graphics();
+            const bubbleText = scene.add.text(0, 0, '', {
+                font: '600 13px Rajdhani', fill: '#000000', align: 'center', wordWrap: { width: 180 }
+            }).setOrigin(0.5);
+            speechBubble.add([bubbleBg, bubbleText]);
+            speechBubble.bubbleBg = bubbleBg;
+            speechBubble.bubbleText = bubbleText;
+
+            playerContainer = scene.add.container(chosenSpawn[0], chosenSpawn[1], [playerAvatar, avatarMaskGfx, playerRing, nameText, speechBubble]);
+
+            scene.physics.world.enable(playerContainer);
+            playerContainer.body.setCollideWorldBounds(true);
+
+            scene.physics.add.collider(playerContainer, obstacles);
+            scene.physics.add.collider(playerContainer, parkObstacles);
+            scene.physics.add.collider(playerContainer, tankObstacles);
+            scene.physics.add.collider(playerContainer, garageObstacles);
+
+            const cam = scene.cameras.main;
+            cam.startFollow(playerContainer, true, 0.1, 0.1);
+            cam.setBounds(0, 0, MAP_SIZE, MAP_SIZE);
+            cam.setZoom(parseFloat(document.getElementById('setZoom').value));
+                }
+                
+        
+        function initJoystick() {
+            const zone = document.getElementById('joystick-zone');
+            zone.innerHTML = '';
+            joystick = nipplejs.create({
+                zone: zone, mode: 'static',
+                position: { left: '60px', top: '60px' },
+                size: 100, color: '#00e5ff'
+            });
+
+            joystick.on('move', (evt, data) => {
+                if (!isEditHUD && data && data.vector) {
+                    moveVector = { x: data.vector.x, y: -data.vector.y };
+                }
+            });
+            joystick.on('end', () => { moveVector = { x: 0, y: 0 }; });
         }
-    });
-    joystick.on('end', () => { moveVector = { x: 0, y: 0 }; });
-}
 
-// ----------------- Chat + Roblox Bubble -----------------
-document.getElementById('btnSendChat').onclick = () => {
-    const input = document.getElementById('chatInput');
-    const val = input.value.trim();
-    if (!val) return;
+        // --- 4. CÀI ĐẶT & HUD ---
+        const settingsOverlay = document.getElementById('settingsOverlay');
+        document.getElementById('btnOpenSettings').onclick = () => settingsOverlay.classList.add('open');
+        
+        document.getElementById('btnCloseSettings').onclick = () => {
+            settingsOverlay.classList.remove('open');
+            if (isEditHUD) toggleEditHUD(false);
 
-    const item = document.createElement('div');
-    item.innerHTML = `<b style="color:var(--cyan);">${currentUser ? currentUser.username : 'Khách'}:</b> ${val}`;
-    document.getElementById('chatBody').appendChild(item);
-    showRobloxBubbleChat(val);
-    input.value = '';
-};
+            if (scene) scene.cameras.main.setZoom(parseFloat(document.getElementById('setZoom').value));
+            document.documentElement.style.setProperty('--hud-alpha', document.getElementById('setHudAlpha').value);
+        };
 
-function showRobloxBubbleChat(text) {
-    if (!speechBubble) return;
-    speechBubble.bubbleText.setText(text);
-    const w = speechBubble.bubbleText.width + 20;
-    const h = speechBubble.bubbleText.height + 14;
-    speechBubble.bubbleBg.clear();
-    speechBubble.bubbleBg.fillStyle(0xffffff, 1);
-    speechBubble.bubbleBg.fillRoundedRect(-w / 2, -h / 2, w, h, 8);
-    speechBubble.setVisible(true);
-    clearTimeout(speechBubble._t);
-    speechBubble._t = setTimeout(() => speechBubble.setVisible(false), 3000);
-}
+        document.getElementById('btnToggleChat').onclick = () => {
+            if (!isEditHUD) document.getElementById('chatPanel').classList.toggle('hidden-chat');
+        };
 
-// ----------------- Settings & HUD Editing -----------------
-const settingsOverlay = document.getElementById('settingsOverlay');
-document.getElementById('btnOpenSettings').onclick = () => settingsOverlay.classList.add('open');
+        document.getElementById('btnSendChat').onclick = () => {
+            const input = document.getElementById('chatInput');
+            const val = input.value.trim();
+            if (!val) return;
 
-document.getElementById('btnCloseSettings').onclick = () => {
-    settingsOverlay.classList.remove('open');
-    if (isEditHUD) toggleEditHUD(false);
-    if (scene) scene.cameras.main.setZoom(parseFloat(document.getElementById('setZoom').value));
-    document.documentElement.style.setProperty('--hud-alpha', document.getElementById('setHudAlpha').value);
-};
+            const item = document.createElement('div');
+            item.innerHTML = `<b style="color:var(--cyan);">${currentUser ? currentUser.username : 'Khách'}:</b> ${val}`;
+            document.getElementById('chatBody').appendChild(item);
 
-document.getElementById('btnToggleChat').onclick = () => {
-    if (!isEditHUD) document.getElementById('chatPanel').classList.toggle('hidden-chat');
-};
+            showRobloxBubbleChat(val);
+            input.value = '';
+        };
 
-document.getElementById('btnLeaveMap').onclick = () => {
-    settingsOverlay.classList.remove('open');
-    if (game) { game.destroy(true); game = null; }
-    document.getElementById('screen-game').classList.remove('active');
-    document.getElementById('screen-menu').style.display = 'flex';
-};
+        document.getElementById('btnLeaveMap').onclick = () => {
+            settingsOverlay.classList.remove('open');
+            if (game) { game.destroy(true); game = null; }
+            document.getElementById('screen-game').classList.remove('active');
+            document.getElementById('screen-menu').style.display = 'flex';
+        };
 
-document.getElementById('btnEditHUD').onclick = () => {
-    settingsOverlay.classList.remove('open');
-    toggleEditHUD(true);
-};
+        document.getElementById('btnEditHUD').onclick = () => {
+            settingsOverlay.classList.remove('open');
+            toggleEditHUD(true);
+        };
 
-function toggleEditHUD(enable) {
-    isEditHUD = enable;
-    const app = document.getElementById('app');
-    if (enable) {
-        app.classList.add('edit-hud-mode');
-        makeDraggable(document.getElementById('chatPanel'));
-        makeDraggable(document.getElementById('joystick-zone'));
-    } else {
-        app.classList.remove('edit-hud-mode');
-    }
-}
+        function toggleEditHUD(enable) {
+            isEditHUD = enable;
+            const app = document.getElementById('app');
+            if (enable) {
+                app.classList.add('edit-hud-mode');
+                makeDraggable(document.getElementById('chatPanel'));
+                makeDraggable(document.getElementById('joystick-zone'));
+            } else {
+                app.classList.remove('edit-hud-mode');
+            }
+        }
 
-function makeDraggable(el) {
-    let p1 = 0, p2 = 0, p3 = 0, p4 = 0;
-    el.onmousedown = dragMouseDown;
-    el.ontouchstart = dragMouseDown;
+        function makeDraggable(el) {
+            let p1 = 0, p2 = 0, p3 = 0, p4 = 0;
+            el.onmousedown = dragMouseDown;
+            el.ontouchstart = dragMouseDown;
 
-    function dragMouseDown(e) {
-        if (!isEditHUD) return;
-        e = e || window.event;
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-        p3 = clientX; p4 = clientY;
-        document.onmouseup = closeDragElement;
-        document.ontouchend = closeDragElement;
-        document.onmousemove = elementDrag;
-        document.ontouchmove = elementDrag;
-    }
+            function dragMouseDown(e) {
+                if (!isEditHUD) return;
+                e = e || window.event;
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                p3 = clientX; p4 = clientY;
+                document.onmouseup = closeDragElement;
+                document.ontouchend = closeDragElement;
+                document.onmousemove = elementDrag;
+                document.ontouchmove = elementDrag;
+            }
 
-    function elementDrag(e) {
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-        p1 = p3 - clientX; p2 = p4 - clientY;
-        p3 = clientX; p4 = clientY;
-        el.style.top = (el.offsetTop - p2) + "px";
-        el.style.left = (el.offsetLeft - p1) + "px";
-        el.style.bottom = 'auto'; el.style.right = 'auto';
-    }
+            function elementDrag(e) {
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                p1 = p3 - clientX; p2 = p4 - clientY;
+                p3 = clientX; p4 = clientY;
+                el.style.top = (el.offsetTop - p2) + "px";
+                el.style.left = (el.offsetLeft - p1) + "px";
+                el.style.bottom = 'auto'; el.style.right = 'auto';
+            }
 
-    function closeDragElement() {
-        document.onmouseup = null; document.onmousemove = null;
-        document.ontouchend = null; document.ontouchmove = null;
-    }
-}
+            function closeDragElement() {
+                document.onmouseup = null; document.onmousemove = null;
+                document.ontouchend = null; document.ontouchmove = null;
+            }
+        }
 
-// ----------------- Khởi động -----------------
-window.onload = checkDiscordAuth;
-window.onresize = () => { if (game) game.scale.resize(window.innerWidth, window.innerHeight); };
+        function updateScene() {
+            if (!playerContainer || !playerContainer.body) return;
+            const speed = 220;
+            playerContainer.body.setVelocity(moveVector.x * speed, moveVector.y * speed);
+        }
 
-// Bắt lỗi toàn cục hiển thị
-window.addEventListener('error', function (e) {
-    const box = document.getElementById('errBox');
-    box.style.display = 'block';
-    box.textContent += 'LỖI: ' + e.message + '\n   Tại dòng: ' + e.lineno + ':' + e.colno + '\n\n';
-});
-</script>
+        function showRobloxBubbleChat(text) {
+            if (!speechBubble) return;
+            speechBubble.bubbleText.setText(text);
+            const w = speechBubble.bubbleText.width + 20;
+            const h = speechBubble.bubbleText.height + 14;
+            speechBubble.bubbleBg.clear();
+            speechBubble.bubbleBg.fillStyle(0xffffff, 1);
+            speechBubble.bubbleBg.fillRoundedRect(-w / 2, -h / 2, w, h, 8);
+            speechBubble.setVisible(true);
+            clearTimeout(speechBubble._t);
+            speechBubble._t = setTimeout(() => speechBubble.setVisible(false), 3000);
+        }
+
+        window.onload = checkDiscordAuth;
+        window.onresize = () => { if (game) game.scale.resize(window.innerWidth, window.innerHeight); };
+    </script>
 </body>
 </html>
