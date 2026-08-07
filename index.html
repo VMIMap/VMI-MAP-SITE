@@ -166,7 +166,34 @@
         </div>
     </div>
 
+    <div id="errBox" style="display:none; position:fixed; inset:0; z-index:9999; background:#1a0000; color:#ff5555; padding:16px; font-family:monospace; font-size:13px; overflow:auto; white-space:pre-wrap;"></div>
     <script>
+        window.addEventListener('error', function (e) {
+            const box = document.getElementById('errBox');
+            box.style.display = 'block';
+            box.textContent += 'LỖI: ' + e.message + '\n   Tại dòng: ' + e.lineno + ':' + e.colno + '\n\n';
+        });
+
+        // --- ÂM THANH CLICK KIỂU CÔNG NGHỆ CHO CÁC NÚT ---
+        function playClickSound() {
+            try {
+                const ctx = window.__audioCtx || (window.__audioCtx = new (window.AudioContext || window.webkitAudioContext)());
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(1400, ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(900, ctx.currentTime + 0.07);
+                gain.gain.value = 0.05;
+                osc.connect(gain).connect(ctx.destination);
+                osc.start();
+                gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.09);
+                osc.stop(ctx.currentTime + 0.1);
+            } catch (e) {}
+        }
+        document.addEventListener('click', (e) => {
+            if (e.target.closest && e.target.closest('.btn, .map-card')) playClickSound();
+        });
+
         // --- 1. DISCORD OAUTH2 ---
         const CLIENT_ID = '1534238453871673414'; 
         const REDIRECT_URI = window.location.origin + window.location.pathname;
@@ -257,23 +284,32 @@
         };
 
         function initGame() {
-            if (game) { game.destroy(true); game = null; }
+            try {
+                if (typeof Phaser === 'undefined') {
+                    throw new Error('Phaser chưa load được (có thể do mạng chặn CDN jsdelivr.net)');
+                }
+                if (game) { game.destroy(true); game = null; }
 
-            const renderScale = parseFloat(document.getElementById('setGraphics').value);
+                const renderScale = parseFloat(document.getElementById('setGraphics').value);
 
-            const config = {
-                type: Phaser.AUTO,
-                parent: 'phaser-container',
-                width: window.innerWidth,
-                height: window.innerHeight,
-                resolution: renderScale,
-                backgroundColor: '#101726',
-                physics: { default: 'arcade' },
-                scene: { preload: preloadScene, create: createScene, update: updateScene }
-            };
+                const config = {
+                    type: Phaser.AUTO,
+                    parent: 'phaser-container',
+                    width: window.innerWidth,
+                    height: window.innerHeight,
+                    resolution: renderScale,
+                    backgroundColor: '#101726',
+                    physics: { default: 'arcade' },
+                    scene: { preload: preloadScene, create: createScene, update: updateScene }
+                };
 
-            game = new Phaser.Game(config);
-            initJoystick();
+                game = new Phaser.Game(config);
+                initJoystick();
+            } catch (err) {
+                const box = document.getElementById('errBox');
+                box.style.display = 'block';
+                box.textContent += 'LỖI initGame(): ' + err.message + '\n\n';
+            }
         }
 
         function preloadScene() {
@@ -285,6 +321,7 @@
                 : `https://cdn.discordapp.com/embed/avatars/0.png`;
 
             scene.load.image('p_avatar', avUrl);
+            scene.load.image('flag_vn', 'https://flagcdn.com/h240/vn.png');
         }
 
                 function createScene() {
@@ -308,11 +345,10 @@
             // Bệ và Cột cờ
             const flagBase = scene.add.circle(startPos, startPos, 22, 0x777777).setStrokeStyle(3, 0x333333);
             const flagPole = scene.add.line(startPos, startPos, 0, 0, 0, -100, 0xffffff).setLineWidth(4);
-            const flag = scene.add.rectangle(startPos + 22, startPos - 25, 44, 26, 0xda251d); // Lá cờ đỏ
-            const flagStar = scene.add.polygon(startPos + 22, startPos - 25, [0,-5, 2,-1, 5,-1, 2,1, 3,4, 0,2, -3,4, -2,1, -5,-1, -2,-1], 0xffff00); // Sao vàng
-            
+            const flagImg = scene.add.image(startPos + 26, startPos - 25, 'flag_vn').setDisplaySize(52, 36); // Cờ ảnh thật
+
             let isFlagUp = false;
-            const flagGroup = scene.add.container(0, 0, [flag, flagStar]);
+            const flagGroup = scene.add.container(0, 0, [flagImg]);
 
             // Bấm vào cột cờ để kéo lên / hạ xuống
             flagBase.setInteractive({ cursor: 'pointer' });
@@ -341,7 +377,7 @@
                     for (let col = 0; col < 8; col++) {
                         const px = baseX + (col - 3.5) * 40;
                         const py = baseY + (row - 2.5) * 40;
-                        scene.add.rectangle(px, py, 30, 30, 0xffffff, 0.9).setStrokeStyle(2, 0x00e5ff);
+                        scene.add.rectangle(px, py, 30, 30, 0xffffff, 0.9).setStrokeStyle(2, 0xffffff);
                     }
                 }
             }
@@ -349,10 +385,18 @@
             // 4. CỔNG GÁC, HÀNG RÀO VÀNG (CÓ VA CHẠM KHÔNG THỂ ĐI QUA)
             const gateY = startPos - 1500;
             
-            // 2 Cột đỏ đậm
-            const pillarLeft = scene.add.rectangle(startPos - 180, gateY, 40, 40, 0x8b0000).setStrokeStyle(2, 0x000000);
-            const pillarRight = scene.add.rectangle(startPos + 180, gateY, 40, 40, 0x8b0000).setStrokeStyle(2, 0x000000);
-            
+            // 2 Cột đỏ đậm (cao hơn, có chóp vàng cho đẹp)
+            const pillarLeft = scene.add.rectangle(startPos - 180, gateY, 44, 90, 0x8b0000).setStrokeStyle(3, 0x000000);
+            const pillarRight = scene.add.rectangle(startPos + 180, gateY, 44, 90, 0x8b0000).setStrokeStyle(3, 0x000000);
+            const pillarCapLeft = scene.add.rectangle(startPos - 180, gateY - 50, 56, 16, 0xffd700).setStrokeStyle(2, 0xb8860b);
+            const pillarCapRight = scene.add.rectangle(startPos + 180, gateY - 50, 56, 16, 0xffd700).setStrokeStyle(2, 0xb8860b);
+
+            // Xà ngang nối 2 cột + biển hiệu cổng
+            const gateBeam = scene.add.rectangle(startPos, gateY - 65, 400, 14, 0x8b0000).setStrokeStyle(2, 0x000000);
+            scene.add.text(startPos, gateY - 92, 'DOANH TRẠI VMI', {
+                font: 'bold 20px Orbitron', fill: '#ffd700', stroke: '#000000', strokeThickness: 4
+            }).setOrigin(0.5);
+
             // Hàng rào vàng 2 bên cổng
             const fenceLeft = scene.add.rectangle(startPos - 1200, gateY, 2000, 18, 0xffd700).setStrokeStyle(2, 0xb8860b);
             const fenceRight = scene.add.rectangle(startPos + 1200, gateY, 2000, 18, 0xffd700).setStrokeStyle(2, 0xb8860b);
@@ -361,15 +405,24 @@
             const obstacles = scene.physics.add.staticGroup();
             obstacles.addMultiple([pillarLeft, pillarRight, fenceLeft, fenceRight]);
 
-            // 5. ĐƯỜNG BÊ TÔNG RỘNG CHO XE & HÀNG CÂY XANH DỌC ĐƯỜNG
-            const roadWidth = 450;
+            // 5. ĐƯỜNG BÊ TÔNG RỘNG CHO XE, CHIA LÀN & HÀNG CÂY XANH DỌC ĐƯỜNG
+            const roadWidth = 600;
             const roadHeight = 2500;
-            // Mặt đường xám
-            scene.add.rectangle(startPos, gateY - roadHeight / 2, roadWidth, roadHeight, 0x444444);
-            // Vạch đứt tim đường màu vàng
+            // Mặt đường bê tông xám, viền đậm
+            scene.add.rectangle(startPos, gateY - roadHeight / 2, roadWidth, roadHeight, 0x4a4a4a).setStrokeStyle(4, 0x2e2e2e);
+
+            // Vạch đứt tim đường màu vàng (chia 2 chiều đi)
             for (let ly = gateY; ly > gateY - roadHeight; ly -= 80) {
                 scene.add.rectangle(startPos, ly - 20, 8, 40, 0xffd700);
             }
+            // Vạch trắng chia làn phụ 2 bên (mỗi chiều 2 làn)
+            for (let ly2 = gateY; ly2 > gateY - roadHeight; ly2 -= 100) {
+                scene.add.rectangle(startPos - roadWidth / 4, ly2 - 25, 6, 36, 0xffffff, 0.85);
+                scene.add.rectangle(startPos + roadWidth / 4, ly2 - 25, 6, 36, 0xffffff, 0.85);
+            }
+            // Vạch trắng liền 2 mép đường
+            scene.add.rectangle(startPos - roadWidth / 2 + 6, gateY - roadHeight / 2, 6, roadHeight, 0xffffff, 0.9);
+            scene.add.rectangle(startPos + roadWidth / 2 - 6, gateY - roadHeight / 2, 6, roadHeight, 0xffffff, 0.9);
 
             // Trồng hàng cây xanh hai bên đường bê tông
             for (let cy = gateY - 80; cy > gateY - roadHeight; cy -= 110) {
@@ -377,9 +430,25 @@
                 scene.add.circle(startPos + roadWidth / 2 + 35, cy, 28, 0x1e5631).setStrokeStyle(2, 0x0a2912);
             }
 
-            // 6. KHỞI TẠO PLAYER (AVATAR TRÒN KHÔNG BỊ LỖI MÀN HÌNH ĐEN)
-            const playerBody = scene.add.circle(0, 0, 22, 0x00e5ff).setStrokeStyle(3, 0xffffff);
-            const playerEye = scene.add.circle(12, 0, 5, 0x000000);
+            // NHÀ XE cạnh đường (có va chạm, không đi xuyên qua được)
+            const garageX = startPos + roadWidth / 2 + 260;
+            const garageY = gateY - roadHeight + 260;
+            const garageBody = scene.add.rectangle(garageX, garageY, 260, 160, 0xd9d2c5).setStrokeStyle(3, 0x8a8073);
+            scene.add.triangle(garageX, garageY - 100, -140, 20, 140, 20, 0, -50, 0x7a4b3a).setStrokeStyle(2, 0x4a2c22);
+            scene.add.rectangle(garageX, garageY + 45, 90, 70, 0x33363d).setStrokeStyle(2, 0x111111);
+            scene.add.text(garageX, garageY - 130, 'NHÀ XE', {
+                font: 'bold 16px Orbitron', fill: '#ffffff', stroke: '#000000', strokeThickness: 3
+            }).setOrigin(0.5);
+            obstacles.add(garageBody);
+
+            // 6. KHỞI TẠO PLAYER (AVATAR ẢNH THẬT, VIỀN TRÒN TRẮNG)
+            const playerAvatar = scene.add.image(0, 0, 'p_avatar').setDisplaySize(42, 42);
+            const playerRing = scene.add.circle(0, 0, 22, 0xffffff, 0).setStrokeStyle(3, 0xffffff);
+            const avatarMaskGfx = scene.add.graphics();
+            avatarMaskGfx.fillStyle(0xffffff);
+            avatarMaskGfx.fillCircle(0, 0, 21);
+            avatarMaskGfx.setVisible(false);
+            try { playerAvatar.setMask(avatarMaskGfx.createGeometryMask()); } catch (e) {}
 
             const nameText = scene.add.text(0, -38, currentUser ? (currentUser.global_name || currentUser.username) : 'Player', {
                 font: 'bold 14px Rajdhani', fill: '#ffffff', stroke: '#000000', strokeThickness: 4
@@ -396,7 +465,7 @@
             speechBubble.bubbleText = bubbleText;
 
             // Spawn nhân vật tại Sân Bê Tông Trắng
-            playerContainer = scene.add.container(startPos, startPos + 80, [playerBody, playerEye, nameText, speechBubble]);
+            playerContainer = scene.add.container(startPos, startPos + 80, [playerAvatar, avatarMaskGfx, playerRing, nameText, speechBubble]);
 
             scene.physics.world.enable(playerContainer);
             playerContainer.body.setCollideWorldBounds(true);
