@@ -1,65 +1,354 @@
 // ==========================================
-// MAP 1 - KHU HUẤN LUYỆN (SPAWN Ở GIỮA)
+// MAP 1 - KHU HUẤN LUYỆN
+// 12 PAD + SPAWN Ở GIỮA
 // ==========================================
 
 function createMap1(scene) {
-    if (scene.map1Group) scene.map1Group.clear(true, true);
+
+    // Xóa map cũ
+    if (scene.map1Group) {
+        scene.map1Group.clear(true, true);
+    }
+
     scene.map1Group = scene.add.group();
 
-    const MAP_SIZE = 3000;
+    // ==========================================
+    // CẤU HÌNH MAP
+    // ==========================================
+
+    const MAP_SIZE = 4000;
+
     const centerX = MAP_SIZE / 2;
     const centerY = MAP_SIZE / 2;
 
-    // Mở rộng camera
-    scene.cameras.main.setBounds(0, 0, MAP_SIZE, MAP_SIZE);
-    scene.physics.world.setBounds(0, 0, MAP_SIZE, MAP_SIZE);
-    scene.cameras.main.setBackgroundColor('#2b2b2b');
+    scene.cameras.main.setBounds(
+        0, 0,
+        MAP_SIZE,
+        MAP_SIZE
+    );
 
-    // ==============================
-    // SPAWN: SÂN BÊ TÔNG (chính giữa)
-    // ==============================
-    const concreteW = 500;
-    const concreteH = 200;
-    scene.add.rectangle(centerX, centerY, concreteW, concreteH, 0xd9d9d9)
-        .setStrokeStyle(4, 0xffffff).setDepth(1);
-    scene.add.rectangle(centerX, centerY, concreteW - 30, concreteH - 30)
-        .setStrokeStyle(2, 0x999999).setDepth(2);
-    scene.add.text(centerX, centerY + concreteH/2 + 20, 'SPAWN - SÂN BÊ TÔNG', {
-        font: 'bold 18px Arial', fill: '#000', stroke: '#fff', strokeThickness: 4
-    }).setOrigin(0.5).setDepth(3);
+    scene.physics.world.setBounds(
+        0, 0,
+        MAP_SIZE,
+        MAP_SIZE
+    );
 
-    // ==============================
-    // CÁC PAD HUẤN LUYỆN (xung quanh)
-    // ==============================
-    const padW = 300, padH = 80;
-    const gap = 60;
-    const rows = 3, cols = 3; // 9 pad bố trí xung quanh spawn
-    const totalPadWidth = cols * padW + (cols - 1) * gap;
-    const totalPadHeight = rows * padH + (rows - 1) * gap;
-    const startX = centerX - totalPadWidth / 2 + padW / 2;
-    const startY = centerY - 200; // đặt các pad phía trên spawn
+    // Nền xanh lá
+    scene.cameras.main.setBackgroundColor('#4f8f3a');
 
-    for (let row = 0; row < rows; row++) {
-        for (let col = 0; col < cols; col++) {
-            let px = startX + col * (padW + gap);
-            let py = startY + row * (padH + gap);
-            // Điều chỉnh pad ở dưới spawn
-            if (row >= 1) py = centerY + 200 + (row - 1) * (padH + gap);
+    // ==========================================
+    // SPAWN - SÂN BÊ TÔNG GIỮA MAP
+    // ==========================================
 
-            const pad = scene.add.rectangle(px, py, padW, padH, 0x3a3a3a)
-                .setStrokeStyle(2, 0xffffff).setDepth(1);
-            scene.add.text(px, py - padH/2 - 15, `PAD ${row*3+col+1}`, {
-                font: '14px Arial', fill: '#fff', stroke: '#000', strokeThickness: 2
-            }).setOrigin(0.5).setDepth(3);
+    const spawnW = 520;
+    const spawnH = 260;
 
-            // Kẻ ô lưới (tuỳ chọn)
-            const cell = 30;
-            for (let x = px - padW/2 + cell; x < px + padW/2; x += cell) {
-                scene.add.line(0, 0, x, py - padH/2, x, py + padH/2, 0x888888).setLineWidth(1).setDepth(2);
+    const spawn = scene.add.rectangle(
+        centerX,
+        centerY,
+        spawnW,
+        spawnH,
+        0xe5e5e5
+    )
+    .setStrokeStyle(5, 0xffffff)
+    .setDepth(1);
+
+    scene.map1Group.add(spawn);
+
+    // Viền sân
+    const spawnBorder = scene.add.rectangle(
+        centerX,
+        centerY,
+        spawnW - 30,
+        spawnH - 30
+    )
+    .setStrokeStyle(2, 0x999999)
+    .setDepth(2);
+
+    scene.map1Group.add(spawnBorder);
+
+    // ==========================================
+    // CỘT CỜ VIỆT NAM
+    // ==========================================
+
+    const pole = scene.add.rectangle(
+        centerX,
+        centerY - 45,
+        7,
+        130,
+        0xd0d0d0
+    )
+    .setStrokeStyle(2, 0x555555)
+    .setDepth(4);
+
+    scene.map1Group.add(pole);
+
+    // Cờ Việt Nam
+    if (scene.textures.exists('flag_vn')) {
+
+        const flag = scene.add.image(
+            centerX + 42,
+            centerY - 100,
+            'flag_vn'
+        )
+        .setDisplaySize(85, 57)
+        .setDepth(5);
+
+        scene.map1Group.add(flag);
+    }
+
+    // Chân cột
+    const poleBase = scene.add.circle(
+        centerX,
+        centerY + 20,
+        20,
+        0x777777
+    )
+    .setStrokeStyle(3, 0x333333)
+    .setDepth(4);
+
+    scene.map1Group.add(poleBase);
+
+    // ==========================================
+    // 12 PAD
+    //
+    //       PAD PAD PAD PAD
+    //       PAD PAD PAD PAD
+    //       PAD PAD PAD PAD
+    //
+    //       SÂN CỜ / SPAWN
+    // ==========================================
+
+    const PAD_W = 420;
+    const PAD_H = 90;
+
+    const PAD_GAP_X = 70;
+    const PAD_GAP_Y = 65;
+
+    const COLS = 4;
+    const ROWS = 3;
+
+    const totalW =
+        COLS * PAD_W +
+        (COLS - 1) * PAD_GAP_X;
+
+    const totalH =
+        ROWS * PAD_H +
+        (ROWS - 1) * PAD_GAP_Y;
+
+    // Đặt cụm PAD phía trên spawn
+    const padsStartX =
+        centerX - totalW / 2 + PAD_W / 2;
+
+    const padsStartY =
+        centerY - spawnH / 2 - 180 - totalH / 2;
+
+    for (let row = 0; row < ROWS; row++) {
+
+        for (let col = 0; col < COLS; col++) {
+
+            const px =
+                padsStartX +
+                col * (PAD_W + PAD_GAP_X);
+
+            const py =
+                padsStartY +
+                row * (PAD_H + PAD_GAP_Y);
+
+            // PAD
+            const pad = scene.add.rectangle(
+                px,
+                py,
+                PAD_W,
+                PAD_H,
+                0x666666
+            )
+            .setStrokeStyle(
+                3,
+                0xffffff,
+                0.9
+            )
+            .setDepth(2);
+
+            pad.area = row * COLS + col + 1;
+
+            scene.map1Group.add(pad);
+
+            // ==================================
+            // CHIA Ô PAD
+            // ==================================
+
+            const CELL = 30;
+
+            for (
+                let x = px - PAD_W / 2 + CELL;
+                x < px + PAD_W / 2;
+                x += CELL
+            ) {
+
+                const line = scene.add.line(
+                    0,
+                    0,
+                    x,
+                    py - PAD_H / 2,
+                    x,
+                    py + PAD_H / 2,
+                    0xffffff
+                )
+                .setLineWidth(1)
+                .setAlpha(0.35)
+                .setDepth(3);
+
+                scene.map1Group.add(line);
             }
-            for (let y = py - padH/2 + cell; y < py + padH/2; y += cell) {
-                scene.add.line(0, 0, px - padW/2, y, px + padW/2, y, 0x888888).setLineWidth(1).setDepth(2);
-            }
+
+            // ==================================
+            // ĐƯỜNG VÀO PAD
+            // ==================================
+
+            const road = scene.add.rectangle(
+                px,
+                py + PAD_H / 2 + 25,
+                PAD_W,
+                35,
+                0x777777
+            )
+            .setDepth(1);
+
+            scene.map1Group.add(road);
         }
     }
- }
+
+    // ==========================================
+    // ĐƯỜNG CHÍNH TỪ PAD -> SPAWN
+    // ==========================================
+
+    const mainRoad = scene.add.rectangle(
+        centerX,
+        centerY - spawnH / 2 - 80,
+        totalW + 120,
+        45,
+        0x777777
+    )
+    .setDepth(1);
+
+    scene.map1Group.add(mainRoad);
+
+    // ==========================================
+    // SPAWN PLAYER
+    // ==========================================
+
+    const spawnX = centerX;
+    const spawnY = centerY + 70;
+
+    // Nếu player cũ tồn tại thì xóa
+    if (playerContainer) {
+        playerContainer.destroy();
+        playerContainer = null;
+    }
+
+    // Avatar
+    const playerAvatar = scene.add.image(
+        0,
+        0,
+        'p_avatar'
+    )
+    .setDisplaySize(40, 40);
+
+    // Vòng player
+    const playerRing = scene.add.circle(
+        0,
+        0,
+        22,
+        0xffffff,
+        0
+    )
+    .setStrokeStyle(
+        3,
+        0xffffff
+    );
+
+    // Tên
+    const playerName = currentUser
+        ? (
+            currentUser.global_name ||
+            currentUser.username
+        )
+        : 'Player';
+
+    const nameText = scene.add.text(
+        0,
+        -38,
+        playerName,
+        {
+            font: 'bold 14px Rajdhani',
+            fill: '#ffffff',
+            stroke: '#000000',
+            strokeThickness: 4
+        }
+    )
+    .setOrigin(0.5);
+
+    // Container player
+    playerContainer = scene.add.container(
+        spawnX,
+        spawnY,
+        [
+            playerAvatar,
+            playerRing,
+            nameText
+        ]
+    );
+
+    controlledObject = playerContainer;
+
+    // Physics
+    scene.physics.world.enable(
+        playerContainer
+    );
+
+    playerContainer.body.setCollideWorldBounds(true);
+
+    playerContainer.body.setSize(
+        36,
+        36
+    );
+
+    // ==========================================
+    // CAMERA
+    // ==========================================
+
+    const cam = scene.cameras.main;
+
+    cam.startFollow(
+        playerContainer,
+        true,
+        0.1,
+        0.1
+    );
+
+    cam.setBounds(
+        0,
+        0,
+        MAP_SIZE,
+        MAP_SIZE
+    );
+
+    cam.setZoom(
+        parseFloat(
+            document.getElementById('setZoom').value
+        )
+    );
+
+    // ==========================================
+    // JOYSTICK
+    // ==========================================
+
+    if (typeof initJoystick === 'function') {
+        initJoystick();
+    }
+
+    console.log(
+        'MAP 1: 12 PAD + SPAWN + PLAYER đã tạo'
+    );
+                }
