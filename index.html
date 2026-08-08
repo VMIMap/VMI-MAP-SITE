@@ -329,70 +329,64 @@
             scene.load.image('btr_apc', 'https://commons.wikimedia.org/wiki/Special:FilePath/BTR-4 silhouette.png?width=300');
         }
 
-                function createScene() {
-            // KHU HUẤN LUYỆN - MAP NHỎ, GỌN (từ từ mở rộng thêm khu khác sau)
-            const MAP_SIZE = 2000;
-            scene.physics.world.setBounds(0, 0, MAP_SIZE, MAP_SIZE);
-            const startPos = MAP_SIZE / 2; // Tâm map
+        function createScene() {
+    // KHU HUẤN LUYỆN - CHỈ GIỮ PAD
+    const MAP_SIZE = 3000; // Tăng nhẹ từ 2000 để pad không lọt ra ngoài biên map
+    scene.physics.world.setBounds(0, 0, MAP_SIZE, MAP_SIZE);
+    const startPos = MAP_SIZE / 2; // Tâm map
 
-            // NỀN CỎ XANH
-            scene.add.rectangle(startPos, startPos, MAP_SIZE, MAP_SIZE, 0x5c8a67).setOrigin(0.5);
+    // NỀN CỎ XANH
+    scene.add.rectangle(startPos, startPos, MAP_SIZE, MAP_SIZE, 0x5c8a67).setOrigin(0.5);
 
-            const obstacles = scene.physics.add.staticGroup();
-            const roadHalf = 300;
-            const pillarOffset = roadHalf + 40;
+    const obstacles = scene.physics.add.staticGroup();
 
-
-            // 2. KHU VỰC PAD ĐỨNG (6 CỤM)
-            const clusterOffsetX = [-400, 0, 400, -400, 0, 400];
-            const clusterOffsetY = [-700, -700, -700, -1100, -1100, -1100];
-            for (let c = 0; c < 6; c++) {
-                const baseX = startPos + clusterOffsetX[c];
-                const baseY = startPos + clusterOffsetY[c];
-                for (let row = 0; row < 6; row++) {
-                    for (let col = 0; col < 8; col++) {
-                        const px = baseX + (col - 3.5) * 40;
-                        const py = baseY + (row - 2.5) * 40;
-                        scene.add.rectangle(px, py, 30, 30, 0xffffff, 0.9).setStrokeStyle(2, 0xffffff);
-                    }
-                }
+    // KHU VỰC PAD ĐỨNG (6 CỤM)
+    const clusterOffsetX = [-400, 0, 400, -400, 0, 400];
+    const clusterOffsetY = [-700, -700, -700, -1100, -1100, -1100];
+    for (let c = 0; c < 6; c++) {
+        const baseX = startPos + clusterOffsetX[c];
+        const baseY = startPos + clusterOffsetY[c];
+        for (let row = 0; row < 6; row++) {
+            for (let col = 0; col < 8; col++) {
+                const px = baseX + (col - 3.5) * 40;
+                const py = baseY + (row - 2.5) * 40;
+                scene.add.rectangle(px, py, 30, 30, 0xffffff, 0.9).setStrokeStyle(2, 0xffffff);
             }
+        }
+    }
 
-            // 3. NHÀ CHÍNH (KIỂU HỘI TRƯỜNG/NHÀ QUỐC HỘI) PHÍA SAU KHU PAD + TƯỜNG THẤP QUANH NHÀ
-            
+    // KHỞI TẠO PLAYER (AVATAR ẢNH THẬT)
+    const playerAvatar = scene.add.image(0, 0, 'p_avatar').setDisplaySize(40, 40);
+    const playerRing = scene.add.circle(0, 0, 22, 0xffffff, 0).setStrokeStyle(3, 0xffffff);
 
-            // 6. KHỞI TẠO PLAYER (AVATAR ẢNH THẬT - HIỂN THỊ TRỰC TIẾP)
-            const playerAvatar = scene.add.image(0, 0, 'p_avatar').setDisplaySize(40, 40);
-            const playerRing = scene.add.circle(0, 0, 22, 0xffffff, 0).setStrokeStyle(3, 0xffffff);
+    const nameText = scene.add.text(0, -38, currentUser ? (currentUser.global_name || currentUser.username) : 'Player', {
+        font: 'bold 14px Rajdhani', fill: '#ffffff', stroke: '#000000', strokeThickness: 4
+    }).setOrigin(0.5);
 
-            const nameText = scene.add.text(0, -38, currentUser ? (currentUser.global_name || currentUser.username) : 'Player', {
-                font: 'bold 14px Rajdhani', fill: '#ffffff', stroke: '#000000', strokeThickness: 4
-            }).setOrigin(0.5);
+    speechBubble = scene.add.container(0, -75).setVisible(false);
+    const bubbleBg = scene.add.graphics();
+    const bubbleText = scene.add.text(0, 0, '', {
+        font: '600 13px Rajdhani', fill: '#000000', align: 'center', wordWrap: { width: 180 }
+    }).setOrigin(0.5);
+    speechBubble.add([bubbleBg, bubbleText]);
+    speechBubble.bubbleBg = bubbleBg;
+    speechBubble.bubbleText = bubbleText;
 
-            speechBubble = scene.add.container(0, -75).setVisible(false);
-            const bubbleBg = scene.add.graphics();
-            const bubbleText = scene.add.text(0, 0, '', {
-                font: '600 13px Rajdhani', fill: '#000000', align: 'center', wordWrap: { width: 180 }
-            }).setOrigin(0.5);
-            speechBubble.add([bubbleBg, bubbleText]);
-            speechBubble.bubbleBg = bubbleBg;
-            speechBubble.bubbleText = bubbleText;
+    // Spawn ngay giữa map, phía dưới khu pad
+    playerContainer = scene.add.container(startPos, startPos + 400, [playerAvatar, playerRing, nameText, speechBubble]);
+    controlledObject = playerContainer;
 
-            playerContainer = scene.add.container(chosenSpawn[0], chosenSpawn[1], [playerAvatar, playerRing, nameText, speechBubble]);
-            controlledObject = playerContainer;
+    scene.physics.world.enable(playerContainer);
+    playerContainer.body.setCollideWorldBounds(true);
 
-            scene.physics.world.enable(playerContainer);
-            playerContainer.body.setCollideWorldBounds(true);
+    scene.physics.add.collider(playerContainer, obstacles);
 
-            scene.physics.add.collider(playerContainer, obstacles);
-            scene.physics.add.collider(playerContainer, garageObstacles);
-
-            const cam = scene.cameras.main;
-            cam.startFollow(playerContainer, true, 0.1, 0.1);
-            cam.setBounds(0, 0, MAP_SIZE, MAP_SIZE);
-            cam.setZoom(parseFloat(document.getElementById('setZoom').value));
-                }
-
+    const cam = scene.cameras.main;
+    cam.startFollow(playerContainer, true, 0.1, 0.1);
+    cam.setBounds(0, 0, MAP_SIZE, MAP_SIZE);
+    cam.setZoom(parseFloat(document.getElementById('setZoom').value));
+        }
+        
         function initJoystick() {
             const zone = document.getElementById('joystick-zone');
             zone.innerHTML = '';
