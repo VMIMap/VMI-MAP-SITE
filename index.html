@@ -90,7 +90,7 @@
         <!-- SẢNH GAME (LOBBY) -->
         <div id="screen-menu">
             <div class="lobby-box">
-                <div class="title">VMI MILITARY</div>
+                <div class="title">VMI MAP</div>
 
                 <div class="panel profile-card">
                     <div class="avatar" id="avatarEl"><img src="https://cdn.discordapp.com/embed/avatars/0.png"></div>
@@ -102,7 +102,7 @@
                     <button class="btn danger" id="btnLogout" style="display:none;">THOÁT</button>
                 </div>
 
-                <div style="font-size:12px; color:var(--cyan);">CHỌN BẢN ĐỒ HUẤN LUYỆN</div>
+                <div style="font-size:12px; color:var(--cyan);">CHỌN MAP</div>
                 <div class="map-row" id="mapRow"></div>
 
                 <button id="btnEnterGame" class="btn gold" style="width:200px; height:45px;" disabled>VÀO GAME</button>
@@ -117,7 +117,7 @@
                 <div class="panel" style="padding:6px 12px; color:var(--gold); font-weight:bold;" id="mapLabel">KHU HUẤN LUYỆN</div>
                 <div style="display:flex; gap:8px;">
                     <button class="btn" id="btnToggleChat">💬 CHAT</button>
-                    <button class="btn" id="btnOpenSettings">⚙ CÀI ĐẶT</button>
+                    <button class="btn" id="btnOpenSettings">CÀI ĐẶT</button>
                 </div>
             </div>
 
@@ -150,8 +150,8 @@
                     <label>Đồ họa (Độ nét):</label>
                     <select id="setGraphics">
                         <option value="1">Tiêu chuẩn (1x)</option>
-                        <option value="1.5" selected>Sắc nét (1.5x)</option>
-                        <option value="2">Siêu nét (2x - Tốn RAM)</option>
+                        <option value="1.5" selected>nét (1.5x)</option>
+                        <option value="2">Siêu nét</option>
                     </select>
                 </div>
                 <div class="set-row">
@@ -159,8 +159,8 @@
                     <input type="range" id="setHudAlpha" min="0.2" max="1" step="0.1" value="0.9">
                 </div>
 
-                <button class="btn" id="btnEditHUD" style="border-color:var(--gold); color:var(--gold);">🛠 CHỈNH VỊ TRÍ & CỠ HUD</button>
-                <button class="btn danger" id="btnLeaveMap">🚪 RỜI MAP VỀ SẢNH</button>
+                <button class="btn" id="btnEditHUD" style="border-color:var(--gold); color:var(--gold);">CHỈNH VỊ TRÍ & CỠ HUD</button>
+                <button class="btn danger" id="btnLeaveMap">RỜI MAP VỀ SẢNH</button>
                 <button class="btn gold" id="btnCloseSettings">LƯU & ĐÓNG</button>
             </div>
         </div>
@@ -296,7 +296,7 @@
                 const renderScale = parseFloat(document.getElementById('setGraphics').value);
 
                 const config = {
-                    type: Phaser.AUTO,
+                    type: Phaser.AUTO, ưu
                     parent: 'phaser-container',
                     width: window.innerWidth,
                     height: window.innerHeight,
@@ -331,7 +331,7 @@
 
                 function createScene() {
             // KHU HUẤN LUYỆN - MAP NHỎ, GỌN (từ từ mở rộng thêm khu khác sau)
-            const MAP_SIZE = 20000;
+            const MAP_SIZE = 2000;
             scene.physics.world.setBounds(0, 0, MAP_SIZE, MAP_SIZE);
             const startPos = MAP_SIZE / 2; // Tâm map
 
@@ -342,28 +342,6 @@
             const roadHalf = 300;
             const pillarOffset = roadHalf + 40;
 
-            // 1. KHU VỰC SPAWN (SÂN BÊ TÔNG TRẮNG & CỘT CỜ ĐẸP)
-            scene.add.rectangle(startPos, startPos, 500, 500, 0xeeeeee).setStrokeStyle(4, 0xcccccc);
-            scene.add.circle(startPos, startPos, 170, 0xdddddd, 0).setStrokeStyle(3, 0xcccccc);
-
-            const flagBase = scene.add.circle(startPos, startPos, 24, 0x777777).setStrokeStyle(3, 0x333333);
-            scene.add.rectangle(startPos + 2, startPos - 55, 9, 110, 0x888888).setOrigin(0.5, 1);
-            scene.add.rectangle(startPos, startPos - 55, 9, 110, 0xf2f2f2).setOrigin(0.5, 1);
-            scene.add.rectangle(startPos - 2, startPos - 55, 3, 110, 0xffffff).setOrigin(0.5, 1);
-            scene.add.circle(startPos, startPos - 3, 4, 0xda251d);
-            scene.add.circle(startPos, startPos - 110, 7, 0xffd700).setStrokeStyle(2, 0xb8860b);
-
-            const flagImg = scene.add.image(startPos + 28, startPos - 28, 'flag_vn').setDisplaySize(56, 38);
-            let isFlagUp = false;
-            const flagGroup = scene.add.container(0, 0, [flagImg]);
-            flagBase.setInteractive({ cursor: 'pointer' });
-            flagBase.on('pointerdown', () => {
-                isFlagUp = !isFlagUp;
-                scene.tweens.add({ targets: flagGroup, y: isFlagUp ? -72 : 0, duration: 1200, ease: 'Power2' });
-                if (typeof showRobloxBubbleChat === 'function') {
-                    showRobloxBubbleChat(isFlagUp ? "Đã kéo cờ!" : "Đã hạ cờ!");
-                }
-            });
 
             // 2. KHU VỰC PAD ĐỨNG (6 CỤM)
             const clusterOffsetX = [-400, 0, 400, -400, 0, 400];
@@ -381,76 +359,7 @@
             }
 
             // 3. NHÀ CHÍNH (KIỂU HỘI TRƯỜNG/NHÀ QUỐC HỘI) PHÍA SAU KHU PAD + TƯỜNG THẤP QUANH NHÀ
-            const hqY = startPos - 1450;
-            scene.add.rectangle(startPos, hqY, 1300, 260, 0xe8e3d8).setStrokeStyle(4, 0x9c9484);
-            scene.add.triangle(startPos, hqY - 130, -420, 60, 420, 60, 0, -100, 0xc94a3b).setStrokeStyle(3, 0x7a2c22);
-            for (let colX = -560; colX <= 560; colX += 140) {
-                scene.add.rectangle(startPos + colX, hqY + 40, 28, 180, 0xffffff).setStrokeStyle(2, 0xbdb6a6);
-            }
-            scene.add.rectangle(startPos, hqY + 145, 1360, 30, 0xcfc7b4).setStrokeStyle(2, 0x9c9484);
-            scene.add.text(startPos, hqY - 175, 'HỘI TRƯỜNG TRUNG TÂM', {
-                font: 'bold 20px Orbitron', fill: '#8b0000', stroke: '#ffffff', strokeThickness: 3
-            }).setOrigin(0.5);
-            const hqObstacle = scene.add.rectangle(startPos, hqY, 1300, 260, 0xe8e3d8, 0);
-            obstacles.add(hqObstacle);
-
-            const hqWallColor = 0xb0a890, hqWallStroke = 0x6b5a42;
-            const hqWLeft = scene.add.rectangle(startPos - 700, hqY, 40, 380, hqWallColor).setStrokeStyle(2, hqWallStroke);
-            const hqWRight = scene.add.rectangle(startPos + 700, hqY, 40, 380, hqWallColor).setStrokeStyle(2, hqWallStroke);
-            const hqWBack = scene.add.rectangle(startPos, hqY - 190, 1440, 40, hqWallColor).setStrokeStyle(2, hqWallStroke);
-            obstacles.addMultiple([hqWLeft, hqWRight, hqWBack]);
-
-            // 4. CỔNG CHÍNH - 2 CỘT + TƯỜNG BAO KHU HUẤN LUYỆN (map nhỏ nên tường ngay gần)
-            const wallHalf = MAP_SIZE / 2 - 300; // Tường sát viền map, chừa khoảng đệm nhỏ
-            const gateY = startPos - wallHalf;
-            const pillarLeft = scene.add.rectangle(startPos - pillarOffset, gateY, 44, 160, 0x8b0000).setStrokeStyle(3, 0x000000);
-            const pillarRight = scene.add.rectangle(startPos + pillarOffset, gateY, 44, 160, 0x8b0000).setStrokeStyle(3, 0x000000);
-            scene.add.rectangle(startPos - pillarOffset, gateY - 85, 56, 16, 0xffd700).setStrokeStyle(2, 0xb8860b);
-            scene.add.rectangle(startPos + pillarOffset, gateY - 85, 56, 16, 0xffd700).setStrokeStyle(2, 0xb8860b);
-            scene.add.rectangle(startPos, gateY - 100, pillarOffset * 2 + 40, 20, 0x8b0000).setStrokeStyle(2, 0x000000);
-            scene.add.text(startPos, gateY - 132, 'DOANH TRẠI VMI', {
-                font: 'bold 22px Orbitron', fill: '#ffd700', stroke: '#000000', strokeThickness: 4
-            }).setOrigin(0.5);
-            obstacles.addMultiple([pillarLeft, pillarRight]);
-
-            // Tường bao quanh khu huấn luyện (4 cạnh, chừa lối cổng phía trên)
-            const wallColor = 0xb0a890, wallStroke = 0x6b5a42, wallThick = 140;
-            const topWallLen = wallHalf - pillarOffset;
-            const wLeft = scene.add.rectangle(startPos - pillarOffset - topWallLen / 2, gateY, topWallLen, wallThick, wallColor).setStrokeStyle(3, wallStroke);
-            const wRight = scene.add.rectangle(startPos + pillarOffset + topWallLen / 2, gateY, topWallLen, wallThick, wallColor).setStrokeStyle(3, wallStroke);
-            const wBottom = scene.add.rectangle(startPos, startPos + wallHalf, wallHalf * 2, wallThick, wallColor).setStrokeStyle(3, wallStroke);
-            const wLeftSide = scene.add.rectangle(startPos - wallHalf, startPos, wallThick, wallHalf * 2, wallColor).setStrokeStyle(3, wallStroke);
-            const wRightSide = scene.add.rectangle(startPos + wallHalf, startPos, wallThick, wallHalf * 2, wallColor).setStrokeStyle(3, wallStroke);
-            obstacles.addMultiple([wLeft, wRight, wBottom, wLeftSide, wRightSide]);
-
-            // Cây dọc tường cho đẹp
-            for (let tx = startPos - wallHalf + 200; tx < startPos + wallHalf; tx += 900) {
-                scene.add.circle(tx, startPos + wallHalf - 220, 30, 0x1e5631).setStrokeStyle(2, 0x0a2912);
-                scene.add.circle(tx, startPos - wallHalf + 220, 30, 0x1e5631).setStrokeStyle(2, 0x0a2912);
-            }
-            for (let ty = startPos - wallHalf + 200; ty < startPos + wallHalf; ty += 900) {
-                scene.add.circle(startPos - wallHalf + 220, ty, 30, 0x1e5631).setStrokeStyle(2, 0x0a2912);
-                scene.add.circle(startPos + wallHalf - 220, ty, 30, 0x1e5631).setStrokeStyle(2, 0x0a2912);
-            }
-
-            // 5. NHÀ XE Ô TÔ - NGAY TRONG KHU PAD (khoảng trống giữa 2 hàng pad)
-            const garageX = startPos;
-            const garageY = startPos - 900;
-            const garageBody = scene.add.rectangle(garageX, garageY, 280, 200, 0xd9d2c5).setStrokeStyle(3, 0x8a8073);
-            scene.add.triangle(garageX, garageY - 120, -150, 20, 150, 20, 0, -55, 0x7a4b3a).setStrokeStyle(2, 0x4a2c22);
-            scene.add.rectangle(garageX, garageY + 55, 100, 80, 0x33363d).setStrokeStyle(2, 0x111111);
-            scene.add.text(garageX, garageY - 155, 'NHÀ XE', {
-                font: 'bold 16px Orbitron', fill: '#ffffff', stroke: '#000000', strokeThickness: 3
-            }).setOrigin(0.5);
-            const garageObstacles = scene.physics.add.staticGroup();
-            garageObstacles.add(garageBody);
-
-            const spawnPoints = [
-                [garageX - 90, garageY + 60], [garageX - 45, garageY + 70],
-                [garageX, garageY + 80], [garageX + 45, garageY + 70],
-                [garageX + 90, garageY + 60]
-            ];
-            const chosenSpawn = spawnPoints[Math.floor(Math.random() * spawnPoints.length)];
+            
 
             // 6. KHỞI TẠO PLAYER (AVATAR ẢNH THẬT - HIỂN THỊ TRỰC TIẾP)
             const playerAvatar = scene.add.image(0, 0, 'p_avatar').setDisplaySize(40, 40);
@@ -611,4 +520,3 @@
     </script>
 </body>
 </html>
-                
