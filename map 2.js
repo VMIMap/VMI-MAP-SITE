@@ -5,12 +5,14 @@
 
 function createMap2(scene) {
 
+    // Xóa Map 2 cũ
     if (scene.map2Group) {
         scene.map2Group.clear(true, true);
     }
 
     scene.map2Group = scene.add.group();
 
+    // MAP_SIZE lấy từ biến global
     const W = MAP_SIZE;
     const centerX = W / 2;
     const centerY = W / 2;
@@ -19,13 +21,16 @@ function createMap2(scene) {
     // NỀN CỎ
     // ==========================================
 
-    scene.add.rectangle(
+    const grass = scene.add.rectangle(
         centerX,
         centerY,
         W,
         W,
         0x4f8738
-    ).setOrigin(0.5);
+    );
+
+    grass.setOrigin(0.5);
+    scene.map2Group.add(grass);
 
     // ==========================================
     // ĐƯỜNG BAO QUANH
@@ -33,507 +38,272 @@ function createMap2(scene) {
 
     const ROAD = 180;
 
-    scene.add.rectangle(
-        centerX,
-        100,
-        W,
-        ROAD,
-        0x25282c
-    );
+    const roads = [
 
-    scene.add.rectangle(
-        centerX,
-        W - 100,
-        W,
-        ROAD,
-        0x25282c
-    );
+        // Trên
+        scene.add.rectangle(
+            centerX,
+            100,
+            W,
+            ROAD,
+            0x25282c
+        ),
 
-    scene.add.rectangle(
-        100,
-        centerY,
-        ROAD,
-        W,
-        0x25282c
-    );
+        // Dưới
+        scene.add.rectangle(
+            centerX,
+            W - 100,
+            W,
+            ROAD,
+            0x25282c
+        ),
 
-    scene.add.rectangle(
-        W - 100,
-        centerY,
-        ROAD,
-        W,
-        0x25282c
-    );
+        // Trái
+        scene.add.rectangle(
+            100,
+            centerY,
+            ROAD,
+            W,
+            0x25282c
+        ),
+
+        // Phải
+        scene.add.rectangle(
+            W - 100,
+            centerY,
+            ROAD,
+            W,
+            0x25282c
+        )
+    ];
+
+    roads.forEach(road => {
+        road.setOrigin(0.5);
+        scene.map2Group.add(road);
+    });
 
     // ==========================================
     // VẠCH ĐƯỜNG
     // ==========================================
 
-    for (let x = 40; x < W; x += 100) {
+    const DASH = 80;
+    const DASH_GAP = 60;
 
-        scene.add.rectangle(
+    // Đường ngang trên + dưới
+    for (let x = 180; x < W - 180; x += DASH + DASH_GAP) {
+
+        const dashTop = scene.add.rectangle(
             x,
             100,
-            50,
-            5,
-            0xffffff,
-            0.8
+            DASH,
+            10,
+            0xf0d85a
         );
 
-        scene.add.rectangle(
+        const dashBottom = scene.add.rectangle(
             x,
             W - 100,
-            50,
-            5,
-            0xffffff,
-            0.8
+            DASH,
+            10,
+            0xf0d85a
         );
+
+        scene.map2Group.add(dashTop);
+        scene.map2Group.add(dashBottom);
     }
 
-    for (let y = 40; y < W; y += 100) {
+    // Đường dọc trái + phải
+    for (let y = 180; y < W - 180; y += DASH + DASH_GAP) {
 
-        scene.add.rectangle(
+        const dashLeft = scene.add.rectangle(
             100,
             y,
-            5,
-            50,
-            0xffffff,
-            0.8
+            10,
+            DASH,
+            0xf0d85a
         );
 
-        scene.add.rectangle(
+        const dashRight = scene.add.rectangle(
             W - 100,
             y,
-            5,
-            50,
-            0xffffff,
-            0.8
+            10,
+            DASH,
+            0xf0d85a
         );
+
+        scene.map2Group.add(dashLeft);
+        scene.map2Group.add(dashRight);
     }
 
     // ==========================================
-    // SÂN DIỄU BINH
-    // ==========================================
-
-    const FIELD_W = W - 420;
-    const FIELD_H = W - 420;
-
-    scene.add.rectangle(
-        centerX,
-        centerY,
-        FIELD_W,
-        FIELD_H,
-        0x5c913f
-    ).setStrokeStyle(
-        5,
-        0x3e6d2b
-    );
-
-    // ==========================================
-    // 12 PAD
+    // 12 PAD DIỄU BINH
     // 4 CỘT × 3 HÀNG
     // ==========================================
 
-    const PAD_W = 90;
-    const PAD_H = 90;
+    const PAD_W = 430;
+    const PAD_H = 250;
 
-    const PAD_GAP_X = 18;
-    const PAD_GAP_Y = 25;
+    const GAP_X = 110;
+    const GAP_Y = 140;
 
-    const PAD_COLS = 4;
-    const PAD_ROWS = 3;
+    const COLS = 4;
+    const ROWS = 3;
 
-    const totalPadW =
-        PAD_COLS * PAD_W +
-        (PAD_COLS - 1) * PAD_GAP_X;
+    const totalWidth =
+        COLS * PAD_W +
+        (COLS - 1) * GAP_X;
 
-    const totalPadH =
-        PAD_ROWS * PAD_H +
-        (PAD_ROWS - 1) * PAD_GAP_Y;
+    const totalHeight =
+        ROWS * PAD_H +
+        (ROWS - 1) * GAP_Y;
 
-    const padStartX =
-        centerX - totalPadW / 2 + PAD_W / 2;
+    const startX =
+        centerX - totalWidth / 2 + PAD_W / 2;
 
-    const padStartY =
-        centerY - totalPadH / 2 + PAD_H / 2 + 80;
+    const startY =
+        centerY - totalHeight / 2 + PAD_H / 2;
 
-    for (let row = 0; row < PAD_ROWS; row++) {
+    for (let row = 0; row < ROWS; row++) {
 
-        for (let col = 0; col < PAD_COLS; col++) {
+        for (let col = 0; col < COLS; col++) {
 
-            const padX =
-                padStartX +
-                col * (PAD_W + PAD_GAP_X);
+            const x =
+                startX +
+                col * (PAD_W + GAP_X);
 
-            const padY =
-                padStartY +
-                row * (PAD_H + PAD_GAP_Y);
+            const y =
+                startY +
+                row * (PAD_H + GAP_Y);
+
+            // ----------------------------------
+            // Nền PAD
+            // ----------------------------------
 
             const pad = scene.add.rectangle(
-                padX,
-                padY,
+                x,
+                y,
                 PAD_W,
                 PAD_H,
-                0xe8e8e8
+                0xdfe4e0
             );
 
-            pad.setStrokeStyle(
-                3,
-                0xffffff,
+            pad.setOrigin(0.5);
+
+            scene.map2Group.add(pad);
+
+            // ----------------------------------
+            // Viền PAD
+            // ----------------------------------
+
+            const border = scene.add.rectangle(
+                x,
+                y,
+                PAD_W,
+                PAD_H
+            );
+
+            border.setStrokeStyle(
+                6,
+                0x555555,
                 1
             );
 
-            pad.area = row + 1;
-            pad.pad = col + 1;
+            border.setFillStyle(
+                0x000000,
+                0
+            );
 
-            scene.map2Group.add(pad);
+            scene.map2Group.add(border);
+
+            // ----------------------------------
+            // Vạch bên trong PAD
+            // ----------------------------------
+
+            const lineCount = 5;
+
+            for (let i = 1; i < lineCount; i++) {
+
+                const lineX =
+                    x -
+                    PAD_W / 2 +
+                    (PAD_W / lineCount) * i;
+
+                const line = scene.add.rectangle(
+                    lineX,
+                    y,
+                    4,
+                    PAD_H - 20,
+                    0xb8bfba
+                );
+
+                scene.map2Group.add(line);
+            }
+
+            // ----------------------------------
+            // Số PAD
+            // ----------------------------------
+
+            const number = scene.add.text(
+                x,
+                y,
+                String(row * COLS + col + 1),
+                {
+                    fontSize: '28px',
+                    fontFamily: 'Arial',
+                    color: '#555555',
+                    fontStyle: 'bold'
+                }
+            );
+
+            number.setOrigin(0.5);
+
+            scene.map2Group.add(number);
         }
     }
 
     // ==========================================
-    // VẠCH GIỮA SÂN
+    // SPAWN NGƯỜI CHƠI
     // ==========================================
 
-    scene.add.rectangle(
+    scene.map2Spawn = {
+        x: centerX,
+        y: centerY
+    };
+
+    // ==========================================
+    // ĐIỂM SPAWN
+    // ==========================================
+
+    const spawn = scene.add.circle(
         centerX,
-        centerY + 300,
-        700,
-        4,
+        centerY,
+        35,
         0xffffff,
-        0.9
+        0.18
     );
 
-    // ==========================================
-    // SÂN BÊ TÔNG + CỘT CỜ
-    // ==========================================
-
-    const concreteX = centerX;
-    const concreteY = centerY - 500;
-
-    scene.add.rectangle(
-        concreteX,
-        concreteY,
-        420,
-        220,
-        0xe5e5e5
-    ).setStrokeStyle(
-        5,
-        0xffffff
-    );
-
-    // Chân cột cờ
-    scene.add.circle(
-        concreteX,
-        concreteY + 55,
-        20,
-        0x777777
-    ).setStrokeStyle(
-        3,
-        0x333333
-    );
-
-    // Cột cờ
-    scene.add.rectangle(
-        concreteX,
-        concreteY - 35,
-        7,
-        170,
-        0xd0d0d0
-    ).setStrokeStyle(
-        2,
-        0x555555
-    );
-
-    // ==========================================
-    // CỜ VIỆT NAM
-    // ==========================================
-
-    if (scene.textures.exists('flag_vn')) {
-
-        const flag = scene.add.image(
-            concreteX + 48,
-            concreteY - 100,
-            'flag_vn'
-        );
-
-        flag.setDisplaySize(
-            90,
-            60
-        );
-    }
-
-    scene.add.text(
-        concreteX,
-        concreteY + 88,
-        'CỘT CỜ - SÂN BÊ TÔNG',
-        {
-            font: 'bold 18px Orbitron',
-            fill: '#222222',
-            stroke: '#ffffff',
-            strokeThickness: 4
-        }
-    ).setOrigin(0.5);
-
-    // ==========================================
-    // SPAWN
-    // ==========================================
-
-    scene.spawnX = centerX;
-    scene.spawnY = centerY + 430;
-
-    createPlayerMap2(scene);
-
-    console.log('MAP 2 - DIỄU BINH: 12 PAD');
-}
-
-
-// ==========================================
-// PLAYER MAP 2
-// AVATAR + TÊN
-// ==========================================
-
-function createPlayerMap2(scene) {
-
-    if (scene.playerContainer) {
-        scene.playerContainer.destroy();
-    }
-
-    const player = scene.add.container(
-        scene.spawnX,
-        scene.spawnY
-    );
-
-    scene.playerContainer = player;
-
-    // ==========================================
-    // AVATAR
-    // ==========================================
-
-    let avatar;
-
-    if (scene.textures.exists('p_avatar')) {
-
-        avatar = scene.add.image(
-            0,
-            0,
-            'p_avatar'
-        );
-
-        avatar.setDisplaySize(
-            42,
-            42
-        );
-
-    } else {
-
-        avatar = scene.add.circle(
-            0,
-            0,
-            21,
-            0x00e5ff
-        );
-    }
-
-    // Viền avatar
-    const ring = scene.add.circle(
-        0,
-        0,
-        24,
-        0xffffff,
-        0
-    );
-
-    ring.setStrokeStyle(
-        3,
-        0x00e5ff
-    );
-
-    // ==========================================
-    // TÊN
-    // ==========================================
-
-    const playerName =
-        currentUser
-            ? (
-                currentUser.global_name ||
-                currentUser.username ||
-                'Player'
-            )
-            : 'Player';
-
-    const nameText = scene.add.text(
-        0,
-        -38,
-        playerName,
-        {
-            font: 'bold 14px Rajdhani',
-            fill: '#ffffff',
-            stroke: '#000000',
-            strokeThickness: 4
-        }
-    ).setOrigin(0.5);
-
-    player.add([
-        ring,
-        avatar,
-        nameText
-    ]);
-
-    // ==========================================
-    // PHYSICS
-    // ==========================================
-
-    scene.physics.world.enable(player);
-
-    player.body.setCircle(22);
-
-    player.body.setCollideWorldBounds(true);
-
-    player.body.setDrag(
-        600,
-        600
-    );
-
-    scene.controlledObject = player;
+    scene.map2Group.add(spawn);
 
     // ==========================================
     // CAMERA
     // ==========================================
 
-    const cam = scene.cameras.main;
+    if (scene.cameras && scene.cameras.main) {
 
-    cam.startFollow(
-        player,
-        true,
-        0.12,
-        0.12
-    );
-
-    cam.setBounds(
-        0,
-        0,
-        MAP_SIZE,
-        MAP_SIZE
-    );
-
-    cam.setZoom(
-        parseFloat(
-            document.getElementById('setZoom').value
-        ) || 0.8
-    );
-
-    // ==========================================
-    // KEYBOARD
-    // ==========================================
-
-    scene.keys = scene.input.keyboard.addKeys({
-        W: Phaser.Input.Keyboard.KeyCodes.W,
-        A: Phaser.Input.Keyboard.KeyCodes.A,
-        S: Phaser.Input.Keyboard.KeyCodes.S,
-        D: Phaser.Input.Keyboard.KeyCodes.D,
-
-        UP: Phaser.Input.Keyboard.KeyCodes.UP,
-        DOWN: Phaser.Input.Keyboard.KeyCodes.DOWN,
-        LEFT: Phaser.Input.Keyboard.KeyCodes.LEFT,
-        RIGHT: Phaser.Input.Keyboard.KeyCodes.RIGHT
-    });
-}
-
-
-// ==========================================
-// DI CHUYỂN PLAYER
-// ==========================================
-
-function updatePlayerMap2(scene) {
-
-    if (!scene.playerContainer) return;
-
-    const body =
-        scene.playerContainer.body;
-
-    if (!body) return;
-
-    let x = 0;
-    let y = 0;
-
-    // ==========================================
-    // WASD / PHÍM MŨI TÊN
-    // ==========================================
-
-    if (scene.keys) {
-
-        if (
-            scene.keys.W.isDown ||
-            scene.keys.UP.isDown
-        ) {
-            y = -1;
-        }
-
-        if (
-            scene.keys.S.isDown ||
-            scene.keys.DOWN.isDown
-        ) {
-            y = 1;
-        }
-
-        if (
-            scene.keys.A.isDown ||
-            scene.keys.LEFT.isDown
-        ) {
-            x = -1;
-        }
-
-        if (
-            scene.keys.D.isDown ||
-            scene.keys.RIGHT.isDown
-        ) {
-            x = 1;
-        }
-    }
-
-    // ==========================================
-    // JOYSTICK
-    // ==========================================
-
-    if (
-        typeof moveVector !== 'undefined' &&
-        moveVector &&
-        !isEditHUD
-    ) {
-
-        if (
-            moveVector.x !== 0 ||
-            moveVector.y !== 0
-        ) {
-
-            x = moveVector.x;
-            y = moveVector.y;
-        }
-    }
-
-    // ==========================================
-    // CHUẨN HÓA
-    // ==========================================
-
-    const length =
-        Math.sqrt(
-            x * x + y * y
+        scene.cameras.main.setBounds(
+            0,
+            0,
+            MAP_SIZE,
+            MAP_SIZE
         );
 
-    if (length > 0) {
-
-        x /= length;
-        y /= length;
+        scene.cameras.main.centerOn(
+            centerX,
+            centerY
+        );
     }
 
-    // ==========================================
-    // TỐC ĐỘ
-    // ==========================================
-
-    const SPEED = 220;
-
-    body.setVelocity(
-        x * SPEED,
-        y * SPEED
+    console.log(
+        'MAP 2: DIỄU BINH - 12 PAD (4 × 3)'
     );
-                }
+        }
