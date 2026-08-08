@@ -167,8 +167,11 @@
     </div>
 
     <div id="errBox" style="display:none; position:fixed; inset:0; z-index:9999; background:#1a0000; color:#ff5555; padding:16px; font-family:monospace; font-size:13px; overflow:auto; white-space:pre-wrap;"></div>
-    <script>
-        window.addEventListener('error', function (e) {
+    <script src="map 1.js"></script>
+<script src="map 2.js"></script>
+
+<script>
+    window.addEventListener('error', function (e) {
             const box = document.getElementById('errBox');
             box.style.display = 'block';
             box.textContent += 'LỖI: ' + e.message + '\n   Tại dòng: ' + e.lineno + ':' + e.colno + '\n\n';
@@ -272,47 +275,30 @@
             mapRow.appendChild(card);
         });
 
-        // --- 3. GAME ENGINE & ROBLOX BUBBLE CHAT ---
-        let game = null, scene = null, playerContainer = null, joystick = null;
-        let moveVector = { x: 0, y: 0 };
-        let speechBubble = null;
-        let controlledObject = null; // Player hoặc xe đang lái
-        let activeVehicle = null; // Container xe đang lái (null nếu đi bộ)
-        const parkedVehicles = []; // Danh sách xe đứng yên có thể bấm vào để lái
+        function createGame() {
+    // Lưu Phaser Scene hiện tại
+    scene = this;
 
-        document.getElementById('btnEnterGame').onclick = () => {
-            document.getElementById('screen-menu').style.display = 'none';
-            document.getElementById('screen-game').classList.add('active');
-            initGame();
-        };
+    // ==============================
+    // CHỌN MAP
+    // ==============================
 
-        function initGame() {
-            try {
-                if (typeof Phaser === 'undefined') {
-                    throw new Error('Phaser chưa load được (có thể do mạng chặn CDN jsdelivr.net)');
-                }
-                if (game) { game.destroy(true); game = null; }
+    if (selectedMap.id === 'm1') {
 
-                const renderScale = parseFloat(document.getElementById('setGraphics').value);
+        // MAP 1 - KHU HUẤN LUYỆN
+        createMap1(this);
 
-                const config = {
-                    type: Phaser.AUTO,
-                    parent: 'phaser-container',
-                    width: window.innerWidth,
-                    height: window.innerHeight,
-                    resolution: renderScale,
-                    backgroundColor: '#101726',
-                    physics: { default: 'arcade' },
-                    scene: { preload: preloadScene, create: createScene, update: updateScene }
-                };
+    } else if (selectedMap.id === 'm2') {
 
-                game = new Phaser.Game(config);
-                initJoystick();
-            } catch (err) {
-                const box = document.getElementById('errBox');
-                box.style.display = 'block';
-                box.textContent += 'LỖI initGame(): ' + err.message + '\n\n';
-            }
+        // MAP 2 - DIỄU BINH
+        createMap2(this);
+
+    } else {
+
+        // Các map chưa làm
+        // Tạm thời dùng Map 1
+        createMap1(this);
+    }
         }
 
         function preloadScene() {
@@ -329,59 +315,7 @@
             scene.load.image('btr_apc', 'https://commons.wikimedia.org/wiki/Special:FilePath/BTR-4 silhouette.png?width=300');
         }
 
-        function createScene() {
-            // MAP DIỄU BINH - PAD 8 NGANG x 6 DỌC + PAD ĐỎ CHỈ HUY + CỘT CỜ
-            const MAP_SIZE = 3000;
-            scene.physics.world.setBounds(0, 0, MAP_SIZE, MAP_SIZE);
-            const startPos = MAP_SIZE / 2; // Tâm map
-
-            // NỀN CỎ XANH
-            scene.add.rectangle(startPos, startPos, MAP_SIZE, MAP_SIZE, 0x5c8a67).setOrigin(0.5);
-
-            const obstacles = scene.physics.add.staticGroup();
-
-            // 1. THÔNG SỐ KHỐI PAD (đặt trước để tính vị trí cột cờ)
-            const padCols = 8, padRows = 6, cellSize = 40;
-            const padWidth = padCols * cellSize;   // 320
-            const padHeight = padRows * cellSize;  // 240
-            const padBaseX = startPos;
-            const padBaseY = startPos + 300; // Khối pad nằm phía dưới, cột cờ ở trên
-
-            // 2. CỘT CỜ - Ở TRÊN, CHÍNH GIỮA, PHÍA TRƯỚC HÀNG PAD ĐẦU
-            const flagX = startPos;
-            const flagY = padBaseY - padHeight / 2 - 150;
-
-            const flagBase = scene.add.circle(flagX, flagY, 24, 0x777777).setStrokeStyle(3, 0x333333);
-            scene.add.rectangle(flagX + 2, flagY - 55, 9, 110, 0x888888).setOrigin(0.5, 1); // Bóng trụ
-            scene.add.rectangle(flagX, flagY - 55, 9, 110, 0xf2f2f2).setOrigin(0.5, 1);     // Thân trụ chính
-            scene.add.rectangle(flagX - 2, flagY - 55, 3, 110, 0xffffff).setOrigin(0.5, 1); // Vệt sáng giả 3D
-            scene.add.circle(flagX, flagY - 3, 4, 0xda251d); // Vòng đỏ chân cột
-            scene.add.circle(flagX, flagY - 110, 7, 0xffd700).setStrokeStyle(2, 0xb8860b); // Chóp vàng đỉnh cột
-
-            const flagImg = scene.add.image(flagX + 28, flagY - 28, 'flag_vn').setDisplaySize(56, 38);
-            let isFlagUp = false;
-            const flagGroup = scene.add.container(0, 0, [flagImg]);
-
-            flagBase.setInteractive({ cursor: 'pointer' });
-            flagBase.on('pointerdown', () => {
-                isFlagUp = !isFlagUp;
-                scene.tweens.add({ targets: flagGroup, y: isFlagUp ? -72 : 0, duration: 1200, ease: 'Power2' });
-                if (typeof showRobloxBubbleChat === 'function') {
-                    showRobloxBubbleChat(isFlagUp ? "Đã kéo cờ!" : "Đã hạ cờ!");
-                }
-            });
-
-            // 3. KHU VỰC PAD ĐỨNG - 1 CỤM DUY NHẤT: 8 NGANG x 6 DỌC
-            for (let row = 0; row < padRows; row++) {
-                for (let col = 0; col < padCols; col++) {
-                    const px = padBaseX + (col - (padCols - 1) / 2) * cellSize;
-                    const py = padBaseY + (row - (padRows - 1) / 2) * cellSize;
-                    scene.add.rectangle(px, py, 30, 30, 0xffffff, 0.9).setStrokeStyle(2, 0xffffff);
-                }
-            }
-
-            // Pad ĐỎ CHO CHỈ HUY - ngay sau (cuối) hàng 1
-            const commanderRow = 0; // Hàng 1 (gần cột cờ nhất)
+        
             const commanderPx = padBaseX + (padCols - (padCols - 1) / 2) * cellSize; // Ngay sau ô cuối hàng 1
             const commanderPy = padBaseY + (commanderRow - (padRows - 1) / 2) * cellSize;
             scene.add.rectangle(commanderPx, commanderPy, 32, 32, 0xda251d, 0.95).setStrokeStyle(2, 0xffd700);
