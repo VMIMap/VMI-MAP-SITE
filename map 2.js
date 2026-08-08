@@ -1,273 +1,146 @@
 // ==========================================
-// MAP 2 - BÃI HUẤN LUYỆN
+// 6 PAD HUẤN LUYỆN - DÀI THEO CHIỀU NGANG
 // ==========================================
 
-function createMap2(scene) {
+const centerX = MAP_SIZE / 2;
+const centerY = MAP_SIZE / 2;
 
-    // Xóa map cũ
-    if (scene.map2Group) {
-        scene.map2Group.clear(true, true);
+const padWidth = 500;   // chiều ngang
+const padHeight = 90;  // chiều dọc
+
+const padGapX = 540;
+const padGapY = 120;
+
+const padPositions = [
+    // HÀNG TRÊN
+    { x: centerX - padGapX, y: centerY - 260 },
+    { x: centerX,           y: centerY - 260 },
+    { x: centerX + padGapX, y: centerY - 260 },
+
+    // HÀNG DƯỚI
+    { x: centerX - padGapX, y: centerY + 260 },
+    { x: centerX,           y: centerY + 260 },
+    { x: centerX + padGapX, y: centerY + 260 }
+];
+
+padPositions.forEach((p, index) => {
+
+    // Nền PAD
+    scene.add.rectangle(
+        p.x,
+        p.y,
+        padWidth,
+        padHeight,
+        0x777777
+    ).setStrokeStyle(4, 0xffffff);
+
+    // Chia ô trên PAD
+    const cellSize = 30;
+
+    for (let x = p.x - padWidth / 2 + cellSize; 
+         x < p.x + padWidth / 2; 
+         x += cellSize) {
+
+        scene.add.line(
+            0, 0,
+            x, p.y - padHeight / 2,
+            x, p.y + padHeight / 2,
+            0xffffff
+        ).setLineWidth(1);
     }
 
-    scene.map2Group = scene.add.group();
+    for (let y = p.y - padHeight / 2 + cellSize;
+         y < p.y + padHeight / 2;
+         y += cellSize) {
 
-    // ==========================================
-    // KÍCH THƯỚC MAP
-    // ==========================================
-
-    const FIELD_W = 1800;
-    const FIELD_H = 1100;
-
-    const ROAD = 130;
-
-    // ==========================================
-    // NỀN
-    // ==========================================
-
-    const ground = scene.add.rectangle(
-        FIELD_W / 2,
-        FIELD_H / 2,
-        FIELD_W,
-        FIELD_H,
-        0x426b32
-    );
-
-    scene.map2Group.add(ground);
-
-    // ==========================================
-    // SÂN CỎ
-    // ==========================================
-
-    const grass = scene.add.rectangle(
-        FIELD_W / 2,
-        FIELD_H / 2,
-        FIELD_W - ROAD * 2,
-        FIELD_H - ROAD * 2,
-        0x5d873c
-    );
-
-    grass.setStrokeStyle(6, 0x303f27);
-
-    scene.map2Group.add(grass);
-
-    // ==========================================
-    // ĐƯỜNG BAO QUANH
-    // ==========================================
-
-    const roadTop = scene.add.rectangle(
-        FIELD_W / 2,
-        ROAD / 2,
-        FIELD_W,
-        ROAD,
-        0x20252a
-    );
-
-    const roadBottom = scene.add.rectangle(
-        FIELD_W / 2,
-        FIELD_H - ROAD / 2,
-        FIELD_W,
-        ROAD,
-        0x20252a
-    );
-
-    const roadLeft = scene.add.rectangle(
-        ROAD / 2,
-        FIELD_H / 2,
-        ROAD,
-        FIELD_H,
-        0x20252a
-    );
-
-    const roadRight = scene.add.rectangle(
-        FIELD_W - ROAD / 2,
-        FIELD_H / 2,
-        ROAD,
-        FIELD_H,
-        0x20252a
-    );
-
-    scene.map2Group.addMultiple([
-        roadTop,
-        roadBottom,
-        roadLeft,
-        roadRight
-    ]);
-
-    // ==========================================
-    // VẠCH ĐƯỜNG
-    // ==========================================
-
-    for (let x = 80; x < FIELD_W; x += 120) {
-
-        const lineTop = scene.add.rectangle(
-            x,
-            ROAD / 2,
-            55,
-            5,
-            0xffffff
-        );
-
-        const lineBottom = scene.add.rectangle(
-            x,
-            FIELD_H - ROAD / 2,
-            55,
-            5,
-            0xffffff
-        );
-
-        scene.map2Group.addMultiple([
-            lineTop,
-            lineBottom
-        ]);
-    }
-
-    for (let y = 80; y < FIELD_H; y += 120) {
-
-        const lineLeft = scene.add.rectangle(
-            ROAD / 2,
+        scene.add.line(
+            0, 0,
+            p.x - padWidth / 2,
             y,
-            5,
-            55,
-            0xffffff
-        );
-
-        const lineRight = scene.add.rectangle(
-            FIELD_W - ROAD / 2,
+            p.x + padWidth / 2,
             y,
-            5,
-            55,
             0xffffff
-        );
-
-        scene.map2Group.addMultiple([
-            lineLeft,
-            lineRight
-        ]);
+        ).setLineWidth(1);
     }
 
-    // ==========================================
-    // CỘT CỜ
-    // ==========================================
-
-    function createFlag(x, y) {
-
-        // Cột
-        const pole = scene.add.rectangle(
-            x,
-            y,
-            8,
-            110,
-            0xd0d0d0
-        );
-
-        pole.setOrigin(0.5, 1);
-
-        scene.map2Group.add(pole);
-
-        // Lá cờ Việt Nam
-        const flag = scene.add.image(
-            x + 32,
-            y - 92,
-            "vietnamFlag"
-        );
-
-        flag.setDisplaySize(64, 43);
-
-        scene.map2Group.add(flag);
-    }
-
-    // 4 cột cờ
-    createFlag(180, 180);
-    createFlag(FIELD_W - 180, 180);
-    createFlag(180, FIELD_H - 180);
-    createFlag(FIELD_W - 180, FIELD_H - 180);
-
-    // ==========================================
-    // PAD
-    // ==========================================
-
-    const PAD_W = 35;
-    const PAD_H = 35;
-    const PAD_GAP = 8;
-
-    function createPadGroup(
-        startX,
-        startY,
-        cols,
-        rows
-    ) {
-
-        for (let y = 0; y < rows; y++) {
-
-            for (let x = 0; x < cols; x++) {
-
-                const px =
-                    startX +
-                    x * (PAD_W + PAD_GAP);
-
-                const py =
-                    startY +
-                    y * (PAD_H + PAD_GAP);
-
-                const pad = scene.add.rectangle(
-                    px,
-                    py,
-                    PAD_W,
-                    PAD_H,
-                    0xd8d8d8
-                );
-
-                pad.setOrigin(0, 0);
-
-                pad.setStrokeStyle(
-                    2,
-                    0x8c8c8c
-                );
-
-                scene.map2Group.add(pad);
-            }
-        }
-    }
-
-    // ==========================================
-    // 9 CỤM PAD
-    // ==========================================
-
-    // Hàng 1
-    createPadGroup(350, 300, 8, 6);
-    createPadGroup(650, 300, 8, 6);
-    createPadGroup(950, 300, 8, 6);
-
-    // Hàng 2
-    createPadGroup(350, 500, 8, 6);
-    createPadGroup(650, 500, 8, 6);
-    createPadGroup(950, 500, 8, 6);
-
-    // Hàng 3
-    createPadGroup(350, 700, 8, 6);
-    createPadGroup(650, 700, 8, 6);
-    createPadGroup(950, 700, 8, 6);
-
-    // ==========================================
-    // TIÊU ĐỀ
-    // ==========================================
-
-    const title = scene.add.text(
-        FIELD_W / 2,
-        170,
-        "BÃI HUẤN LUYỆN",
+    // Tên PAD
+    scene.add.text(
+        p.x,
+        p.y - padHeight / 2 - 18,
+        `PAD ${index + 1}`,
         {
-            fontSize: "42px",
-            color: "#ffffff",
-            fontStyle: "bold"
+            font: 'bold 14px Orbitron',
+            fill: '#ffffff',
+            stroke: '#000000',
+            strokeThickness: 4
         }
-    );
+    ).setOrigin(0.5);
+});
 
-    title.setOrigin(0.5);
+// ==========================================
+// SÂN BÊ TÔNG TRUNG TÂM
+// ==========================================
 
-    scene.map2Group.add(title);
+const concreteW = 700;
+const concreteH = 300;
 
-    console.log(
-        "MAP 2 - BÃI HUẤN LUYỆN đã tạo"
-    );
-         }
+scene.add.rectangle(
+    centerX,
+    centerY,
+    concreteW,
+    concreteH,
+    0xe5e5e5
+).setStrokeStyle(5, 0xffffff);
+
+// Viền sân
+scene.add.rectangle(
+    centerX,
+    centerY,
+    concreteW - 30,
+    concreteH - 30,
+    0xe5e5e5
+).setStrokeStyle(2, 0xb5b5b5);
+
+
+// ==========================================
+// CỘT CỜ VIỆT NAM
+// ==========================================
+
+// Chân cột
+scene.add.circle(
+    centerX,
+    centerY + 20,
+    20,
+    0x777777
+).setStrokeStyle(3, 0x333333);
+
+// Cột
+scene.add.rectangle(
+    centerX,
+    centerY - 60,
+    7,
+    160,
+    0xd0d0d0
+).setStrokeStyle(2, 0x555555);
+
+// Cờ VN
+const flag = scene.add.image(
+    centerX + 42,
+    centerY - 125,
+    'flag_vn'
+);
+
+flag.setDisplaySize(85, 57);
+
+// Tên khu vực
+scene.add.text(
+    centerX,
+    centerY + 70,
+    'SÂN BÊ TÔNG',
+    {
+        font: 'bold 16px Orbitron',
+        fill: '#222222',
+        stroke: '#ffffff',
+        strokeThickness: 4
+    }
+).setOrigin(0.5);
