@@ -84,12 +84,112 @@ MAPS.forEach(m=>{const c=document.createElement('div');c.className='map-card'+(m
 
 function preloadScene(){scene=this;if(scene.textures.exists('p_avatar'))scene.textures.remove('p_avatar');const a=currentUser&&currentUser.avatar?`https://cdn.discordapp.com/avatars/${currentUser.id}/${currentUser.avatar}.png?size=256`:'https://cdn.discordapp.com/embed/avatars/0.png';scene.load.image('p_avatar',a);scene.load.image('flag_vn','https://flagcdn.com/h240/vn.png');scene.load.image('tank_t90','https://commons.wikimedia.org/wiki/Special:FilePath/T-90_tank.svg?width=300');scene.load.image('btr_apc','https://commons.wikimedia.org/wiki/Special:FilePath/BTR-4%20silhouette.png?width=300')}
 
-function createGame(){scene=this;if(selectedMap.id==='m1')createMap1(this);else if(selectedMap.id==='m2')createMap2(this);else createMap1(this)}
-function updateScene(){if(!playerContainer||!playerContainer.body)return;const speed=220;playerContainer.body.setVelocity(moveVector.x*speed,moveVector.y*speed)}
+function createGame(){
+    scene = this;
+
+    if(selectedMap.id==='m1'){
+        if(typeof createMap1 === 'function') createMap1(this);
+    }else if(selectedMap.id==='m2'){
+        if(typeof createMap2 === 'function') createMap2(this);
+    }else{
+        if(typeof createMap1 === 'function') createMap1(this);
+    }
+
+    // Map 1/2 nếu chưa tự tạo player thì tạo player mặc định.
+    setTimeout(ensurePlayer,100);
+}
+function updateScene(){
+    if(!playerContainer || !playerContainer.body) return;
+    const speed = 220;
+    playerContainer.body.setVelocity(
+        moveVector.x * speed,
+        moveVector.y * speed
+    );
+}
+
+
+function ensurePlayer(){
+    if(!scene || playerContainer) return;
+
+    const x = scene.cameras.main.centerX;
+    const y = scene.cameras.main.centerY;
+
+    const avatarKey = scene.textures.exists('p_avatar') ? 'p_avatar' : null;
+    const avatar = avatarKey
+        ? scene.add.image(0,0,avatarKey).setDisplaySize(48,48)
+        : scene.add.circle(0,0,24,0x1e90ff);
+
+    const ring = scene.add.circle(0,0,27,0xffffff,0).setStrokeStyle(3,0xffffff);
+
+    const name = currentUser
+        ? (currentUser.global_name || currentUser.username || 'Player')
+        : 'Player';
+
+    const nameText = scene.add.text(0,-42,name,{
+        font:'bold 16px Rajdhani',
+        fill:'#ffffff',
+        stroke:'#000000',
+        strokeThickness:5
+    }).setOrigin(.5);
+
+    speechBubble = scene.add.container(0,-80).setVisible(false);
+    const bg = scene.add.graphics();
+    const txt = scene.add.text(0,0,'',{
+        font:'600 13px Rajdhani',
+        fill:'#000000',
+        align:'center',
+        wordWrap:{width:180}
+    }).setOrigin(.5);
+
+    speechBubble.add([bg,txt]);
+    speechBubble.bubbleBg = bg;
+    speechBubble.bubbleText = txt;
+
+    playerContainer = scene.add.container(x,y,[avatar,ring,nameText,speechBubble]);
+    controlledObject = playerContainer;
+
+    scene.physics.world.enable(playerContainer);
+    playerContainer.body.setSize(48,48);
+    playerContainer.body.setCollideWorldBounds(true);
+
+    scene.cameras.main.startFollow(playerContainer,true,.1,.1);
+    scene.cameras.main.setZoom(parseFloat(document.getElementById('setZoom').value) || .8);
+}
 
 function initJoystick(){const z=document.getElementById('joystick-zone');z.innerHTML='';joystick=nipplejs.create({zone:z,mode:'static',position:{left:'60px',top:'60px'},size:100,color:'#00e5ff'});joystick.on('move',(e,d)=>{if(!isEditHUD&&d&&d.vector)moveVector={x:d.vector.x,y:-d.vector.y}});joystick.on('end',()=>moveVector={x:0,y:0})}
 
-function startGame(){document.getElementById('screen-menu').style.display='none';document.getElementById('screen-game').classList.add('active');if(game)game.destroy(true);game=new Phaser.Game({type:Phaser.AUTO,parent:'phaser-container',width:window.innerWidth,height:window.innerHeight,backgroundColor:'#111',physics:{default:'arcade',arcade:{debug:false}},scene:{preload:preloadScene,create:createGame,update:updateScene},scale:{mode:Phaser.Scale.RESIZE,autoCenter:Phaser.Scale.CENTER_BOTH}});setTimeout(initJoystick,300)}
+function startGame(){
+    document.getElementById('screen-menu').style.display='none';
+    document.getElementById('screen-game').classList.add('active');
+
+    if(game){ game.destroy(true); game=null; }
+
+    game = new Phaser.Game({
+        type: Phaser.AUTO,
+        parent: 'phaser-container',
+        width: window.innerWidth,
+        height: window.innerHeight,
+        backgroundColor: '#39a852',
+        physics: {
+            default: 'arcade',
+            arcade: { debug: false }
+        },
+        scene: {
+            preload: preloadScene,
+            create: createGame,
+            update: updateScene
+        },
+        scale: {
+            mode: Phaser.Scale.RESIZE,
+            autoCenter: Phaser.Scale.CENTER_BOTH
+        }
+    });
+
+    // Joystick phải tồn tại sau khi màn hình game được mở.
+    setTimeout(() => {
+        initJoystick();
+    }, 500);
+}
 document.getElementById('btnEnterGame').onclick=startGame;
 
 const settingsOverlay=document.getElementById('settingsOverlay');
@@ -105,4 +205,4 @@ function showRobloxBubbleChat(text){if(!speechBubble)return;speechBubble.bubbleT
 window.onload=checkDiscordAuth;window.onresize=()=>{if(game)game.scale.resize(window.innerWidth,window.innerHeight)};
 </script>
 </body>
-    </html>
+</html>
