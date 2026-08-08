@@ -1,87 +1,65 @@
-// ================================
-// MAP 1 - KHU HUẤN LUYỆN
-// ================================
+// ==========================================
+// MAP 1 - KHU HUẤN LUYỆN (SPAWN Ở GIỮA)
+// ==========================================
 
 function createMap1(scene) {
-
-    // Xóa map cũ nếu có
-    if (scene.map1Group) {
-        scene.map1Group.clear(true, true);
-    }
-
+    if (scene.map1Group) scene.map1Group.clear(true, true);
     scene.map1Group = scene.add.group();
 
-    // ================================
-    // CẤU HÌNH
-    // ================================
+    const MAP_SIZE = 3000;
+    const centerX = MAP_SIZE / 2;
+    const centerY = MAP_SIZE / 2;
 
-    const PAD_W = 40;          // giảm kích thước pad để vừa màn hình
-    const PAD_H = 40;
-    const PAD_LENGTH = 8;      // số pad theo chiều dài
-    const PAD_WIDTH = 6;       // số pad theo chiều ngang
-    const GAP = 4;             // khoảng cách giữa các pad
-    const AREA_COUNT = 9;      // 9 khu
-    const AREA_GAP_X = 60;     // khoảng cách giữa các khu (ngang)
-    const AREA_GAP_Y = 80;     // khoảng cách giữa các khu (dọc)
+    // Mở rộng camera
+    scene.cameras.main.setBounds(0, 0, MAP_SIZE, MAP_SIZE);
+    scene.physics.world.setBounds(0, 0, MAP_SIZE, MAP_SIZE);
+    scene.cameras.main.setBackgroundColor('#2b2b2b');
 
-    // Tính kích thước một khu
-    const areaWidth = PAD_LENGTH * (PAD_W + GAP) - GAP;
-    const areaHeight = PAD_WIDTH * (PAD_H + GAP) - GAP;
+    // ==============================
+    // SPAWN: SÂN BÊ TÔNG (chính giữa)
+    // ==============================
+    const concreteW = 500;
+    const concreteH = 200;
+    scene.add.rectangle(centerX, centerY, concreteW, concreteH, 0xd9d9d9)
+        .setStrokeStyle(4, 0xffffff).setDepth(1);
+    scene.add.rectangle(centerX, centerY, concreteW - 30, concreteH - 30)
+        .setStrokeStyle(2, 0x999999).setDepth(2);
+    scene.add.text(centerX, centerY + concreteH/2 + 20, 'SPAWN - SÂN BÊ TÔNG', {
+        font: 'bold 18px Arial', fill: '#000', stroke: '#fff', strokeThickness: 4
+    }).setOrigin(0.5).setDepth(3);
 
-    // ================================
-    // TẠO 9 KHU (3x3)
-    // ================================
+    // ==============================
+    // CÁC PAD HUẤN LUYỆN (xung quanh)
+    // ==============================
+    const padW = 300, padH = 80;
+    const gap = 60;
+    const rows = 3, cols = 3; // 9 pad bố trí xung quanh spawn
+    const totalPadWidth = cols * padW + (cols - 1) * gap;
+    const totalPadHeight = rows * padH + (rows - 1) * gap;
+    const startX = centerX - totalPadWidth / 2 + padW / 2;
+    const startY = centerY - 200; // đặt các pad phía trên spawn
 
-    for (let area = 0; area < AREA_COUNT; area++) {
-        const areaRow = Math.floor(area / 3);
-        const areaCol = area % 3;
+    for (let row = 0; row < rows; row++) {
+        for (let col = 0; col < cols; col++) {
+            let px = startX + col * (padW + gap);
+            let py = startY + row * (padH + gap);
+            // Điều chỉnh pad ở dưới spawn
+            if (row >= 1) py = centerY + 200 + (row - 1) * (padH + gap);
 
-        const startX = areaCol * (areaWidth + AREA_GAP_X);
-        const startY = areaRow * (areaHeight + AREA_GAP_Y);
+            const pad = scene.add.rectangle(px, py, padW, padH, 0x3a3a3a)
+                .setStrokeStyle(2, 0xffffff).setDepth(1);
+            scene.add.text(px, py - padH/2 - 15, `PAD ${row*3+col+1}`, {
+                font: '14px Arial', fill: '#fff', stroke: '#000', strokeThickness: 2
+            }).setOrigin(0.5).setDepth(3);
 
-        // Tạo pad trong khu
-        for (let y = 0; y < PAD_WIDTH; y++) {
-            for (let x = 0; x < PAD_LENGTH; x++) {
-                const padX = startX + x * (PAD_W + GAP);
-                const padY = startY + y * (PAD_H + GAP);
-
-                const pad = scene.add.rectangle(padX, padY, PAD_W, PAD_H, 0x555555);
-                pad.setOrigin(0, 0);
-                pad.setStrokeStyle(2, 0xffffff, 0.8);
-                pad.area = area + 1;
-                pad.padX = x + 1;
-                pad.padY = y + 1;
-
-                scene.map1Group.add(pad);
+            // Kẻ ô lưới (tuỳ chọn)
+            const cell = 30;
+            for (let x = px - padW/2 + cell; x < px + padW/2; x += cell) {
+                scene.add.line(0, 0, x, py - padH/2, x, py + padH/2, 0x888888).setLineWidth(1).setDepth(2);
+            }
+            for (let y = py - padH/2 + cell; y < py + padH/2; y += cell) {
+                scene.add.line(0, 0, px - padW/2, y, px + padW/2, y, 0x888888).setLineWidth(1).setDepth(2);
             }
         }
     }
-
-    // ================================
-    // PAD SPAWN (chính giữa bản đồ)
-    // ================================
-    // Vị trí trung tâm của toàn bộ cụm 9 khu
-    const totalWidth = 3 * areaWidth + 2 * AREA_GAP_X;
-    const totalHeight = 3 * areaHeight + 2 * AREA_GAP_Y;
-    const centerX = totalWidth / 2;
-    const centerY = totalHeight / 2;
-
-    // Pad spawn màu xanh lá, viền trắng
-    const spawnPad = scene.add.rectangle(centerX, centerY, PAD_W, PAD_H, 0x00aa00);
-    spawnPad.setOrigin(0.5, 0.5);  // đặt tâm để dễ căn giữa
-    spawnPad.setStrokeStyle(2, 0xffffff, 1);
-    spawnPad.isSpawn = true;       // đánh dấu đây là pad spawn
-
-    scene.map1Group.add(spawnPad);
-
-    // Text "SPAWN" bên trong pad (nếu cần)
-    const spawnText = scene.add.text(centerX, centerY, "SPAWN", {
-        fontSize: "14px",
-        color: "#ffffff",
-        fontStyle: "bold"
-    }).setOrigin(0.5, 0.5);
-
-    scene.map1Group.add(spawnText);
-
-    console.log("MAP 1 - HUẤN LUYỆN đã tạo (có pad spawn)");
-}
+ }
