@@ -309,7 +309,7 @@
             <div style="padding:4px 8px;background:rgba(0,0,0,.4);font-size:10px;color:var(--cyan)">TRÒ CHUYỆN</div>
             <div class="chat-body" id="chatBody"></div>
             <div class="chat-input">
-                <input type="text" id="chatInput" placeholder="Nhập tin nhắn... (Enter để gửi)" maxlength="60">
+                <input type="text" id="chatInput" placeholder="Nhập tin nhắn... (Enter để gửi)" maxlength="999">
                 <button class="btn" id="btnSendChat">GỬI</button>
             </div>
         </div>
@@ -542,19 +542,37 @@ function updateScene() {
 function ensurePlayer() {
     if (!scene || playerContainer) return;
 
-    // Ưu tiên điểm spawn do map chỉ định (map1Spawn / map2Spawn), nếu không có
-    // thì lấy giữa camera.
     const spawn = scene.map1Spawn || scene.map2Spawn || {
         x: scene.cameras.main.centerX,
         y: scene.cameras.main.centerY
     };
 
     const hasAvatar = scene.textures.exists('p_avatar');
-    const avatar = hasAvatar
-        ? scene.add.image(0, 0, 'p_avatar').setDisplaySize(48, 48)
-        : scene.add.circle(0, 0, 24, 0x1e90ff);
 
-    const ring = scene.add.circle(0, 0, 27, 0xffffff, 0).setStrokeStyle(3, 0xffffff);
+    let avatar;
+
+    if (hasAvatar) {
+        avatar = scene.add.image(0, 0, 'p_avatar')
+            .setDisplaySize(48, 48);
+
+        // Cắt avatar thành hình tròn
+        const maskShape = scene.make.graphics({ x: 0, y: 0, add: false });
+        maskShape.fillStyle(0xffffff);
+        maskShape.fillCircle(0, 0, 24);
+
+        avatar.setMask(maskShape.createGeometryMask());
+    } else {
+        avatar = scene.add.circle(0, 0, 24, 0x1e90ff);
+    }
+
+    // Viền tròn avatar
+    const ring = scene.add.circle(
+        0,
+        0,
+        27,
+        0xffffff,
+        0
+    ).setStrokeStyle(3, 0xffffff);
 
     const playerName = currentUser
         ? (currentUser.global_name || currentUser.username || 'Player')
@@ -567,28 +585,46 @@ function ensurePlayer() {
         strokeThickness: 5
     }).setOrigin(0.5);
 
-    speechBubble = scene.add.container(0, -80).setVisible(false);
+    speechBubble = scene.add.container(0, -80)
+        .setVisible(false);
+
     const bubbleBg = scene.add.graphics();
+
     const bubbleText = scene.add.text(0, 0, '', {
         font: '600 13px Rajdhani',
         fill: '#000000',
         align: 'center',
         wordWrap: { width: 180 }
     }).setOrigin(0.5);
+
     speechBubble.add([bubbleBg, bubbleText]);
     speechBubble.bubbleBg = bubbleBg;
     speechBubble.bubbleText = bubbleText;
 
-    playerContainer = scene.add.container(spawn.x, spawn.y, [avatar, ring, nameText, speechBubble]);
+    playerContainer = scene.add.container(
+        spawn.x,
+        spawn.y,
+        [avatar, ring, nameText, speechBubble]
+    );
+
     controlledObject = playerContainer;
 
     scene.physics.world.enable(playerContainer);
+
     playerContainer.body.setSize(48, 48);
     playerContainer.body.setCollideWorldBounds(true);
 
-    scene.cameras.main.startFollow(playerContainer, true, 0.1, 0.1);
-    scene.cameras.main.setZoom(parseFloat(document.getElementById('setZoom').value) || 0.8);
-}
+    scene.cameras.main.startFollow(
+        playerContainer,
+        true,
+        0.1,
+        0.1
+    );
+
+    scene.cameras.main.setZoom(
+        parseFloat(document.getElementById('setZoom').value) || 0.8
+    );
+       }
 
 /* ==========================================================
    JOYSTICK
