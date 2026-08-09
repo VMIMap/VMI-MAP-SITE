@@ -4,8 +4,7 @@
 // MỖI BÃI: 8 NGANG × 6 DÀI
 // ==========================================
 
-// Biến global MAP_SIZE được khai báo ở phạm vi ngoài cùng
-// const MAP_SIZE = 3000; 
+// Lưu ý: Biến global MAP_SIZE = 3000 phải được khai báo ở phạm vi ngoài cùng
 
 function createMap1(scene) {
 
@@ -15,6 +14,13 @@ function createMap1(scene) {
     }
 
     scene.map1Group = scene.add.group();
+
+    // ==========================================
+    // GIỚI HẠN VẬT LÝ CHO MAP (CHỐNG LỌT MAP)
+    // ==========================================
+    if (scene.physics && scene.physics.world) {
+        scene.physics.world.setBounds(0, 0, MAP_SIZE, MAP_SIZE);
+    }
 
     // ==========================================
     // NỀN MAP
@@ -41,7 +47,7 @@ function createMap1(scene) {
     const TILE_SIZE = 65;     // Kích thước mỗi ô vuông
     const GAP = 10;           // Khoảng cách giữa các ô
 
-    // Kích thước thực tế của 1 bãi
+    // Kích thước thực tế của 1 bãi (Ngang: 590px, Dọc: 440px)
     const PAD_WIDTH = PAD_COLS * TILE_SIZE + (PAD_COLS - 1) * GAP;
     const PAD_HEIGHT = PAD_ROWS * TILE_SIZE + (PAD_ROWS - 1) * GAP;
 
@@ -49,7 +55,8 @@ function createMap1(scene) {
     const COLUMN_GAP = 180;
 
     // Khoảng cách giữa hàng trên và hàng dưới
-    const ROW_GAP = 350;
+    // ĐÃ FIX: Tăng từ 350 lên 800 để 2 hàng không đè lên nhau và có không gian ở giữa để Spawn
+    const ROW_GAP = 800;
 
     // ==========================================
     // TÂM MAP
@@ -85,22 +92,13 @@ function createMap1(scene) {
     // ==========================================
 
     padPositions.forEach(pad => {
-
         for (let row = 0; row < PAD_ROWS; row++) {
             for (let col = 0; col < PAD_COLS; col++) {
-
                 const x = pad.x - PAD_WIDTH / 2 + TILE_SIZE / 2 + col * (TILE_SIZE + GAP);
                 const y = pad.y - PAD_HEIGHT / 2 + TILE_SIZE / 2 + row * (TILE_SIZE + GAP);
 
                 // Tạo ô vuông màu trắng/xám rất nhạt
-                const tile = scene.add.rectangle(
-                    x,
-                    y,
-                    TILE_SIZE,
-                    TILE_SIZE,
-                    0xf2f5f2 
-                );
-
+                const tile = scene.add.rectangle(x, y, TILE_SIZE, TILE_SIZE, 0xf2f5f2);
                 tile.setOrigin(0.5);
                 scene.map1Group.add(tile);
             }
@@ -108,8 +106,7 @@ function createMap1(scene) {
     });
 
     // ==========================================
-    // SPAWN NGƯỜI CHƠI
-    // Ở GIỮA MAP
+    // SPAWN NGƯỜI CHƠI TRỞ LẠI VỊ TRÍ ĐÚNG
     // ==========================================
 
     scene.map1Spawn = {
@@ -121,14 +118,7 @@ function createMap1(scene) {
     // ĐIỂM SPAWN HIỂN THỊ
     // ==========================================
 
-    const spawnMark = scene.add.circle(
-        centerX,
-        centerY,
-        35,
-        0xffffff,
-        0.15
-    );
-
+    const spawnMark = scene.add.circle(centerX, centerY, 35, 0xffffff, 0.15);
     scene.map1Group.add(spawnMark);
 
     // ==========================================
@@ -140,5 +130,5 @@ function createMap1(scene) {
         scene.cameras.main.centerOn(centerX, centerY);
     }
 
-    console.log("MAP 1: KHU HUẤN LUYỆN - 6 bãi (3 trên, 3 dưới) - Mỗi bãi 8 × 6 ô");
+    console.log("MAP 1: KHU HUẤN LUYỆN - Đã khởi tạo hoàn tất");
 }
