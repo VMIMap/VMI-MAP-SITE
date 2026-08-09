@@ -136,15 +136,7 @@ function createMap2(scene) {
             );
             scene.map2Group.add(padBg);
 
-            // 3. Viền vàng bo góc (nổi bật, kiểu khu quân sự)
-            const border = scene.add.graphics();
-            border.lineStyle(4, 0xffd700, 0.9);
-            border.strokeRoundedRect(
-                padCenterX - outerW / 2,
-                padCenterY - outerH / 2,
-                outerW, outerH, 14
-            );
-            scene.map2Group.add(border);
+    
 
             // 4. Lưới ô vuông trong PAD - viền cyan cho đồng bộ phong cách (KHÔNG CÒN SỐ)
             for (let tr = 0; tr < PAD_ROWS; tr++) {
