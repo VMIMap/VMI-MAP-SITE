@@ -3,6 +3,7 @@
 // 6 BÃI: 3 TRÊN + 3 DƯỚI
 // MỖI BÃI: 8 NGANG × 6 DỌC
 // ==========================================
+const MAP_SIZE = 3000;
 
 function createMap1(scene) {
 
