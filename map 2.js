@@ -1,300 +1,144 @@
 // ==========================================
 // MAP 2 - DIỄU BINH
-// SÂN BÊ TÔNG + CỘT CỜ VN + 12 PAD
-// 4 CỘT × 3 HÀNG
+// SÂN BÊ TÔNG + CỘT CỜ VN + 12 PAD (ĐÃ CHIA Ô)
 // ==========================================
-const MAP_SIZE = 3000;
 
 function createMap2(scene) {
 
+    // Xóa Map 2 cũ an toàn
     if (scene.map2Group) {
         scene.map2Group.clear(true, true);
     }
-
     scene.map2Group = scene.add.group();
 
-    const W = MAP_SIZE;
+    const W = MAP_SIZE; // Yêu cầu biến MAP_SIZE = 3000 ở global
     const centerX = W / 2;
     const centerY = W / 2;
 
     // ==========================================
-    // GIỚI HẠN MAP
+    // GIỚI HẠN VẬT LÝ
     // ==========================================
-
     if (scene.physics && scene.physics.world) {
         scene.physics.world.setBounds(0, 0, W, W);
     }
 
     // ==========================================
-    // NỀN CỎ
+    // NỀN CỎ & ĐƯỜNG BAO QUANH
     // ==========================================
-
-    const grass = scene.add.rectangle(
-        centerX,
-        centerY,
-        W,
-        W,
-        0x4f8738
-    );
-
+    const grass = scene.add.rectangle(centerX, centerY, W, W, 0x4f8738);
     scene.map2Group.add(grass);
 
-    // ==========================================
-    // ĐƯỜNG BAO QUANH
-    // ==========================================
-
     const ROAD = 180;
-
     const roads = [
         scene.add.rectangle(centerX, 90, W, ROAD, 0x25282c),
         scene.add.rectangle(centerX, W - 90, W, ROAD, 0x25282c),
         scene.add.rectangle(90, centerY, ROAD, W, 0x25282c),
         scene.add.rectangle(W - 90, centerY, ROAD, W, 0x25282c)
     ];
+    roads.forEach(road => scene.map2Group.add(road));
 
-    roads.forEach(road => {
-        scene.map2Group.add(road);
-    });
-
-    // ==========================================
-    // VẠCH ĐƯỜNG
-    // ==========================================
-
+    // Vạch kẻ đường
     const DASH = 80;
     const DASH_GAP = 60;
-
     for (let x = 180; x < W - 180; x += DASH + DASH_GAP) {
-
-        scene.map2Group.add(
-            scene.add.rectangle(
-                x,
-                90,
-                DASH,
-                10,
-                0xf0d85a
-            )
-        );
-
-        scene.map2Group.add(
-            scene.add.rectangle(
-                x,
-                W - 90,
-                DASH,
-                10,
-                0xf0d85a
-            )
-        );
+        scene.map2Group.add(scene.add.rectangle(x, 90, DASH, 10, 0xf0d85a));
+        scene.map2Group.add(scene.add.rectangle(x, W - 90, DASH, 10, 0xf0d85a));
     }
-
     for (let y = 180; y < W - 180; y += DASH + DASH_GAP) {
-
-        scene.map2Group.add(
-            scene.add.rectangle(
-                90,
-                y,
-                10,
-                DASH,
-                0xf0d85a
-            )
-        );
-
-        scene.map2Group.add(
-            scene.add.rectangle(
-                W - 90,
-                y,
-                10,
-                DASH,
-                0xf0d85a
-            )
-        );
+        scene.map2Group.add(scene.add.rectangle(90, y, 10, DASH, 0xf0d85a));
+        scene.map2Group.add(scene.add.rectangle(W - 90, y, 10, DASH, 0xf0d85a));
     }
 
     // ==========================================
-    // SÂN BÊ TÔNG + CỘT CỜ
+    // SÂN BÊ TÔNG + CỘT CỜ (ĐÃ CĂN GIỮA)
     // ==========================================
-
     const yardY = 450;
 
-    const concreteYard = scene.add.rectangle(
-        centerX,
-        yardY,
-        1200,
-        400,
-        0xeeeeee
-    );
-
+    const concreteYard = scene.add.rectangle(centerX, yardY, 1200, 400, 0xeeeeee);
     scene.map2Group.add(concreteYard);
 
-    const flagBase = scene.add.rectangle(
-        centerX,
-        yardY + 150,
-        150,
-        40,
-        0x888888
-    );
-
+    const flagBase = scene.add.rectangle(centerX, yardY + 150, 150, 40, 0x888888);
     scene.map2Group.add(flagBase);
 
-    const flagPole = scene.add.rectangle(
-        centerX,
-        yardY,
-        12,
-        300,
-        0xdddddd
-    );
-
+    const flagPole = scene.add.rectangle(centerX, yardY, 12, 300, 0xdddddd);
     scene.map2Group.add(flagPole);
 
-    // ==========================================
-    // CỜ VIỆT NAM
-    // ==========================================
-
+    // FIX LỖI THOÁT RA VÀO LẠI (Kiểm tra scene còn hoạt động không)
     if (!scene.textures.exists('flag_vn')) {
-
-        scene.load.image(
-            'flag_vn',
-            'https://flagcdn.com/w256/vn.png'
-        );
-
+        scene.load.image('flag_vn', 'https://flagcdn.com/w256/vn.png');
         scene.load.once('complete', () => {
-
-            const flag = scene.add.image(
-                centerX + 65,
-                yardY - 110,
-                'flag_vn'
-            ).setScale(0.5);
-
-            scene.map2Group.add(flag);
+            if (scene && scene.sys && scene.sys.isActive() && scene.map2Group) {
+                const flag = scene.add.image(centerX + 65, yardY - 110, 'flag_vn').setScale(0.5);
+                scene.map2Group.add(flag);
+            }
         });
-
         scene.load.start();
-
     } else {
-
-        const flag = scene.add.image(
-            centerX + 65,
-            yardY - 110,
-            'flag_vn'
-        ).setScale(0.5);
-
+        const flag = scene.add.image(centerX + 65, yardY - 110, 'flag_vn').setScale(0.5);
         scene.map2Group.add(flag);
     }
 
     // ==========================================
-    // 12 PAD DIỄU BINH
-    // 4 CỘT × 3 HÀNG
+    // 12 PAD DIỄU BINH - CHIA THÀNH TỪNG Ô LƯỚI
     // ==========================================
-
-    const PAD_W = 450;
-    const PAD_H = 380;
+    const TILE_SIZE = 45;   // Kích thước mỗi ô
+    const TILE_GAP = 5;     // Khoảng cách giữa các ô
+    const PAD_COLS = 8;     // 8 ô ngang
+    const PAD_ROWS = 6;     // 6 ô dọc
+    
+    // Tính toán lại kích thước tổng của 1 PAD dựa trên số ô
+    const PAD_W = PAD_COLS * TILE_SIZE + (PAD_COLS - 1) * TILE_GAP; 
+    const PAD_H = PAD_ROWS * TILE_SIZE + (PAD_ROWS - 1) * TILE_GAP; 
 
     const GAP_X = 120;
     const GAP_Y = 150;
-
     const COLS = 4;
     const ROWS = 3;
 
-    const totalWidth =
-        COLS * PAD_W +
-        (COLS - 1) * GAP_X;
+    const totalWidth = COLS * PAD_W + (COLS - 1) * GAP_X;
+    const totalHeight = ROWS * PAD_H + (ROWS - 1) * GAP_Y;
 
-    const totalHeight =
-        ROWS * PAD_H +
-        (ROWS - 1) * GAP_Y;
-
-    const startX =
-        centerX -
-        totalWidth / 2 +
-        PAD_W / 2;
-
-    const padAreaCenterY =
-        yardY +
-        200 +
-        ((W - 180) - (yardY + 200)) / 2;
-
-    const startY =
-        padAreaCenterY -
-        totalHeight / 2 +
-        PAD_H / 2;
+    const startX = centerX - totalWidth / 2 + PAD_W / 2;
+    const padAreaCenterY = yardY + 200 + ((W - 180) - (yardY + 200)) / 2;
+    const startY = padAreaCenterY - totalHeight / 2 + PAD_H / 2;
 
     for (let row = 0; row < ROWS; row++) {
-
         for (let col = 0; col < COLS; col++) {
+            
+            const padCenterX = startX + col * (PAD_W + GAP_X);
+            const padCenterY = startY + row * (PAD_H + GAP_Y);
 
-            const x =
-                startX +
-                col * (PAD_W + GAP_X);
+            // 1. Nền dưới cùng của PAD
+            const padBg = scene.add.rectangle(padCenterX, padCenterY, PAD_W + 10, PAD_H + 10, 0xdfe4e0);
+            scene.map2Group.add(padBg);
 
-            const y =
-                startY +
-                row * (PAD_H + GAP_Y);
-
-            // PAD
-            const pad = scene.add.rectangle(
-                x,
-                y,
-                PAD_W,
-                PAD_H,
-                0xdfe4e0
-            );
-
-            scene.map2Group.add(pad);
-
-            // VIỀN
-            const border = scene.add.rectangle(
-                x,
-                y,
-                PAD_W,
-                PAD_H
-            );
-
-            border.setStrokeStyle(
-                6,
-                0x555555,
-                1
-            );
-
-            border.setFillStyle(
-                0x000000,
-                0
-            );
-
+            // 2. Viền bọc ngoài PAD
+            const border = scene.add.rectangle(padCenterX, padCenterY, PAD_W + 10, PAD_H + 10);
+            border.setStrokeStyle(4, 0x555555, 1);
+            border.setFillStyle(0x000000, 0);
             scene.map2Group.add(border);
 
-            // VẠCH TRONG PAD
-            for (let i = 1; i < 5; i++) {
-
-                const lineX =
-                    x -
-                    PAD_W / 2 +
-                    (PAD_W / 5) * i;
-
-                const line = scene.add.rectangle(
-                    lineX,
-                    y,
-                    4,
-                    PAD_H - 20,
-                    0xb8bfba
-                );
-
-                scene.map2Group.add(line);
+            // 3. Vòng lặp chia từng ô vuông (Grid)
+            for (let tr = 0; tr < PAD_ROWS; tr++) {
+                for (let tc = 0; tc < PAD_COLS; tc++) {
+                    const tileX = padCenterX - PAD_W / 2 + TILE_SIZE / 2 + tc * (TILE_SIZE + TILE_GAP);
+                    const tileY = padCenterY - PAD_H / 2 + TILE_SIZE / 2 + tr * (TILE_SIZE + TILE_GAP);
+                    
+                    const tile = scene.add.rectangle(tileX, tileY, TILE_SIZE, TILE_SIZE, 0xf2f5f2);
+                    scene.map2Group.add(tile);
+                }
             }
 
-            // SỐ PAD
-            const number = scene.add.text(
-                x,
-                y,
-                String(row * COLS + col + 1),
-                {
-                    fontSize: '48px',
-                    fontFamily: 'Arial',
-                    color: '#555555',
-                    fontStyle: 'bold'
-                }
-            );
-
+            // 4. Đánh số Pad (Thêm viền stroke trắng để số nổi lên trên nền lưới)
+            const number = scene.add.text(padCenterX, padCenterY, String(row * COLS + col + 1), {
+                fontSize: '52px',
+                fontFamily: 'Arial',
+                color: '#000000',
+                fontStyle: 'bold',
+                stroke: '#ffffff',
+                strokeThickness: 6 
+            });
             number.setOrigin(0.5);
-
             scene.map2Group.add(number);
         }
     }
@@ -302,45 +146,22 @@ function createMap2(scene) {
     // ==========================================
     // SPAWN
     // ==========================================
-
+    // Chỉnh Y = W - 90 để spawn đúng giữa lòng đường dưới
     const spawnX = centerX;
     const spawnY = W - 90;
 
-    scene.map2Spawn = {
-        x: spawnX,
-        y: spawnY
-    };
+    scene.map2Spawn = { x: spawnX, y: spawnY };
 
-    const spawnMark = scene.add.circle(
-        spawnX,
-        spawnY,
-        40,
-        0xffffff,
-        0.4
-    );
-
+    const spawnMark = scene.add.circle(spawnX, spawnY, 40, 0xffffff, 0.4);
     scene.map2Group.add(spawnMark);
 
     // ==========================================
     // CAMERA
     // ==========================================
-
     if (scene.cameras && scene.cameras.main) {
-
-        scene.cameras.main.setBounds(
-            0,
-            0,
-            W,
-            W
-        );
-
-        scene.cameras.main.centerOn(
-            spawnX,
-            spawnY
-        );
+        scene.cameras.main.setBounds(0, 0, W, W);
+        scene.cameras.main.centerOn(spawnX, spawnY);
     }
 
-    console.log(
-        'MAP 2: DIỄU BINH - 12 PAD'
-    );
-        }
+    console.log('MAP 2: ĐÃ FIX BUG THOÁT RA VÀO LẠI + CHIA Ô LƯỚI PAD');
+                                         }
