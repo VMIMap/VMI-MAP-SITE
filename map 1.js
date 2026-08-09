@@ -4,11 +4,12 @@
 // MỖI BÃI: 8 NGANG × 6 DÀI
 // ==========================================
 
-const MAP_SIZE = 3000;
+// Biến global MAP_SIZE được khai báo ở phạm vi ngoài cùng
+// const MAP_SIZE = 3000; 
 
 function createMap1(scene) {
 
-    // Xóa map cũ
+    // Xóa map cũ nếu có
     if (scene.map1Group) {
         scene.map1Group.clear(true, true);
     }
@@ -24,30 +25,27 @@ function createMap1(scene) {
         MAP_SIZE / 2,
         MAP_SIZE,
         MAP_SIZE,
-        0x5d8f6b
+        0x5d8f6b // Màu xanh cỏ
     );
 
+    bg.setOrigin(0.5);
     scene.map1Group.add(bg);
 
     // ==========================================
     // THÔNG SỐ BÃI HUẤN LUYỆN
     // ==========================================
 
-    const PAD_COLS = 8;       // ngang
-    const PAD_ROWS = 6;       // dài
+    const PAD_COLS = 8;       // Số ô ngang
+    const PAD_ROWS = 6;       // Số ô dọc
 
-    const TILE_SIZE = 65;
-    const GAP = 10;
+    const TILE_SIZE = 65;     // Kích thước mỗi ô vuông
+    const GAP = 10;           // Khoảng cách giữa các ô
 
-    const PAD_WIDTH =
-        PAD_COLS * TILE_SIZE +
-        (PAD_COLS - 1) * GAP;
+    // Kích thước thực tế của 1 bãi
+    const PAD_WIDTH = PAD_COLS * TILE_SIZE + (PAD_COLS - 1) * GAP;
+    const PAD_HEIGHT = PAD_ROWS * TILE_SIZE + (PAD_ROWS - 1) * GAP;
 
-    const PAD_HEIGHT =
-        PAD_ROWS * TILE_SIZE +
-        (PAD_ROWS - 1) * GAP;
-
-    // Khoảng cách giữa 3 bãi
+    // Khoảng cách giữa 3 bãi theo chiều ngang
     const COLUMN_GAP = 180;
 
     // Khoảng cách giữa hàng trên và hàng dưới
@@ -64,88 +62,49 @@ function createMap1(scene) {
     // VỊ TRÍ 6 BÃI
     // ==========================================
 
-    const totalWidth =
-        PAD_WIDTH * 3 +
-        COLUMN_GAP * 2;
+    const totalWidth = PAD_WIDTH * 3 + COLUMN_GAP * 2;
+    const startX = centerX - totalWidth / 2 + PAD_WIDTH / 2;
 
-    const startX =
-        centerX - totalWidth / 2 + PAD_WIDTH / 2;
-
-    const topY =
-        centerY - ROW_GAP / 2;
-
-    const bottomY =
-        centerY + ROW_GAP / 2;
+    const topY = centerY - ROW_GAP / 2;
+    const bottomY = centerY + ROW_GAP / 2;
 
     const padPositions = [
-
         // HÀNG TRÊN
-        { x: startX, top: topY },
-        {
-            x: startX + PAD_WIDTH + COLUMN_GAP,
-            top: topY
-        },
-        {
-            x: startX + (PAD_WIDTH + COLUMN_GAP) * 2,
-            top: topY
-        },
+        { x: startX, y: topY },
+        { x: startX + PAD_WIDTH + COLUMN_GAP, y: topY },
+        { x: startX + (PAD_WIDTH + COLUMN_GAP) * 2, y: topY },
 
         // HÀNG DƯỚI
-        { x: startX, top: bottomY },
-        {
-            x: startX + PAD_WIDTH + COLUMN_GAP,
-            top: bottomY
-        },
-        {
-            x: startX + (PAD_WIDTH + COLUMN_GAP) * 2,
-            top: bottomY
-        }
+        { x: startX, y: bottomY },
+        { x: startX + PAD_WIDTH + COLUMN_GAP, y: bottomY },
+        { x: startX + (PAD_WIDTH + COLUMN_GAP) * 2, y: bottomY }
     ];
 
     // ==========================================
-    // TẠO 6 BÃI
+    // TẠO 6 BÃI (48 Ô / BÃI)
     // ==========================================
 
-    padPositions.forEach((pad, padIndex) => {
-
-        const padGroup = scene.add.group();
-
-        // --------------------------------------
-        // 48 Ô / BÃI
-        // --------------------------------------
+    padPositions.forEach(pad => {
 
         for (let row = 0; row < PAD_ROWS; row++) {
-
             for (let col = 0; col < PAD_COLS; col++) {
 
-                const x =
-                    pad.x -
-                    PAD_WIDTH / 2 +
-                    col * (TILE_SIZE + GAP);
+                const x = pad.x - PAD_WIDTH / 2 + TILE_SIZE / 2 + col * (TILE_SIZE + GAP);
+                const y = pad.y - PAD_HEIGHT / 2 + TILE_SIZE / 2 + row * (TILE_SIZE + GAP);
 
-                const y =
-                    pad.top -
-                    PAD_HEIGHT / 2 +
-                    row * (TILE_SIZE + GAP);
-
+                // Tạo ô vuông màu trắng/xám rất nhạt
                 const tile = scene.add.rectangle(
                     x,
                     y,
                     TILE_SIZE,
                     TILE_SIZE,
-                    0xf2f5f2
+                    0xf2f5f2 
                 );
 
                 tile.setOrigin(0.5);
-
-                padGroup.add(tile);
+                scene.map1Group.add(tile);
             }
         }
-
-        scene.map1Group.addMultiple(
-            padGroup.getChildren()
-        );
-
     });
 
     // ==========================================
@@ -177,21 +136,9 @@ function createMap1(scene) {
     // ==========================================
 
     if (scene.cameras && scene.cameras.main) {
-
-        scene.cameras.main.setBounds(
-            0,
-            0,
-            MAP_SIZE,
-            MAP_SIZE
-        );
-
-        scene.cameras.main.centerOn(
-            centerX,
-            centerY
-        );
+        scene.cameras.main.setBounds(0, 0, MAP_SIZE, MAP_SIZE);
+        scene.cameras.main.centerOn(centerX, centerY);
     }
 
-    console.log(
-        "MAP 1: 6 bãi huấn luyện - mỗi bãi 8 × 6"
-    );
+    console.log("MAP 1: KHU HUẤN LUYỆN - 6 bãi (3 trên, 3 dưới) - Mỗi bãi 8 × 6 ô");
 }
