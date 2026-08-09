@@ -156,8 +156,26 @@ function ensurePlayer(){
     scene.cameras.main.setZoom(parseFloat(document.getElementById('setZoom').value) || .8);
 }
 
-function initJoystick(){const z=document.getElementById('joystick-zone');z.innerHTML='';joystick=nipplejs.create({zone:z,mode:'static',position:{left:'60px',top:'60px'},size:100,color:'#00e5ff'});joystick.on('move',(e,d)=>{if(!isEditHUD&&d&&d.vector)moveVector={x:d.vector.x,y:-d.vector.y}});joystick.on('end',()=>moveVector={x:0,y:0})}
+function initJoystick() {
+    // FIX: hủy joystick cũ trước, tránh chồng nhiều joystick sau mỗi lần vào lại map
+    if (joystick && typeof joystick.destroy === 'function') {
+        joystick.destroy();
+        joystick = null;
+    }
 
+    const z = document.getElementById('joystick-zone');
+    z.innerHTML = '';
+    joystick = nipplejs.create({
+        zone: z, mode: 'static',
+        position: { left: '60px', top: '60px' },
+        size: 100, color: '#FFFFCC'
+    });
+    joystick.on('move', (e, d) => {
+        if (!isEditHUD && d && d.vector) moveVector = { x: d.vector.x, y: -d.vector.y };
+    });
+    joystick.on('end', () => moveVector = { x: 0, y: 0 });
+}
+    
 function startGame(){
     document.getElementById('screen-menu').style.display='none';
     document.getElementById('screen-game').classList.add('active');
