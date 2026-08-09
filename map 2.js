@@ -1,6 +1,6 @@
 // ==========================================
 // MAP 2 - DIỄU BINH
-// SÂN BÊ TÔNG + CỘT CỜ VN + 12 PAD (ĐÃ CHIA Ô)
+// SÂN BÊ TÔNG + CỘT CỜ VN + 12 PAD (ĐÃ CHIA Ô, ĐÃ FIX ĐẸP - BỎ SỐ)
 // ==========================================
 
 function createMap2(scene) {
@@ -79,16 +79,16 @@ function createMap2(scene) {
     }
 
     // ==========================================
-    // 12 PAD DIỄU BINH - CHIA THÀNH TỪNG Ô LƯỚI
+    // 12 PAD DIỄU BINH - CHIA THÀNH TỪNG Ô LƯỚI (ĐÃ LÀM ĐẸP, BỎ SỐ)
     // ==========================================
     const TILE_SIZE = 45;   // Kích thước mỗi ô
     const TILE_GAP = 5;     // Khoảng cách giữa các ô
     const PAD_COLS = 8;     // 8 ô ngang
     const PAD_ROWS = 6;     // 6 ô dọc
-    
+
     // Tính toán lại kích thước tổng của 1 PAD dựa trên số ô
-    const PAD_W = PAD_COLS * TILE_SIZE + (PAD_COLS - 1) * TILE_GAP; 
-    const PAD_H = PAD_ROWS * TILE_SIZE + (PAD_ROWS - 1) * TILE_GAP; 
+    const PAD_W = PAD_COLS * TILE_SIZE + (PAD_COLS - 1) * TILE_GAP;
+    const PAD_H = PAD_ROWS * TILE_SIZE + (PAD_ROWS - 1) * TILE_GAP;
 
     const GAP_X = 120;
     const GAP_Y = 150;
@@ -104,42 +104,59 @@ function createMap2(scene) {
 
     for (let row = 0; row < ROWS; row++) {
         for (let col = 0; col < COLS; col++) {
-            
+
             const padCenterX = startX + col * (PAD_W + GAP_X);
             const padCenterY = startY + row * (PAD_H + GAP_Y);
+            const outerW = PAD_W + 16;
+            const outerH = PAD_H + 16;
 
-            // 1. Nền dưới cùng của PAD
-            const padBg = scene.add.rectangle(padCenterX, padCenterY, PAD_W + 10, PAD_H + 10, 0xdfe4e0);
+            // 1. Bóng đổ nhẹ (giả 3D) - lệch xuống-phải 5px
+            const shadow = scene.add.graphics();
+            shadow.fillStyle(0x000000, 0.25);
+            shadow.fillRoundedRect(
+                padCenterX - outerW / 2 + 5,
+                padCenterY - outerH / 2 + 5,
+                outerW, outerH, 14
+            );
+            scene.map2Group.add(shadow);
+
+            // 2. Nền PAD bo góc (gradient giả bằng 2 lớp màu)
+            const padBg = scene.add.graphics();
+            padBg.fillStyle(0xd6ddd8, 1);
+            padBg.fillRoundedRect(
+                padCenterX - outerW / 2,
+                padCenterY - outerH / 2,
+                outerW, outerH, 14
+            );
+            padBg.fillStyle(0xeef2ef, 0.6);
+            padBg.fillRoundedRect(
+                padCenterX - outerW / 2 + 4,
+                padCenterY - outerH / 2 + 4,
+                outerW - 8, outerH * 0.45, 10
+            );
             scene.map2Group.add(padBg);
 
-            // 2. Viền bọc ngoài PAD
-            const border = scene.add.rectangle(padCenterX, padCenterY, PAD_W + 10, PAD_H + 10);
-            border.setStrokeStyle(4, 0x555555, 1);
-            border.setFillStyle(0x000000, 0);
+            // 3. Viền vàng bo góc (nổi bật, kiểu khu quân sự)
+            const border = scene.add.graphics();
+            border.lineStyle(4, 0xffd700, 0.9);
+            border.strokeRoundedRect(
+                padCenterX - outerW / 2,
+                padCenterY - outerH / 2,
+                outerW, outerH, 14
+            );
             scene.map2Group.add(border);
 
-            // 3. Vòng lặp chia từng ô vuông (Grid)
+            // 4. Lưới ô vuông trong PAD - viền cyan cho đồng bộ phong cách (KHÔNG CÒN SỐ)
             for (let tr = 0; tr < PAD_ROWS; tr++) {
                 for (let tc = 0; tc < PAD_COLS; tc++) {
                     const tileX = padCenterX - PAD_W / 2 + TILE_SIZE / 2 + tc * (TILE_SIZE + TILE_GAP);
                     const tileY = padCenterY - PAD_H / 2 + TILE_SIZE / 2 + tr * (TILE_SIZE + TILE_GAP);
-                    
-                    const tile = scene.add.rectangle(tileX, tileY, TILE_SIZE, TILE_SIZE, 0xf2f5f2);
+
+                    const tile = scene.add.rectangle(tileX, tileY, TILE_SIZE, TILE_SIZE, 0xffffff, 0.92);
+                    tile.setStrokeStyle(2, 0x00e5ff, 0.8);
                     scene.map2Group.add(tile);
                 }
             }
-
-            // 4. Đánh số Pad (Thêm viền stroke trắng để số nổi lên trên nền lưới)
-            const number = scene.add.text(padCenterX, padCenterY, String(row * COLS + col + 1), {
-                fontSize: '52px',
-                fontFamily: 'Arial',
-                color: '#000000',
-                fontStyle: 'bold',
-                stroke: '#ffffff',
-                strokeThickness: 6 
-            });
-            number.setOrigin(0.5);
-            scene.map2Group.add(number);
         }
     }
 
@@ -163,5 +180,6 @@ function createMap2(scene) {
         scene.cameras.main.centerOn(spawnX, spawnY);
     }
 
-    console.log('MAP 2: ĐÃ FIX BUG THOÁT RA VÀO LẠI + CHIA Ô LƯỚI PAD');
-                                         }
+    console.log('MAP 2: PAD ĐÃ LÀM ĐẸP (BO GÓC + ĐỔ BÓNG + VIỀN VÀNG), ĐÃ BỎ SỐ');
+                }
+                        
