@@ -3,6 +3,7 @@
 // SÂN BÊ TÔNG + CỘT CỜ VN + 12 PAD
 // 4 CỘT × 3 HÀNG
 // ==========================================
+const MAP_SIZE = 3000;
 
 function createMap2(scene) {
 
