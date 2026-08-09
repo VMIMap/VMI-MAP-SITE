@@ -2,7 +2,7 @@
 // MAP 2 - DIỄU BINH
 // SÂN BÊ TÔNG + CỘT CỜ VN + 12 PAD (ĐÃ CHIA Ô, ĐÃ FIX ĐẸP - BỎ SỐ)
 // ==========================================
-
+MAP_SIZE = 3000
 function createMap2(scene) {
 
     // Xóa Map 2 cũ an toàn
