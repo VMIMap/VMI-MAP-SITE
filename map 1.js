@@ -3,7 +3,7 @@
 // SÂN BÊ TÔNG + CỘT CỜ (TRÊN CÙNG)
 // 6 BÃI: 3 TRÊN + 3 DƯỚI (MỖI BÃI 8x6 Ô)
 // ==========================================
-// Lưu ý: Biến MAP_SIZE = 3000 đã khai báo ở global
+MAP_SIZE = 3000
 
 function createMap1(scene) {
 
