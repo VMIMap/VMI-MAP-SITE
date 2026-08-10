@@ -523,7 +523,7 @@ function createGame() {
     ensurePlayer();
 }
 // ================ UPDATESCEN ================
-   function updateScene(time, delta) {
+function updateScene(time, delta) {
 
     if (!scene) return;
 
@@ -549,16 +549,8 @@ function createGame() {
     // =========================
     // JOYSTICK
     // =========================
-    if (typeof joystickVector !== 'undefined' && joystickVector) {
-        vx = joystickVector.x || 0;
-        vy = joystickVector.y || 0;
-    }
-
-    // Nếu code joystick của bạn dùng joystickData
-    if (typeof joystickData !== 'undefined' && joystickData) {
-        vx = joystickData.x || 0;
-        vy = joystickData.y || 0;
-    }
+    vx = moveVector.x || 0;
+    vy = moveVector.y || 0;
 
     // =========================
     // BÀN PHÍM PC
@@ -566,49 +558,51 @@ function createGame() {
     if (scene.input && scene.input.keyboard) {
 
         if (!scene.cursors) {
-            scene.cursors = scene.input.keyboard.createCursorKeys();
+            scene.cursors =
+                scene.input.keyboard.createCursorKeys();
         }
 
-        if (scene.cursors.left.isDown) vx = -1;
-        if (scene.cursors.right.isDown) vx = 1;
-        if (scene.cursors.up.isDown) vy = -1;
-        if (scene.cursors.down.isDown) vy = 1;
+        if (scene.cursors.left.isDown) {
+            vx = -1;
+        }
+
+        if (scene.cursors.right.isDown) {
+            vx = 1;
+        }
+
+        if (scene.cursors.up.isDown) {
+            vy = -1;
+        }
+
+        if (scene.cursors.down.isDown) {
+            vy = 1;
+        }
     }
 
     // =========================
     // CHUẨN HÓA DI CHUYỂN
     // =========================
-    const length = Math.sqrt(vx * vx + vy * vy);
+    const length = Math.sqrt(
+        vx * vx + vy * vy
+    );
 
     if (length > 1) {
         vx /= length;
         vy /= length;
     }
 
+    // =========================
+    // ÁP DỤNG VẬN TỐC
+    // =========================
     body.setVelocity(
         vx * speed,
         vy * speed
     );
-   }
+}
 
 /* ==========================================================
    PHASER: UPDATE (chạy mỗi frame)
    ========================================================== */
-function ensurePlayer() {
-    if (!scene || playerContainer) return;
-
-    const spawn = scene.map1Spawn || scene.map2Spawn || {
-        x: scene.cameras.main.centerX,
-        y: scene.cameras.main.centerY
-    };
-
-    const hasAvatar = scene.textures.exists('p_avatar');
-
-    // =========================
-    // AVATAR TRÒN
-    // =========================
-    let avatar;
-
 function ensurePlayer() {
     if (!scene || playerContainer) return;
 
@@ -775,8 +769,7 @@ function ensurePlayer() {
         spawn.x,
         spawn.y
     );
-                                   }
-
+}
 /* ==========================================================
    JOYSTICK
    ========================================================== */
