@@ -530,15 +530,6 @@ function createGame() {
 /* ==========================================================
    PHASER: UPDATE (chạy mỗi frame)
    ========================================================== */
-function updateScene() {
-    if (!playerContainer || !playerContainer.body) return;
-    const speed = 220;
-    playerContainer.body.setVelocity(moveVector.x * speed, moveVector.y * speed);
-}
-
-/* ==========================================================
-   TẠO PLAYER (nếu map chưa tự tạo)
-   ========================================================== */
 function ensurePlayer() {
     if (!scene || playerContainer) return;
 
@@ -549,13 +540,29 @@ function ensurePlayer() {
 
     const hasAvatar = scene.textures.exists('p_avatar');
 
-    // FIX: bỏ mask (nguyên nhân khiến avatar không hiện - mask đứng yên
-    // ở toạ độ (0,0) trong khi avatar bị đặt vào container ở vị trí spawn
-    // xa gốc, nên mask không còn che trùng lên avatar nữa -> ảnh bị lọc mất).
-    // Hiển thị trực tiếp, chỉ còn viền tròn trắng đè lên cho có cảm giác tròn.
-    const avatar = hasAvatar
-        ? scene.add.image(0, 0, 'p_avatar').setDisplaySize(48, 48)
-        : scene.add.circle(0, 0, 24, 0x1e90ff);
+    // =========================
+    // AVATAR TRÒN
+    // =========================
+    let avatar;
+
+    if (hasAvatar) {
+        avatar = scene.add.image(0, 0, 'p_avatar');
+        avatar.setOrigin(0.5);
+        avatar.setDisplaySize(48, 48);
+
+        // Mask tròn thật sự
+        const maskG = scene.make.graphics({ x: 0, y: 0, add: false });
+        maskG.fillStyle(0xffffff, 1);
+        maskG.fillCircle(0, 0, 24);
+
+        const mask = maskG.createGeometryMask();
+        avatar.setMask(mask);
+
+        // giữ reference để khỏi bị dọn mất
+        avatar._maskG = maskG;
+    } else {
+        avatar = scene.add.circle(0, 0, 24, 0x1e90ff);
+    }
 
     // Viền tròn avatar
     const ring = scene.add.circle(0, 0, 27, 0xffffff, 0).setStrokeStyle(3, 0xffffff);
@@ -585,16 +592,25 @@ function ensurePlayer() {
     speechBubble.bubbleBg = bubbleBg;
     speechBubble.bubbleText = bubbleText;
 
-    playerContainer = scene.add.container(spawn.x, spawn.y, [avatar, ring, nameText, speechBubble]);
+    playerContainer = scene.add.container(spawn.x, spawn.y, [
+        avatar,
+        ring,
+        nameText,
+        speechBubble
+    ]);
+
     controlledObject = playerContainer;
 
+    // =========================
+    // PHYSICS
+    // =========================
     scene.physics.world.enable(playerContainer);
     playerContainer.body.setSize(48, 48);
     playerContainer.body.setCollideWorldBounds(true);
 
     scene.cameras.main.startFollow(playerContainer, true, 0.1, 0.1);
     scene.cameras.main.setZoom(parseFloat(document.getElementById('setZoom').value) || 0.8);
-   }
+}
 
 /* ==========================================================
    JOYSTICK
