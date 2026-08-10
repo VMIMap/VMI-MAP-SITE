@@ -507,14 +507,10 @@ function preloadScene() {
 function createGame() {
     scene = this;
 
-    // FIX QUAN TRỌNG: reset playerContainer về null mỗi lần vào map mới.
-    // Bản trước không reset -> khi rời map rồi vào lại, playerContainer vẫn
-    // còn giữ tham chiếu tới object của scene CŨ (đã bị Phaser huỷ), nên
-    // ensurePlayer() thấy playerContainer "có giá trị" (dù object đã chết)
-    // và bỏ qua việc tạo player mới -> vào lại map không có player để di chuyển.
     playerContainer = null;
     controlledObject = null;
     speechBubble = null;
+    playerBody = null;
 
     if (selectedMap.id === 'm1' && typeof createMap1 === 'function') {
         createMap1(this);
@@ -526,6 +522,74 @@ function createGame() {
 
     ensurePlayer();
 }
+// ================ UPDATESCEN ================
+   function updateScene(time, delta) {
+
+    if (!scene) return;
+
+    // =========================
+    // ĐẢM BẢO PLAYER ĐƯỢC TẠO
+    // =========================
+    if (!playerContainer) {
+        ensurePlayer();
+    }
+
+    if (!controlledObject || !controlledObject.body) return;
+
+    const body = controlledObject.body;
+
+    // =========================
+    // TỐC ĐỘ DI CHUYỂN
+    // =========================
+    const speed = 180;
+
+    let vx = 0;
+    let vy = 0;
+
+    // =========================
+    // JOYSTICK
+    // =========================
+    if (typeof joystickVector !== 'undefined' && joystickVector) {
+        vx = joystickVector.x || 0;
+        vy = joystickVector.y || 0;
+    }
+
+    // Nếu code joystick của bạn dùng joystickData
+    if (typeof joystickData !== 'undefined' && joystickData) {
+        vx = joystickData.x || 0;
+        vy = joystickData.y || 0;
+    }
+
+    // =========================
+    // BÀN PHÍM PC
+    // =========================
+    if (scene.input && scene.input.keyboard) {
+
+        if (!scene.cursors) {
+            scene.cursors = scene.input.keyboard.createCursorKeys();
+        }
+
+        if (scene.cursors.left.isDown) vx = -1;
+        if (scene.cursors.right.isDown) vx = 1;
+        if (scene.cursors.up.isDown) vy = -1;
+        if (scene.cursors.down.isDown) vy = 1;
+    }
+
+    // =========================
+    // CHUẨN HÓA DI CHUYỂN
+    // =========================
+    const length = Math.sqrt(vx * vx + vy * vy);
+
+    if (length > 1) {
+        vx /= length;
+        vy /= length;
+    }
+
+    body.setVelocity(
+        vx * speed,
+        vy * speed
+    );
+   }
 
 /* ==========================================================
    PHASER: UPDATE (chạy mỗi frame)
@@ -545,72 +609,173 @@ function ensurePlayer() {
     // =========================
     let avatar;
 
-    if (hasAvatar) {
+function ensurePlayer() {
+    if (!scene || playerContainer) return;
+
+    const spawn =
+        scene.map1Spawn ||
+        scene.map2Spawn ||
+        {
+            x: scene.cameras.main.centerX,
+            y: scene.cameras.main.centerY
+        };
+
+    let avatar;
+
+    // =========================
+    // AVATAR
+    // =========================
+    if (scene.textures.exists('p_avatar')) {
+
         avatar = scene.add.image(0, 0, 'p_avatar');
+
         avatar.setOrigin(0.5);
         avatar.setDisplaySize(48, 48);
 
-        // Mask tròn thật sự
-        const maskG = scene.make.graphics({ x: 0, y: 0, add: false });
-        maskG.fillStyle(0xffffff, 1);
-        maskG.fillCircle(0, 0, 24);
-
-        const mask = maskG.createGeometryMask();
-        avatar.setMask(mask);
-
-        // giữ reference để khỏi bị dọn mất
-        avatar._maskG = maskG;
     } else {
-        avatar = scene.add.circle(0, 0, 24, 0x1e90ff);
+
+        avatar = scene.add.circle(
+            0,
+            0,
+            24,
+            0x1e90ff
+        );
     }
 
-    // Viền tròn avatar
-    const ring = scene.add.circle(0, 0, 27, 0xffffff, 0).setStrokeStyle(3, 0xffffff);
+    // =========================
+    // KHUNG TRÒN
+    // =========================
+    const ring = scene.add.circle(
+        0,
+        0,
+        27,
+        0xffffff,
+        0
+    );
 
+    ring.setStrokeStyle(
+        3,
+        0xffffff,
+        1
+    );
+
+    // =========================
+    // TÊN PLAYER
+    // =========================
     const playerName = currentUser
-        ? (currentUser.global_name || currentUser.username || 'Player')
+        ? (
+            currentUser.global_name ||
+            currentUser.username ||
+            'Player'
+        )
         : 'Player';
 
-    const nameText = scene.add.text(0, -42, playerName, {
-        font: 'bold 16px Rajdhani',
-        fill: '#ffffff',
-        stroke: '#000000',
-        strokeThickness: 5
-    }).setOrigin(0.5);
+    const nameText = scene.add.text(
+        0,
+        -42,
+        playerName,
+        {
+            font: 'bold 16px Rajdhani',
+            fill: '#ffffff',
+            stroke: '#000000',
+            strokeThickness: 5
+        }
+    ).setOrigin(0.5);
 
-    speechBubble = scene.add.container(0, -80).setVisible(false);
+    // =========================
+    // CHAT BUBBLE
+    // =========================
+    speechBubble = scene.add.container(
+        0,
+        -80
+    ).setVisible(false);
 
     const bubbleBg = scene.add.graphics();
-    const bubbleText = scene.add.text(0, 0, '', {
-        font: '600 13px Rajdhani',
-        fill: '#000000',
-        align: 'center',
-        wordWrap: { width: 180 }
-    }).setOrigin(0.5);
 
-    speechBubble.add([bubbleBg, bubbleText]);
+    const bubbleText = scene.add.text(
+        0,
+        0,
+        '',
+        {
+            font: '600 13px Rajdhani',
+            fill: '#000000',
+            align: 'center',
+            wordWrap: {
+                width: 180
+            }
+        }
+    ).setOrigin(0.5);
+
+    speechBubble.add([
+        bubbleBg,
+        bubbleText
+    ]);
+
     speechBubble.bubbleBg = bubbleBg;
     speechBubble.bubbleText = bubbleText;
 
-    playerContainer = scene.add.container(spawn.x, spawn.y, [
-        avatar,
-        ring,
-        nameText,
-        speechBubble
-    ]);
+    // =========================
+    // PLAYER CONTAINER
+    // =========================
+    playerContainer = scene.add.container(
+        spawn.x,
+        spawn.y,
+        [
+            avatar,
+            ring,
+            nameText,
+            speechBubble
+        ]
+    );
 
     controlledObject = playerContainer;
 
     // =========================
     // PHYSICS
     // =========================
-    scene.physics.world.enable(playerContainer);
-    playerContainer.body.setSize(48, 48);
-    playerContainer.body.setCollideWorldBounds(true);
+    scene.physics.world.enable(
+        playerContainer
+    );
 
-    scene.cameras.main.startFollow(playerContainer, true, 0.1, 0.1);
-    scene.cameras.main.setZoom(parseFloat(document.getElementById('setZoom').value) || 0.8);
-}
+    playerContainer.body.setSize(
+        48,
+        48
+    );
+
+    playerContainer.body.setOffset(
+        -24,
+        -24
+    );
+
+    playerContainer.body.setCollideWorldBounds(
+        true
+    );
+
+    // =========================
+    // CAMERA
+    // =========================
+    scene.cameras.main.startFollow(
+        playerContainer,
+        true,
+        0.1,
+        0.1
+    );
+
+    const zoomInput =
+        document.getElementById('setZoom');
+
+    scene.cameras.main.setZoom(
+        zoomInput
+            ? parseFloat(zoomInput.value) || 0.8
+            : 0.8
+    );
+
+    console.log(
+        'PLAYER CREATED:',
+        spawn.x,
+        spawn.y
+    );
+                                   }
 
 /* ==========================================================
    JOYSTICK
@@ -662,7 +827,6 @@ function startGame() {
     game = new Phaser.Game({
         type: Phaser.AUTO,
         parent: 'phaser-container',
-
         width: window.innerWidth,
         height: window.innerHeight,
 
@@ -678,18 +842,7 @@ function startGame() {
         scene: {
             preload: preloadScene,
             create: createGame,
-
-            // FIX: dùng hàm update có sẵn
-            update: function (time, delta) {
-                // Update game ở đây nếu cần
-
-                if (typeof controlledObject !== 'undefined' &&
-                    controlledObject &&
-                    controlledObject.body) {
-
-                    // Không làm gì nếu chưa có player
-                }
-            }
+            update: updateScene
         },
 
         scale: {
@@ -698,7 +851,11 @@ function startGame() {
         }
     });
 
-    setTimeout(initJoystick, 500);
+    setTimeout(() => {
+        if (typeof initJoystick === 'function') {
+            initJoystick();
+        }
+    }, 500);
 }
 
 document.getElementById('btnEnterGame').onclick = startGame;
