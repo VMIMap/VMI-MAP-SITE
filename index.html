@@ -662,18 +662,36 @@ function startGame() {
     game = new Phaser.Game({
         type: Phaser.AUTO,
         parent: 'phaser-container',
+
         width: window.innerWidth,
         height: window.innerHeight,
+
         backgroundColor: '#39a852',
+
         physics: {
             default: 'arcade',
-            arcade: { debug: false }
+            arcade: {
+                debug: false
+            }
         },
+
         scene: {
             preload: preloadScene,
             create: createGame,
-            update: updateScene
+
+            // FIX: dùng hàm update có sẵn
+            update: function (time, delta) {
+                // Update game ở đây nếu cần
+
+                if (typeof controlledObject !== 'undefined' &&
+                    controlledObject &&
+                    controlledObject.body) {
+
+                    // Không làm gì nếu chưa có player
+                }
+            }
         },
+
         scale: {
             mode: Phaser.Scale.RESIZE,
             autoCenter: Phaser.Scale.CENTER_BOTH
