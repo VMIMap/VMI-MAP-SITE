@@ -1,1574 +1,562 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-
-<title>VMI - DIỄU BINH</title>
-
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
-
-<script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.10.1/nipplejs.min.js"></script>
-
-<style>
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    user-select: none;
-    -webkit-user-select: none;
-    -webkit-tap-highlight-color: transparent;
-}
-
-:root {
-    --bg: #0b0e14;
-    --panel: rgba(16,22,34,.9);
-    --line: rgba(0,229,255,.4);
-    --cyan: #00e5ff;
-    --gold: #e8b84b;
-    --red: #ff3b3b;
-    --green: #39ff88;
-    --text: #e7edff;
-    --hud-alpha: .9;
-}
-
-html,
-body {
-    width: 100vw;
-    height: 100vh;
-    overflow: hidden;
-    background: var(--bg);
-    font-family: Rajdhani,sans-serif;
-    color: var(--text);
-}
-
-.panel {
-    background: var(--panel);
-    border: 1px solid var(--line);
-    backdrop-filter: blur(8px);
-}
-
-.btn {
-    font-family: Orbitron,sans-serif;
-    font-size: 12px;
-    color: #fff;
-    background: rgba(0,229,255,.1);
-    border: 1px solid var(--cyan);
-    padding: 10px 16px;
-    cursor: pointer;
-    text-align: center;
-    font-weight: bold;
-}
-
-.btn.gold {
-    border-color: var(--gold);
-    background: var(--gold);
-    color: #000;
-}
-
-.btn.danger {
-    border-color: var(--red);
-    background: rgba(255,59,59,.2);
-}
-
-.btn:disabled {
-    opacity: .3;
-    cursor: not-allowed;
-}
-
-/* =========================
-   SẢNH
-========================= */
-
-#screen-menu {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    z-index: 10;
-    padding: 15px;
-    background: radial-gradient(
-        circle,
-        #1a2333 0%,
-        #0b0e14 100%
-    );
-}
-
-.lobby-box {
-    width: 100%;
-    max-width: 500px;
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    align-items: center;
-}
-
-.title {
-    font-family: Orbitron,sans-serif;
-    font-size: 28px;
-    color: var(--gold);
-    text-shadow: 0 0 10px var(--gold);
-}
-
-.profile-card {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 10px 20px;
-    width: 100%;
-    max-width: 400px;
-}
-
-/* =========================
-   AVATAR TRÒN
-========================= */
-
-.avatar {
-    width: 48px;
-    height: 48px;
-    min-width: 48px;
-    min-height: 48px;
-
-    border-radius: 50%;
-
-    border: 2px solid var(--cyan);
-
-    overflow: hidden;
-
-    background: #000;
-
-    flex-shrink: 0;
-
-    position: relative;
-}
-
-.avatar img {
-    width: 100%;
-    height: 100%;
-
-    display: block;
-
-    object-fit: cover;
-
-    border-radius: 50%;
-}
-
-/* =========================
-   GAME
-========================= */
-
-#screen-game {
-    position: absolute;
-    inset: 0;
-
-    display: none;
-
-    z-index: 5;
-
-    background: #000;
-}
-
-#screen-game.active {
-    display: block;
-}
-
-#phaser-container {
-    width: 100%;
-    height: 100%;
-}
-
-.hud-element {
-    position: absolute;
-    z-index: 20;
-    opacity: var(--hud-alpha);
-}
-
-.hud-top {
-    top: 10px;
-    right: 10px;
-
-    pointer-events: none;
-}
-
-.hud-top > * {
-    pointer-events: auto;
-}
-
-/* =========================
-   JOYSTICK
-========================= */
-
-#joystick-zone {
-    position: absolute;
-
-    bottom: 20px;
-    left: 20px;
-
-    width: 120px;
-    height: 120px;
-
-    z-index: 30;
-
-    touch-action: none;
-    pointer-events: auto;
-}
-
-/* =========================
-   SETTINGS
-========================= */
-
-.overlay {
-    position: fixed;
-    inset: 0;
-
-    background: rgba(0,0,0,.85);
-
-    display: none;
-
-    align-items: center;
-    justify-content: center;
-
-    z-index: 100;
-}
-
-.overlay.open {
-    display: flex;
-}
-
-.setting-box {
-    width: 90%;
-    max-width: 420px;
-
-    padding: 20px;
-
-    display: flex;
-    flex-direction: column;
-
-    gap: 12px;
-
-    max-height: 90vh;
-    overflow-y: auto;
-}
-
-.set-row {
-    display: flex;
-
-    justify-content: space-between;
-    align-items: center;
-
-    font-size: 13px;
-}
-
-.set-row input[type=range],
-.set-row select {
-    width: 50%;
-}
-
-.edit-hud-mode .hud-element {
-    border: 2px dashed var(--gold) !important;
-    cursor: move;
-}
-
-/* =========================
-   ERROR
-========================= */
-
-#errBox {
-    display: none;
-
-    position: fixed;
-    inset: 0;
-
-    z-index: 9999;
-
-    background: #1a0000;
-
-    color: #ff5555;
-
-    padding: 16px;
-
-    font-family: monospace;
-    font-size: 13px;
-
-    overflow: auto;
-
-    white-space: pre-wrap;
-}
-</style>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>SERVER GAME VMI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.10.1/nipplejs.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-user-select: none; }
+        :root {
+            --bg: #0b0e14;
+            --panel: rgba(16, 22, 34, 0.9);
+            --line: rgba(0, 229, 255, 0.4);
+            --cyan: #00e5ff;
+            --gold: #e8b84b;
+            --red: #ff3b3b;
+            --green: #39ff88;
+            --text: #e7edff;
+            --hud-alpha: 0.9;
+        }
+        html, body { width: 100vw; height: 100vh; overflow: hidden; background: var(--bg); font-family: 'Rajdhani', sans-serif; color: var(--text); }
+        
+        /* GENERAL UI */
+        .panel { background: var(--panel); border: 1px solid var(--line); backdrop-filter: blur(8px); }
+        .btn {
+            font-family: 'Orbitron', sans-serif; font-size: 12px; color: #fff; background: rgba(0, 229, 255, 0.1);
+            border: 1px solid var(--cyan); padding: 10px 16px; cursor: pointer; text-align: center; font-weight: bold;
+        }
+        .btn.gold { border-color: var(--gold); background: var(--gold); color: #000; }
+        .btn.danger { border-color: var(--red); background: rgba(255, 59, 59, 0.2); color: #fff; }
+        .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+        /* SẢNH (LOBBY) */
+        #screen-menu {
+            position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            z-index: 10; padding: 15px; background: radial-gradient(circle, #1a2333 0%, #0b0e14 100%);
+        }
+        .lobby-box { width: 100%; max-width: 750px; display: flex; flex-direction: column; gap: 15px; align-items: center; }
+        .title { font-family: 'Orbitron', sans-serif; font-size: 28px; color: var(--gold); text-shadow: 0 0 10px var(--gold); }
+        
+        .profile-card { display: flex; align-items: center; gap: 12px; padding: 10px 20px; width: 100%; max-width: 400px; justify-content: center; }
+        .avatar { width: 48px; height: 48px; border-radius: 50%; border: 2px solid var(--cyan); overflow: hidden; background: #000; }
+        .avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+        /* MAP NẰM NGANG */
+        .map-row { display: flex; flex-direction: row; gap: 10px; width: 100%; overflow-x: auto; padding: 5px; justify-content: center; }
+        .map-card {
+            flex: 1; min-width: 120px; max-width: 160px; height: 70px; padding: 10px; cursor: pointer;
+            border: 1px solid var(--line); display: flex; flex-direction: column; justify-content: center; align-items: center;
+            background: rgba(255,255,255,0.03); transition: 0.2s;
+        }
+        .map-card.selected { border-color: var(--green); background: rgba(57, 255, 136, 0.15); transform: scale(1.05); }
+
+        /* IN-GAME HUD */
+        #screen-game { position: absolute; inset: 0; display: none; z-index: 5; background: #000; }
+        #screen-game.active { display: block; }
+        #phaser-container { width: 100%; height: 100%; }
+
+        .hud-element { position: absolute; z-index: 20; opacity: var(--hud-alpha); }
+        .hud-top { top: 10px; left: 10px; right: 10px; display: flex; justify-content: space-between; pointer-events: none; }
+        .hud-top > * { pointer-events: auto; }
+
+        #joystick-zone { bottom: 20px; left: 20px; width: 120px; height: 120px; }
+
+        /* CHAT */
+        #chatPanel {
+            bottom: 20px; right: 20px; width: 260px; height: 160px; display: flex; flex-direction: column;
+            background: var(--panel); border: 1px solid var(--line); transition: opacity 0.2s;
+        }
+        #chatPanel.hidden-chat { display: none !important; }
+        .chat-body { flex: 1; overflow-y: auto; padding: 5px; font-size: 11px; display: flex; flex-direction: column; gap: 3px; }
+        .chat-input { display: flex; border-top: 1px solid var(--line); }
+        .chat-input input { flex: 1; background: transparent; border: none; color: #fff; padding: 5px; font-size: 11px; outline: none; }
+
+        /* SETTINGS OVERLAY */
+        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: none; align-items: center; justify-content: center; z-index: 100; }
+        .overlay.open { display: flex; }
+        .setting-box { width: 90%; max-width: 420px; padding: 20px; display: flex; flex-direction: column; gap: 12px; max-height: 90vh; overflow-y: auto; }
+        .set-row { display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
+        .set-row input[type=range], .set-row select { width: 50%; }
+
+        /* CHẾ ĐỘ EDIT HUD */
+        .edit-hud-mode .hud-element { border: 2px dashed var(--gold) !important; cursor: move; }
+    </style>
 </head>
-
 <body>
+    <div id="app">
+        <!-- SẢNH GAME (LOBBY) -->
+        <div id="screen-menu">
+            <div class="lobby-box">
+                <div class="title">VMI MILITARY</div>
 
-<div id="app">
-
-    <!-- =========================
-         SẢNH CHỜ
-    ========================== -->
-
-    <div id="screen-menu">
-
-        <div class="lobby-box">
-
-            <div class="title">
-                VMI MAP
-            </div>
-
-            <!-- PROFILE -->
-
-            <div class="panel profile-card">
-
-                <div class="avatar" id="avatarEl">
-
-                    <img
-                        id="avatarImg"
-                        src="https://cdn.discordapp.com/embed/avatars/0.png"
-                        alt="avatar"
-                    >
-
-                </div>
-
-                <div style="flex:1">
-
-                    <div
-                        id="playerNameEl"
-                        style="font-weight:bold"
-                    >
-                        Chưa đăng nhập
+                <div class="panel profile-card">
+                    <div class="avatar" id="avatarEl"><img src="https://cdn.discordapp.com/embed/avatars/0.png"></div>
+                    <div style="flex:1;">
+                        <div id="playerNameEl" style="font-weight:bold;">Chưa đăng nhập</div>
+                        <div id="statusEl" style="font-size:10px; color:var(--red);">Khách</div>
                     </div>
-
-                    <div
-                        id="statusEl"
-                        style="font-size:10px;color:var(--red)"
-                    >
-                        Khách
-                    </div>
-
+                    <button class="btn" id="btnLogin">DISCORD</button>
+                    <button class="btn danger" id="btnLogout" style="display:none;">THOÁT</button>
                 </div>
 
-                <button
-                    class="btn"
-                    id="btnLogin"
-                >
-                    ĐĂNG NHẬP
-                </button>
+                <div style="font-size:12px; color:var(--cyan);">CHỌN BẢN ĐỒ HUẤN LUYỆN</div>
+                <div class="map-row" id="mapRow"></div>
 
-                <button
-                    class="btn danger"
-                    id="btnLogout"
-                    style="display:none"
-                >
-                    THOÁT
-                </button>
+                <button id="btnEnterGame" class="btn gold" style="width:200px; height:45px;" disabled>VÀO GAME</button>
+            </div>
+        </div>
 
+        <!-- MAN HINH GAME -->
+        <div id="screen-game">
+            <div id="phaser-container"></div>
+
+            <div class="hud-top hud-element">
+                <div class="panel" style="padding:6px 12px; color:var(--gold); font-weight:bold;" id="mapLabel">KHU HUẤN LUYỆN</div>
+                <div style="display:flex; gap:8px;">
+                    <button class="btn" id="btnToggleChat">💬 CHAT</button>
+                    <button class="btn" id="btnOpenSettings">⚙ CÀI ĐẶT</button>
+                </div>
             </div>
 
-            <!-- MAP DUY NHẤT -->
+            <div id="joystick-zone" class="hud-element"></div>
 
-            <div
-                class="panel"
-                style="
-                    width:100%;
-                    max-width:400px;
-                    padding:14px;
-                    text-align:center
-                "
-            >
+            <div id="chatPanel" class="hud-element">
+                <div style="padding:4px 8px; background:rgba(0,0,0,0.4); font-size:10px; color:var(--cyan);">TRÒ CHUYỆN</div>
+                <div class="chat-body" id="chatBody"></div>
+                <div class="chat-input">
+                    <input type="text" id="chatInput" placeholder="Nhập tin nhắn..." maxlength="60">
+                    <button class="btn" id="btnSendChat">GỬI</button>
+                </div>
+            </div>
+        </div>
 
-                <div
-                    style="
-                        font-family:Orbitron;
-                        color:var(--gold);
-                        font-size:14px
-                    "
-                >
-                    KHU DIỄU BINH
+        <!-- POPUP CÀI ĐẶT -->
+        <div class="overlay" id="settingsOverlay">
+            <div class="panel setting-box">
+                <div style="font-family:'Orbitron'; color:var(--gold); font-size:16px; text-align:center;">CÀI ĐẶT GAME</div>
+                
+                <div class="set-row">
+                    <label>Độ thu phóng (Camera):</label>
+                    <input type="range" id="setZoom" min="0.3" max="1.5" step="0.05" value="0.8">
+                </div>
+                <div class="set-row">
+                    <label>Âm thanh Tổng:</label>
+                    <input type="range" id="setVolume" min="0" max="1" step="0.1" value="0.8">
+                </div>
+                <div class="set-row">
+                    <label>Đồ họa (Độ nét):</label>
+                    <select id="setGraphics">
+                        <option value="1">Tiêu chuẩn (1x)</option>
+                        <option value="1.5" selected>Sắc nét (1.5x)</option>
+                        <option value="2">Siêu nét (2x - Tốn RAM)</option>
+                    </select>
+                </div>
+                <div class="set-row">
+                    <label>Độ mờ HUD:</label>
+                    <input type="range" id="setHudAlpha" min="0.2" max="1" step="0.1" value="0.9">
                 </div>
 
-                <div
-                    style="
-                        font-size:11px;
-                        color:#9ca8c0;
-                        margin-top:5px
-                    "
-                >
-                    MAP PHASE 3
-                </div>
-
+                <button class="btn" id="btnEditHUD" style="border-color:var(--gold); color:var(--gold);">🛠 CHỈNH VỊ TRÍ & CỠ HUD</button>
+                <button class="btn danger" id="btnLeaveMap">🚪 RỜI MAP VỀ SẢNH</button>
+                <button class="btn gold" id="btnCloseSettings">LƯU & ĐÓNG</button>
             </div>
-
-            <!-- VÀO GAME -->
-
-            <button
-                id="btnEnterGame"
-                class="btn gold"
-                style="
-                    width:200px;
-                    height:45px
-                "
-                disabled
-            >
-                VÀO GAME
-            </button>
-
         </div>
-
     </div>
 
-
-    <!-- =========================
-         GAME
-    ========================== -->
-
-    <div id="screen-game">
-
-        <div id="phaser-container"></div>
-
-        <!-- CÀI ĐẶT -->
-
-        <div class="hud-top hud-element">
-
-            <button
-                class="btn"
-                id="btnOpenSettings"
-            >
-                CÀI ĐẶT
-            </button>
-
-        </div>
-
-        <!-- JOYSTICK -->
-
-        <div
-            id="joystick-zone"
-            class="hud-element"
-        ></div>
-
-    </div>
-
-
-    <!-- =========================
-         SETTINGS
-    ========================== -->
-
-    <div
-        class="overlay"
-        id="settingsOverlay"
-    >
-
-        <div class="panel setting-box">
-
-            <div
-                style="
-                    font-family:Orbitron;
-                    color:var(--gold);
-                    font-size:16px;
-                    text-align:center
-                "
-            >
-                CÀI ĐẶT GAME
-            </div>
-
-
-            <div class="set-row">
-
-                <label>
-                    Độ thu phóng:
-                </label>
-
-                <input
-                    type="range"
-                    id="setZoom"
-                    min=".3"
-                    max="1.5"
-                    step=".05"
-                    value=".8"
-                >
-
-            </div>
-
-
-            <div class="set-row">
-
-                <label>
-                    Âm thanh:
-                </label>
-
-                <input
-                    type="range"
-                    id="setVolume"
-                    min="0"
-                    max="1"
-                    step=".1"
-                    value=".8"
-                >
-
-            </div>
-
-
-            <div class="set-row">
-
-                <label>
-                    Đồ họa:
-                </label>
-
-                <select id="setGraphics">
-
-                    <option value="1">
-                        Tiêu chuẩn
-                    </option>
-
-                    <option
-                        value="1.5"
-                        selected
-                    >
-                        Nét
-                    </option>
-
-                    <option value="2">
-                        Siêu nét
-                    </option>
-
-                </select>
-
-            </div>
-
-
-            <div class="set-row">
-
-                <label>
-                    Độ mờ HUD:
-                </label>
-
-                <input
-                    type="range"
-                    id="setHudAlpha"
-                    min=".2"
-                    max="1"
-                    step=".1"
-                    value=".9"
-                >
-
-            </div>
-
-
-            <button
-                class="btn"
-                id="btnEditHUD"
-                style="
-                    border-color:var(--gold);
-                    color:var(--gold)
-                "
-            >
-                CHỈNH VỊ TRÍ HUD
-            </button>
-
-
-            <button
-                class="btn danger"
-                id="btnLeaveMap"
-            >
-                RỜI MAP VỀ SẢNH
-            </button>
-
-
-            <button
-                class="btn gold"
-                id="btnCloseSettings"
-            >
-                LƯU & ĐÓNG
-            </button>
-
-        </div>
-
-    </div>
-
-
-    <div id="errBox"></div>
-
-</div>
-
-
-<!-- CHỈ DÙNG MAP 2 -->
-<script src="map2.js"></script>
-
-
-<script>
-
-/* ==========================================================
-   BẮT LỖI
-========================================================== */
-
-window.addEventListener(
-    'error',
-    function(e) {
-
-        const box =
-            document.getElementById(
-                'errBox'
-            );
-
-        if (!box) return;
-
-        box.style.display = 'block';
-
-        box.textContent +=
-            'LỖI: ' +
-            e.message +
-            '\nTại dòng: ' +
-            e.lineno +
-            ':' +
-            e.colno +
-            '\n\n';
-
-    }
-);
-
-
-/* ==========================================================
-   BIẾN
-========================================================== */
-
-let currentUser = null;
-
-let isEditHUD = false;
-
-let scene = null;
-
-let game = null;
-
-let joystick = null;
-
-let moveVector = {
-    x: 0,
-    y: 0
-};
-
-let playerContainer = null;
-
-let controlledObject = null;
-
-let speechBubble = null;
-
-let playerBody = null;
-
-const MAP_SIZE = 16000;
-
-
-/* ==========================================================
-   DISCORD
-========================================================== */
-
-const CLIENT_ID =
-    '1534238453871673414';
-
-const REDIRECT_URI =
-    window.location.origin +
-    window.location.pathname;
-
-
-function checkDiscordAuth() {
-
-    const hashParams =
-        new URLSearchParams(
-            window.location.hash.slice(1)
-        );
-
-    const token =
-        hashParams.get(
-            'access_token'
-        );
-
-
-    if (token) {
-
-        fetch(
-            'https://discord.com/api/users/@me',
-            {
-                headers: {
-                    authorization:
-                        `Bearer ${token}`
-                }
-            }
-        )
-
-        .then(r => r.json())
-
-        .then(user => {
-
-            if (!user.id) return;
-
-            currentUser = user;
-
-            localStorage.setItem(
-                'vmi_discord_user',
-                JSON.stringify(user)
-            );
-
-            window.history.replaceState(
-                {},
-                document.title,
-                window.location.pathname
-            );
-
-            updateUserUI();
-
-        })
-
-        .catch(err => {
-
-            console.error(
-                'Discord auth:',
-                err
-            );
-
+    <div id="errBox" style="display:none; position:fixed; inset:0; z-index:9999; background:#1a0000; color:#ff5555; padding:16px; font-family:monospace; font-size:13px; overflow:auto; white-space:pre-wrap;"></div>
+    <script>
+        window.addEventListener('error', function (e) {
+            const box = document.getElementById('errBox');
+            box.style.display = 'block';
+            box.textContent += 'LỖI: ' + e.message + '\n   Tại dòng: ' + e.lineno + ':' + e.colno + '\n\n';
         });
 
-    }
+        // --- 1. DISCORD OAUTH2 ---
+        const CLIENT_ID = '1534238453871673414'; 
+        const REDIRECT_URI = window.location.origin + window.location.pathname;
 
-    else {
+        let currentUser = null;
+        let isEditHUD = false;
 
-        const saved =
-            localStorage.getItem(
-                'vmi_discord_user'
-            );
+        function checkDiscordAuth() {
+            const fragment = new URLSearchParams(window.location.hash.slice(1));
+            const accessToken = fragment.get('access_token');
 
-        if (saved) {
-
-            try {
-
-                currentUser =
-                    JSON.parse(saved);
-
-                updateUserUI();
-
+            if (accessToken) {
+                fetch('https://discord.com/api/users/@me', {
+                    headers: { authorization: `Bearer ${accessToken}` }
+                })
+                .then(res => res.json())
+                .then(user => {
+                    if (user.id) {
+                        currentUser = user;
+                        localStorage.setItem('vmi_discord_user', JSON.stringify(user));
+                        window.history.replaceState({}, document.title, window.location.pathname);
+                        updateUserUI();
+                    }
+                });
+            } else {
+                const saved = localStorage.getItem('vmi_discord_user');
+                if (saved) { currentUser = JSON.parse(saved); updateUserUI(); }
             }
-
-            catch {
-
-                localStorage.removeItem(
-                    'vmi_discord_user'
-                );
-
-            }
-
         }
 
-    }
+        function updateUserUI() {
+            if (currentUser) {
+                const avUrl = currentUser.avatar 
+                    ? `https://cdn.discordapp.com/avatars/${currentUser.id}/${currentUser.avatar}.png?size=256`
+                    : `https://cdn.discordapp.com/embed/avatars/0.png`;
+                document.getElementById('avatarEl').innerHTML = `<img src="${avUrl}">`;
+                document.getElementById('playerNameEl').textContent = currentUser.global_name || currentUser.username;
+                document.getElementById('statusEl').textContent = '● Đã xác minh';
+                document.getElementById('statusEl').style.color = 'var(--green)';
+                document.getElementById('btnLogin').style.display = 'none';
+                document.getElementById('btnLogout').style.display = 'block';
+                document.getElementById('btnEnterGame').disabled = false;
+            }
+        }
 
-}
-
-
-/* ==========================================================
-   USER UI
-========================================================== */
-
-function updateUserUI() {
-
-    if (!currentUser) return;
-
-
-    const avatarUrl =
-        currentUser.avatar
-
-        ? `https://cdn.discordapp.com/avatars/${currentUser.id}/${currentUser.avatar}.png?size=256`
-
-        : 'https://cdn.discordapp.com/embed/avatars/0.png';
-
-
-    const avatarImg =
-        document.getElementById(
-            'avatarImg'
-        );
-
-
-    avatarImg.src =
-        avatarUrl;
-
-
-    avatarImg.onerror =
-        function() {
-
-            avatarImg.src =
-                'https://cdn.discordapp.com/embed/avatars/0.png';
-
+        document.getElementById('btnLogin').onclick = () => {
+            const url = `https://discord.com/oauth2/authorize?client_id=${CLIENT_ID}&response_type=token&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=identify`;
+            window.location.href = url;
         };
 
-
-    document.getElementById(
-        'playerNameEl'
-    ).textContent =
-
-        currentUser.global_name ||
-        currentUser.username;
-
-
-    const status =
-        document.getElementById(
-            'statusEl'
-        );
-
-
-    status.textContent =
-        '● Đã xác minh';
-
-
-    status.style.color =
-        'var(--green)';
-
-
-    document.getElementById(
-        'btnLogin'
-    ).style.display =
-        'none';
-
-
-    document.getElementById(
-        'btnLogout'
-    ).style.display =
-        'block';
-
-
-    document.getElementById(
-        'btnEnterGame'
-    ).disabled =
-        false;
-
-}
-
-
-/* ==========================================================
-   LOGIN
-========================================================== */
-
-document.getElementById(
-    'btnLogin'
-).onclick = function() {
-
-    location.href =
-
-        `https://discord.com/oauth2/authorize?client_id=${CLIENT_ID}&response_type=token&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=identify`;
-
-};
-
-
-/* ==========================================================
-   LOGOUT
-========================================================== */
-
-document.getElementById(
-    'btnLogout'
-).onclick = function() {
-
-    localStorage.removeItem(
-        'vmi_discord_user'
-    );
-
-    location.reload();
-
-};
-
-
-/* ==========================================================
-   ENSURE PLAYER
-========================================================== */
-
-function ensurePlayer() {
-
-    if (
-        !scene ||
-        playerContainer ||
-        !scene.physics
-    ) {
-        return;
-    }
-
-
-    /* =========================
-       SPAWN
-    ========================= */
-
-    const spawn =
-
-        scene.map2Spawn ||
-
-        {
-            x:
-                scene.cameras.main.centerX,
-
-            y:
-                scene.cameras.main.centerY
+        document.getElementById('btnLogout').onclick = () => {
+            localStorage.removeItem('vmi_discord_user');
+            location.reload();
         };
 
+        // --- 2. SẢNH MAP ---
+        const MAPS = [
+            { id: 'm1', name: 'KHU HUẤN LUYỆN' },
+            { id: 'm2', name: 'DIỄU BINH' },
+            { id: 'm3', name: 'THAO TRƯỜNG' },
+            { id: 'm4', name: 'SỰ KIỆN' }
+        ];
+        let selectedMap = MAPS[0];
 
-    /* =========================
-       PLAYER CONTAINER
-    ========================= */
+        const mapRow = document.getElementById('mapRow');
+        MAPS.forEach(m => {
+            const card = document.createElement('div');
+            card.className = 'map-card' + (m.id === selectedMap.id ? ' selected' : '');
+            card.innerHTML = `<div style="font-weight:bold; font-size:12px;">${m.name}</div>`;
+            card.onclick = () => {
+                document.querySelectorAll('.map-card').forEach(c => c.classList.remove('selected'));
+                card.classList.add('selected');
+                selectedMap = m;
+                document.getElementById('mapLabel').textContent = m.name;
+            };
+            mapRow.appendChild(card);
+        });
 
-    playerContainer =
-        scene.add.container(
-            spawn.x,
-            spawn.y
-        );
+        // --- 3. GAME ENGINE & ROBLOX BUBBLE CHAT ---
+        let game = null, scene = null, playerContainer = null, joystick = null;
+        let moveVector = { x: 0, y: 0 };
+        let speechBubble = null;
 
+        document.getElementById('btnEnterGame').onclick = () => {
+            document.getElementById('screen-menu').style.display = 'none';
+            document.getElementById('screen-game').classList.add('active');
+            initGame();
+        };
 
-    playerContainer.setDepth(
-        10000
-    );
+        function initGame() {
+            try {
+                if (typeof Phaser === 'undefined') {
+                    throw new Error('Phaser chưa load được (có thể do mạng chặn CDN jsdelivr.net)');
+                }
+                if (game) { game.destroy(true); game = null; }
 
+                const renderScale = parseFloat(document.getElementById('setGraphics').value);
 
-    /* =========================
-       NỀN AVATAR
-    ========================= */
+                const config = {
+                    type: Phaser.AUTO,
+                    parent: 'phaser-container',
+                    width: window.innerWidth,
+                    height: window.innerHeight,
+                    resolution: renderScale,
+                    backgroundColor: '#101726',
+                    physics: { default: 'arcade' },
+                    scene: { preload: preloadScene, create: createScene, update: updateScene }
+                };
 
-    const avatarBg =
-        scene.add.circle(
-            0,
-            0,
-            32,
-            0x0b0e14,
-            0.95
-        );
+                game = new Phaser.Game(config);
+                initJoystick();
+            } catch (err) {
+                const box = document.getElementById('errBox');
+                box.style.display = 'block';
+                box.textContent += 'LỖI initGame(): ' + err.message + '\n\n';
+            }
+        }
 
+        function preloadScene() {
+            scene = this;
+            if (scene.textures.exists('p_avatar')) scene.textures.remove('p_avatar');
 
-    /* =========================
-       AVATAR
-    ========================= */
+            const avUrl = currentUser && currentUser.avatar 
+                ? `https://cdn.discordapp.com/avatars/${currentUser.id}/${currentUser.avatar}.png?size=256`
+                : `https://cdn.discordapp.com/embed/avatars/0.png`;
 
-    let avatar;
+            scene.load.image('p_avatar', avUrl);
+        }
 
+                function createScene() {
+            // KÍCH THƯỚC MAP TỐI ƯU CHO MOBILE (9,600 x 9,600 px)
+            const MAP_SIZE = 9600;
+            scene.physics.world.setBounds(0, 0, MAP_SIZE, MAP_SIZE);
 
-    if (
-        scene.textures.exists(
-            'p_avatar'
-        )
-    ) {
+            const startPos = MAP_SIZE / 2; // Tọa độ Spawn ở trung tâm map (4800, 4800)
 
-        avatar =
-            scene.add.image(
-                0,
-                0,
-                'p_avatar'
-            );
+            // 1. NỀN CỎ XANH LÁ NHẠT + LƯỚI ĐƯỜNG KẺ
+            const bg = scene.add.graphics();
+            bg.fillStyle(0x5c8a67, 1); // Màu cỏ xanh nhạt dịu mắt
+            bg.fillRect(0, 0, MAP_SIZE, MAP_SIZE);
+            bg.lineStyle(2, 0x4e7858, 0.3);
+            for (let x = 0; x <= MAP_SIZE; x += 120) bg.lineBetween(x, 0, x, MAP_SIZE);
+            for (let y = 0; y <= MAP_SIZE; y += 120) bg.lineBetween(0, y, MAP_SIZE, y);
 
-        avatar.setDisplaySize(
-            58,
-            58
-        );
+            // 2. KHU VỰC SPAWN (SÂN BÊ TÔNG TRẮNG & CỘT CỜ TRỰC QUAN)
+            const spawnPlatform = scene.add.rectangle(startPos, startPos, 500, 500, 0xeeeeee).setStrokeStyle(4, 0xcccccc);
 
-    }
+            // Bệ và Cột cờ
+            const flagBase = scene.add.circle(startPos, startPos, 22, 0x777777).setStrokeStyle(3, 0x333333);
+            const flagPole = scene.add.line(startPos, startPos, 0, 0, 0, -100, 0xffffff).setLineWidth(4);
+            const flag = scene.add.rectangle(startPos + 22, startPos - 25, 44, 26, 0xda251d); // Lá cờ đỏ
+            const flagStar = scene.add.polygon(startPos + 22, startPos - 25, [0,-5, 2,-1, 5,-1, 2,1, 3,4, 0,2, -3,4, -2,1, -5,-1, -2,-1], 0xffff00); // Sao vàng
+            
+            let isFlagUp = false;
+            const flagGroup = scene.add.container(0, 0, [flag, flagStar]);
 
-    else {
-
-        avatar =
-            scene.add.circle(
-                0,
-                0,
-                29,
-                0x00e5ff
-            );
-
-    }
-
-
-    /* =========================
-       MASK TRÒN
-    ========================= */
-
-    if (
-        avatar &&
-        avatar.setMask
-    ) {
-
-        const maskShape =
-            scene.make.graphics({
-                x: 0,
-                y: 0,
-                add: false
+            // Bấm vào cột cờ để kéo lên / hạ xuống
+            flagBase.setInteractive({ cursor: 'pointer' });
+            flagBase.on('pointerdown', () => {
+                isFlagUp = !isFlagUp;
+                scene.tweens.add({
+                    targets: flagGroup,
+                    y: isFlagUp ? -65 : 0,
+                    duration: 1200,
+                    ease: 'Power2'
+                });
+                if (typeof showRobloxBubbleChat === 'function') {
+                    showRobloxBubbleChat(isFlagUp ? "Đã kéo cờ!" : "Đã hạ cờ!");
+                }
             });
 
+            // 3. KHU VỰC PAD ĐỨNG (6 CỤM - MỖI CỤM 8 NGANG x 6 DÀI)
+            const clusterOffsetX = [-400, 0, 400, -400, 0, 400];
+            const clusterOffsetY = [-700, -700, -700, -1100, -1100, -1100];
 
-        maskShape.fillStyle(
-            0xffffff
-        );
+            for (let c = 0; c < 6; c++) {
+                const baseX = startPos + clusterOffsetX[c];
+                const baseY = startPos + clusterOffsetY[c];
 
-
-        maskShape.fillCircle(
-            0,
-            0,
-            29
-        );
-
-
-        const avatarMask =
-            maskShape.createGeometryMask();
-
-
-        avatar.setMask(
-            avatarMask
-        );
-
-    }
-
-
-    /* =========================
-       VIỀN TRÒN
-    ========================= */
-
-    const border =
-        scene.add.graphics();
-
-
-    border.lineStyle(
-        3,
-        0x00e5ff,
-        1
-    );
-
-
-    border.strokeCircle(
-        0,
-        0,
-        31
-    );
-
-
-    /* =========================
-       TÊN
-    ========================= */
-
-    const playerName =
-
-        currentUser
-
-        ? (
-            currentUser.global_name ||
-            currentUser.username
-        )
-
-        : 'Khách';
-
-
-    const nameText =
-        scene.add.text(
-            0,
-            43,
-            playerName,
-            {
-                fontFamily:
-                    'Rajdhani',
-
-                fontSize:
-                    '14px',
-
-                fontStyle:
-                    'bold',
-
-                color:
-                    '#ffffff',
-
-                stroke:
-                    '#000000',
-
-                strokeThickness:
-                    4
-            }
-        );
-
-
-    nameText.setOrigin(
-        0.5
-    );
-
-
-    /* =========================
-       ADD PLAYER
-    ========================= */
-
-    playerContainer.add(
-        [
-            avatarBg,
-            avatar,
-            border,
-            nameText
-        ]
-    );
-
-
-    /* =========================
-       CHAT BUBBLE
-       GIỮ LẠI ĐỂ KHÔNG
-       LỖI NẾU MAP GỌI
-    ========================= */
-
-    const bubbleBg =
-        scene.add.graphics();
-
-
-    const bubbleText =
-        scene.add.text(
-            0,
-            -65,
-            '',
-            {
-                fontFamily:
-                    'Rajdhani',
-
-                fontSize:
-                    '13px',
-
-                color:
-                    '#000000',
-
-                align:
-                    'center',
-
-                wordWrap: {
-                    width:
-                        180
+                for (let row = 0; row < 6; row++) {
+                    for (let col = 0; col < 8; col++) {
+                        const px = baseX + (col - 3.5) * 40;
+                        const py = baseY + (row - 2.5) * 40;
+                        scene.add.rectangle(px, py, 30, 30, 0xffffff, 0.9).setStrokeStyle(2, 0x00e5ff);
+                    }
                 }
             }
-        );
 
+            // 4. CỔNG GÁC, HÀNG RÀO VÀNG (CÓ VA CHẠM KHÔNG THỂ ĐI QUA)
+            const gateY = startPos - 1500;
+            
+            // 2 Cột đỏ đậm
+            const pillarLeft = scene.add.rectangle(startPos - 180, gateY, 40, 40, 0x8b0000).setStrokeStyle(2, 0x000000);
+            const pillarRight = scene.add.rectangle(startPos + 180, gateY, 40, 40, 0x8b0000).setStrokeStyle(2, 0x000000);
+            
+            // Hàng rào vàng 2 bên cổng
+            const fenceLeft = scene.add.rectangle(startPos - 1200, gateY, 2000, 18, 0xffd700).setStrokeStyle(2, 0xb8860b);
+            const fenceRight = scene.add.rectangle(startPos + 1200, gateY, 2000, 18, 0xffd700).setStrokeStyle(2, 0xb8860b);
 
-    bubbleText.setOrigin(
-        0.5
-    );
+            // Tạo nhóm vật thể đứng yên để cản đường
+            const obstacles = scene.physics.add.staticGroup();
+            obstacles.addMultiple([pillarLeft, pillarRight, fenceLeft, fenceRight]);
 
+            // 5. ĐƯỜNG BÊ TÔNG RỘNG CHO XE & HÀNG CÂY XANH DỌC ĐƯỜNG
+            const roadWidth = 450;
+            const roadHeight = 2500;
+            // Mặt đường xám
+            scene.add.rectangle(startPos, gateY - roadHeight / 2, roadWidth, roadHeight, 0x444444);
+            // Vạch đứt tim đường màu vàng
+            for (let ly = gateY; ly > gateY - roadHeight; ly -= 80) {
+                scene.add.rectangle(startPos, ly - 20, 8, 40, 0xffd700);
+            }
 
-    bubbleBg.setVisible(
-        false
-    );
+            // Trồng hàng cây xanh hai bên đường bê tông
+            for (let cy = gateY - 80; cy > gateY - roadHeight; cy -= 110) {
+                scene.add.circle(startPos - roadWidth / 2 - 35, cy, 28, 0x1e5631).setStrokeStyle(2, 0x0a2912);
+                scene.add.circle(startPos + roadWidth / 2 + 35, cy, 28, 0x1e5631).setStrokeStyle(2, 0x0a2912);
+            }
 
+            // 6. KHỞI TẠO PLAYER (AVATAR TRÒN KHÔNG BỊ LỖI MÀN HÌNH ĐEN)
+const playerBody = scene.add.circle(0, 0, 22, 0x00e5ff).setStrokeStyle(3, 0xffffff);
+const playerEye = scene.add.circle(12, 0, 5, 0x000000);
 
-    bubbleText.setVisible(
-        false
-    );
+const nameText = scene.add.text(0, -38, currentUser ? (currentUser.global_name || currentUser.username) : 'Player', {
+    font: 'bold 14px Rajdhani', fill: '#ffffff', stroke: '#000000', strokeThickness: 4
+}).setOrigin(0.5);
 
-
-    speechBubble =
-        scene.add.container(
-            0,
-            0
-        );
-
-
-    speechBubble.add(
-        [
-            bubbleBg,
-            bubbleText
-        ]
-    );
-
-
-    speechBubble.setVisible(false);
+// Bubble Chat kiểu Roblox
+speechBubble = scene.add.container(0, -75).setVisible(false);
+const bubbleBg = scene.add.graphics();
+const bubbleText = scene.add.text(0, 0, '', {
+    font: '600 13px Rajdhani', fill: '#000000', align: 'center', wordWrap: { width: 180 }
+}).setOrigin(0.5);
+speechBubble.add([bubbleBg, bubbleText]);
 speechBubble.bubbleBg = bubbleBg;
 speechBubble.bubbleText = bubbleText;
-playerContainer.add(speechBubble);
 
-playerBody = scene.physics.add.existing(playerContainer);
-controlledObject = playerContainer;
+// Spawn nhân vật tại Sân Bê Tông Trắng
+playerContainer = scene.add.container(startPos, startPos + 80, [playerBody, playerEye, nameText, speechBubble]);
 
-if (playerContainer.body) {
-    playerContainer.body.setCircle(28, -28, -28);
-    playerContainer.body.setCollideWorldBounds(true);
-    playerContainer.body.setDrag(800, 800);
-}
+scene.physics.world.enable(playerContainer);
+playerContainer.body.setCollideWorldBounds(true);
 
-if (scene.cameras && scene.cameras.main) {
-    scene.cameras.main.startFollow(
-        playerContainer,
-        true,
-        0.08,
-        0.08
-    );
+// Bật va chạm giữa Player và Hàng rào / Cột gác
+scene.physics.add.collider(playerContainer, obstacles);
 
-    scene.cameras.main.setZoom(
-        parseFloat(document.getElementById('setZoom').value) || 0.8
-    );
-}
-
-}
-
-/* ==========================================================
-   PRELOAD
-========================================================== */
-
-function preloadScene() {
-    scene = this;
-
-    if (scene.textures.exists('p_avatar')) {
-        scene.textures.remove('p_avatar');
+// Camera Follow
+const cam = scene.cameras.main;
+cam.startFollow(playerContainer, true, 0.1, 0.1);
+cam.setBounds(0, 0, MAP_SIZE, MAP_SIZE);
+cam.setZoom(parseFloat(document.getElementById('setZoom').value));
     }
+    
 
-    const avatarUrl = currentUser && currentUser.avatar
-        ? `https://cdn.discordapp.com/avatars/${currentUser.id}/${currentUser.avatar}.png?size=256`
-        : 'https://cdn.discordapp.com/embed/avatars/0.png';
-
-    scene.load.image('p_avatar', avatarUrl);
-
-    scene.load.image(
-        'flag_vn',
-        'https://flagcdn.com/h240/vn.png'
-    );
-
-    scene.load.image(
-        'tank_t90',
-        'https://commons.wikimedia.org/wiki/Special:FilePath/T-90_tank.svg?width=300'
-    );
-
-    scene.load.image(
-        'btr_apc',
-        'https://commons.wikimedia.org/wiki/Special:FilePath/BTR-4%20silhouette.png?width=300'
-    );
-}
-
-/* ==========================================================
-   CREATE
-========================================================== */
-
-function createGame() {
-    scene = this;
-
-    playerContainer = null;
-    controlledObject = null;
-    speechBubble = null;
-    playerBody = null;
-
-    moveVector = { x: 0, y: 0 };
-
-    if (typeof createMap2 === 'function') {
-        createMap2(this);
-    }
-
-    if (this.physics && this.physics.world) {
-        this.physics.world.setBounds(
-            0,
-            0,
-            MAP_SIZE,
-            MAP_SIZE
-        );
-    }
-
-    ensurePlayer();
-    setupJoystick();
-}
-
-/* ==========================================================
-   UPDATE
-========================================================== */
-
-function updateScene() {
-    if (!scene) return;
-
-    if (!playerContainer) {
-        ensurePlayer();
-    }
-
-    if (!controlledObject || !controlledObject.body) {
-        return;
-    }
-
-    const body = controlledObject.body;
-    const speed = 180;
-
-    let vx = moveVector.x || 0;
-    let vy = moveVector.y || 0;
-
-    if (scene.input && scene.input.keyboard) {
-        if (!scene.cursors) {
-            scene.cursors =
-                scene.input.keyboard.createCursorKeys();
-        }
-
-        if (scene.cursors.left.isDown) vx = -1;
-        if (scene.cursors.right.isDown) vx = 1;
-        if (scene.cursors.up.isDown) vy = -1;
-        if (scene.cursors.down.isDown) vy = 1;
-    }
-
-    const length = Math.sqrt(vx * vx + vy * vy);
-
-    if (length > 1) {
-        vx /= length;
-        vy /= length;
-    }
-
-    body.setVelocity(
-        vx * speed,
-        vy * speed
-    );
-}
-
-function update(time, delta) {
-    updateScene();
-}
-
-/* ==========================================================
-   JOYSTICK
-========================================================== */
-
-function setupJoystick() {
-    if (
-        joystick &&
-        typeof joystick.destroy === 'function'
-    ) {
-        joystick.destroy();
-    }
-
+function initJoystick() {
     const zone = document.getElementById('joystick-zone');
     zone.innerHTML = '';
-
-    if (typeof nipplejs === 'undefined') {
-        return;
-    }
-
     joystick = nipplejs.create({
-        zone: zone,
-        mode: 'static',
-        position: {
-            left: '60px',
-            top: '60px'
-        },
-        color: '#00e5ff',
-        size: 110,
-        multitouch: true,
-        restJoystick: true
+        zone: zone, mode: 'static',
+        position: { left: '60px', top: '60px' },
+        size: 100, color: '#00e5ff'
     });
 
-    joystick.on('move', function(evt, data) {
-        if (!data || !data.vector) return;
-
-        moveVector.x = data.vector.x || 0;
-        moveVector.y = -(data.vector.y || 0);
-    });
-
-    joystick.on('end', function() {
-    moveVector.x = 0;
-    moveVector.y = 0;
-});
-} // <-- FIX: đóng hàm setupJoystick() còn thiếu (nguyên nhân khiến TOÀN BỘ nút phía sau không hoạt động)
-
-/* ==========================================================
-   VÀO GAME
-========================================================== */
-
-document.getElementById('btnEnterGame').onclick = function() {
-    if (!currentUser) return;
-
-    document.getElementById('screen-menu').style.display = 'none';
-    document.getElementById('screen-game').classList.add('active');
-
-    if (game) {
-        game.destroy(true);
-        game = null;
-    }
-
-    game = new Phaser.Game({
-        type: Phaser.AUTO,
-        parent: 'phaser-container',
-        width: window.innerWidth,
-        height: window.innerHeight,
-        backgroundColor: '#111111',
-
-        physics: {
-            default: 'arcade',
-            arcade: {
-                gravity: { y: 0 },
-                debug: false
-            }
-        },
-
-        scale: {
-            mode: Phaser.Scale.RESIZE,
-            autoCenter: Phaser.Scale.CENTER_BOTH
-        },
-
-        scene: {
-            preload: preloadScene,
-            create: createGame,
-            update: update
+    joystick.on('move', (evt, data) => {
+        if (!isEditHUD && data && data.vector) {
+            moveVector = { x: data.vector.x, y: -data.vector.y };
         }
     });
-};
+    joystick.on('end', () => { moveVector = { x: 0, y: 0 }; });
+}
 
-/* ==========================================================
-   SETTINGS
-========================================================== */
+// --- 4. CÀI ĐẶT & HUD ---
+const settingsOverlay = document.getElementById('settingsOverlay');
+document.getElementById('btnOpenSettings').onclick = () => settingsOverlay.classList.add('open');
 
-const settingsOverlay =
-    document.getElementById('settingsOverlay');
-
-document.getElementById('btnOpenSettings').onclick = function() {
-    settingsOverlay.classList.add('open');
-};
-
-document.getElementById('btnCloseSettings').onclick = function() {
+document.getElementById('btnCloseSettings').onclick = () => {
     settingsOverlay.classList.remove('open');
+    if (isEditHUD) toggleEditHUD(false);
 
-    if (isEditHUD) {
-        toggleEditHUD(false);
-    }
-
-    if (scene && scene.cameras) {
-        scene.cameras.main.setZoom(
-            parseFloat(
-                document.getElementById('setZoom').value
-            ) || 0.8
-        );
-    }
-
-    document.documentElement.style.setProperty(
-        '--hud-alpha',
-        document.getElementById('setHudAlpha').value
-    );
+    if (scene) scene.cameras.main.setZoom(parseFloat(document.getElementById('setZoom').value));
+    document.documentElement.style.setProperty('--hud-alpha', document.getElementById('setHudAlpha').value);
 };
 
-/* ==========================================================
-   RỜI MAP
-========================================================== */
+// Ẩn/Hiện Chat
+document.getElementById('btnToggleChat').onclick = () => {
+    if (!isEditHUD) document.getElementById('chatPanel').classList.toggle('hidden-chat');
+};
 
-document.getElementById('btnLeaveMap').onclick = function() {
+// Gửi Chat + Nổi chữ Roblox trên đầu
+document.getElementById('btnSendChat').onclick = () => {
+    const input = document.getElementById('chatInput');
+    const val = input.value.trim();
+    if (!val) return;
+
+    const item = document.createElement('div');
+    item.innerHTML = `<b style="color:var(--cyan);">${currentUser ? currentUser.username : 'Khách'}:</b> ${val}`;
+    document.getElementById('chatBody').appendChild(item);
+
+    showRobloxBubbleChat(val);
+    input.value = '';
+};
+
+// Rời Map mượt mà
+document.getElementById('btnLeaveMap').onclick = () => {
     settingsOverlay.classList.remove('open');
-
-    if (game) {
-        game.destroy(true);
-        game = null;
-    }
-
-    if (
-        joystick &&
-        typeof joystick.destroy === 'function'
-    ) {
-        joystick.destroy();
-        joystick = null;
-    }
-
-    playerContainer = null;
-    controlledObject = null;
-    speechBubble = null;
-    playerBody = null;
-
-    moveVector = {
-        x: 0,
-        y: 0
-    };
-
-    document.getElementById('screen-game')
-        .classList.remove('active');
-
-    document.getElementById('screen-menu')
-        .style.display = 'flex';
+    if (game) { game.destroy(true); game = null; }
+    document.getElementById('screen-game').classList.remove('active');
+    document.getElementById('screen-menu').style.display = 'flex';
 };
 
-/* ==========================================================
-   CHỈNH HUD
-========================================================== */
-
-document.getElementById('btnEditHUD').onclick = function() {
+// Chỉnh HUD
+document.getElementById('btnEditHUD').onclick = () => {
     settingsOverlay.classList.remove('open');
     toggleEditHUD(true);
 };
 
 function toggleEditHUD(enable) {
     isEditHUD = enable;
-
     const app = document.getElementById('app');
-
     if (enable) {
         app.classList.add('edit-hud-mode');
-
-        makeDraggable(
-            document.getElementById('joystick-zone')
-        );
+        makeDraggable(document.getElementById('chatPanel'));
+        makeDraggable(document.getElementById('joystick-zone'));
     } else {
         app.classList.remove('edit-hud-mode');
     }
 }
 
-/* ==========================================================
-   KÉO HUD
-========================================================== */
-
 function makeDraggable(el) {
-    if (!el) return;
+    let p1 = 0, p2 = 0, p3 = 0, p4 = 0;
+    el.onmousedown = dragMouseDown;
+    el.ontouchstart = dragMouseDown;
 
-    let curX = 0;
-    let curY = 0;
-    let prevX = 0;
-    let prevY = 0;
-
-    el.onmousedown = dragStart;
-    el.ontouchstart = dragStart;
-
-    function dragStart(e) {
+    function dragMouseDown(e) {
         if (!isEditHUD) return;
-
         e = e || window.event;
-
-        curX = e.touches
-            ? e.touches[0].clientX
-            : e.clientX;
-
-        curY = e.touches
-            ? e.touches[0].clientY
-            : e.clientY;
-
-        document.onmouseup = dragEnd;
-        document.ontouchend = dragEnd;
-        document.onmousemove = dragMove;
-        document.ontouchmove = dragMove;
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        p3 = clientX; p4 = clientY;
+        document.onmouseup = closeDragElement;
+        document.ontouchend = closeDragElement;
+        document.onmousemove = elementDrag;
+        document.ontouchmove = elementDrag;
     }
 
-    function dragMove(e) {
-        const x = e.touches
-            ? e.touches[0].clientX
-            : e.clientX;
-
-        const y = e.touches
-            ? e.touches[0].clientY
-            : e.clientY;
-
-        prevX = curX - x;
-        prevY = curY - y;
-
-        curX = x;
-        curY = y;
-
-        el.style.top =
-            (el.offsetTop - prevY) + 'px';
-
-        el.style.left =
-            (el.offsetLeft - prevX) + 'px';
-
-        el.style.bottom = 'auto';
-        el.style.right = 'auto';
+    function elementDrag(e) {
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        p1 = p3 - clientX; p2 = p4 - clientY;
+        p3 = clientX; p4 = clientY;
+        el.style.top = (el.offsetTop - p2) + "px";
+        el.style.left = (el.offsetLeft - p1) + "px";
+        el.style.bottom = 'auto'; el.style.right = 'auto';
     }
 
-    function dragEnd() {
-        document.onmouseup = null;
-        document.onmousemove = null;
-        document.ontouchend = null;
-        document.ontouchmove = null;
+    function closeDragElement() {
+        document.onmouseup = null; document.onmousemove = null;
+        document.ontouchend = null; document.ontouchmove = null;
     }
 }
 
-/* ==========================================================
-   KHỞI ĐỘNG
-========================================================== */
+function updateScene() {
+    if (!playerContainer || !playerContainer.body) return;
+    const speed = 220;
+    playerContainer.body.setVelocity(moveVector.x * speed, moveVector.y * speed);
+}
+
+function showRobloxBubbleChat(text) {
+    if (!speechBubble) return;
+    speechBubble.bubbleText.setText(text);
+    const w = speechBubble.bubbleText.width + 20;
+    const h = speechBubble.bubbleText.height + 14;
+    speechBubble.bubbleBg.clear();
+    speechBubble.bubbleBg.fillStyle(0xffffff, 1);
+    speechBubble.bubbleBg.fillRoundedRect(-w / 2, -h / 2, w, h, 8);
+    speechBubble.setVisible(true);
+    clearTimeout(speechBubble._t);
+    speechBubble._t = setTimeout(() => speechBubble.setVisible(false), 3000);
+}
 
 window.onload = checkDiscordAuth;
-
-window.onresize = function() {
-    if (game) {
-        game.scale.resize(
-            window.innerWidth,
-            window.innerHeight
-        );
-    }
-};
+window.onresize = () => { if (game) game.scale.resize(window.innerWidth, window.innerHeight); };
 </script>
 </body>
 </html>
+    
