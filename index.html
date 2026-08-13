@@ -654,6 +654,65 @@ document.addEventListener('click', (e) => {
 
 });
 
+/* ==========================================================
+   VÀO GAME
+   ========================================================== */
+
+document.getElementById('btnEnterGame').onclick = () => {
+
+    if (!currentUser) {
+        alert('Bạn cần đăng nhập Discord trước!');
+        return;
+    }
+
+    playClickSound();
+
+    const menu = document.getElementById('screen-menu');
+    const gameScreen = document.getElementById('screen-game');
+
+    menu.style.display = 'none';
+    gameScreen.classList.add('active');
+
+    // Nếu game cũ còn tồn tại thì hủy
+    if (game) {
+        game.destroy(true);
+        game = null;
+    }
+
+    // Reset player
+    playerContainer = null;
+    controlledObject = null;
+    speechBubble = null;
+    playerBody = null;
+
+    // Tạo Phaser
+    game = new Phaser.Game({
+        type: Phaser.AUTO,
+        width: window.innerWidth,
+        height: window.innerHeight,
+        parent: 'phaser-container',
+
+        backgroundColor: '#000000',
+
+        scale: {
+            mode: Phaser.Scale.RESIZE,
+            autoCenter: Phaser.Scale.CENTER_BOTH
+        },
+
+        physics: {
+            default: 'arcade',
+            arcade: {
+                debug: false
+            }
+        },
+
+        scene: {
+            preload: preloadScene,
+            create: createGame,
+            update: update
+        }
+    });
+};
 
 /* ==========================================================
    ĐĂNG NHẬP DISCORD
