@@ -1369,9 +1369,18 @@ function updateUserUI() {
     document.getElementById('btnEnterGame').disabled = false;
 }
 
-document.getElementById('btnLogin').onclick = function() {
-    location.href = `https://discord.com/oauth2/authorize?client_id=${CLIENT_ID}&response_type=token&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=identify`;
-};
+// ======== SỬA NÚT ĐĂNG NHẬP CHO MOBILE ========
+const btnLogin = document.getElementById('btnLogin');
+function doLogin() {
+    alert('🔐 Đang chuyển hướng đến Discord...');
+    const url = `https://discord.com/oauth2/authorize?client_id=${CLIENT_ID}&response_type=token&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=identify`;
+    window.location.href = url;
+}
+// Bắt cả click và touchstart
+btnLogin.addEventListener('click', doLogin);
+btnLogin.addEventListener('touchstart', doLogin);
+
+// ======== NÚT ĐĂNG XUẤT ========
 document.getElementById('btnLogout').onclick = function() {
     localStorage.removeItem('vmi_discord_user');
     location.reload();
