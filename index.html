@@ -185,48 +185,76 @@ body {
     pointer-events: auto;
 }
 
-/* =========================
-   CHAT – VỊ TRÍ GÓC TRÊN TRÁI
-========================= */
+/* ==========================================================
+   CHAT - GIM GÓC TRÊN TRÁI MÀN HÌNH
+========================================================== */
+
 #chat-toggle {
     position: fixed;
-    top: 70px;           /* dưới nút cài đặt (nếu có) */
-    left: 20px;
-    z-index: 50;
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    background: var(--panel);
-    border: 2px solid var(--cyan);
-    color: var(--cyan);
-    font-size: 22px;
-    display: none;        /* ẩn mặc định, chỉ hiện khi trong game */
+    top: 15px;
+    left: 15px;
+
+    width: 48px;
+    height: 48px;
+
+    z-index: 999;
+
+    display: none;
     align-items: center;
     justify-content: center;
+
+    border-radius: 50%;
+    background: rgba(11,14,20,.95);
+    border: 2px solid var(--cyan);
+
+    color: var(--cyan);
+    font-size: 21px;
+
     cursor: pointer;
-    transition: .2s;
-    box-shadow: 0 0 15px rgba(0,229,255,.3);
+    touch-action: manipulation;
+    pointer-events: auto;
+
+    box-shadow:
+        0 0 12px rgba(0,229,255,.35),
+        inset 0 0 8px rgba(0,229,255,.08);
+
+    transition: .15s;
 }
+
 #chat-toggle:hover {
-    transform: scale(1.1);
+    transform: scale(1.08);
+}
+
+#chat-toggle:active {
+    transform: scale(.94);
 }
 
 #chat-window {
     position: fixed;
-    top: 130px;          /* dưới nút chat */
-    left: 20px;
+
+    top: 72px;
+    left: 15px;
+
     width: 280px;
     max-height: 320px;
-    background: rgba(11,14,20,.92);
+
+    background: rgba(11,14,20,.95);
+
     border: 1px solid var(--cyan);
     border-radius: 12px;
+
     backdrop-filter: blur(10px);
+
     display: none;
     flex-direction: column;
-    z-index: 60;
+
+    z-index: 998;
+
     box-shadow: 0 0 30px rgba(0,0,0,.8);
+
     overflow: hidden;
 }
+
 #chat-window.open {
     display: flex;
 }
@@ -235,44 +263,60 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
+
     padding: 6px 12px;
+
     background: rgba(0,229,255,.1);
     border-bottom: 1px solid var(--line);
+
     font-family: Orbitron;
     font-size: 12px;
     color: var(--gold);
 }
+
 .chat-header .close-btn {
     background: none;
     border: none;
+
     color: var(--red);
+
     font-size: 18px;
     cursor: pointer;
+
     line-height: 1;
 }
 
 .chat-messages {
     flex: 1;
+
     padding: 6px 10px;
+
     overflow-y: auto;
+
     max-height: 210px;
+
     font-size: 13px;
     line-height: 1.4;
+
     display: flex;
     flex-direction: column;
     gap: 2px;
 }
+
 .chat-messages .msg {
     padding: 2px 0;
     border-bottom: 1px solid rgba(255,255,255,.05);
 }
+
 .chat-messages .msg.system {
     color: var(--gold);
     font-style: italic;
 }
+
 .chat-messages .msg.user {
     color: var(--text);
 }
+
 .chat-messages .msg .name {
     color: var(--cyan);
     font-weight: bold;
@@ -280,38 +324,69 @@ body {
 
 .chat-input-area {
     display: flex;
+
     padding: 4px 6px;
+
     border-top: 1px solid var(--line);
+
     gap: 4px;
+
     background: rgba(0,0,0,.3);
 }
+
 .chat-input-area input {
     flex: 1;
+
     background: transparent;
+
     border: 1px solid var(--line);
     border-radius: 6px;
+
     padding: 4px 8px;
+
     color: var(--text);
+
     font-family: Rajdhani;
     font-size: 13px;
+
     outline: none;
+
+    user-select: text;
+    -webkit-user-select: text;
 }
+
 .chat-input-area input:focus {
     border-color: var(--cyan);
 }
+
 .chat-input-area button {
     background: var(--cyan);
+
     border: none;
     border-radius: 6px;
+
     padding: 0 12px;
+
     color: #000;
+
     font-weight: bold;
+
     cursor: pointer;
+
     font-family: Orbitron;
     font-size: 10px;
 }
+
 .chat-input-area button:hover {
     background: #66f0ff;
+}
+
+/* ==========================================================
+   CHAT BUBBLE TRÊN ĐẦU NHÂN VẬT
+========================================================== */
+
+.player-chat-bubble {
+    pointer-events: none;
 }
 
 /* =========================
@@ -566,30 +641,59 @@ function showBubbleOnPlayer(text, duration = 3000) {
 }
 
 /* ----- Gửi tin nhắn (thêm vào khung chat + hiển thị bubble) ----- */
-function sendChatMessage() {
-  const text = chatInput.value.trim();
-  if (!text) return;
-  if (!currentUser) {
-    addChatMessage('Bạn cần đăng nhập để nhắn tin.', 'system');
-    chatInput.value = '';
-    return;
-  }
-  const displayName = currentUser.global_name || currentUser.username;
-  // Thêm vào khung chat
-  addChatMessage(text, 'user', displayName);
-  // Hiển thị bubble trên đầu nhân vật
-  if (scene && playerContainer) {
-    showBubbleOnPlayer(`${displayName}: ${text}`, 3000);
-  }
-  chatInput.value = '';
-  // Tự động đóng chat window sau khi gửi (tuỳ chọn)
-  // toggleChat(false);
-}
-chatSend.addEventListener('click', sendChatMessage);
-chatInput.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') sendChatMessage();
-});
+/* ==========================================================
+   GỬI CHAT
+========================================================== */
 
+function sendChatMessage() {
+
+    const text =
+        chatInput.value.trim();
+
+    if (!text) return;
+
+    if (!currentUser) {
+
+        addChatMessage(
+            'Bạn cần đăng nhập để nhắn tin.',
+            'system'
+        );
+
+        chatInput.value = '';
+
+        return;
+    }
+
+    const displayName =
+        currentUser.global_name ||
+        currentUser.username;
+
+    /* CHAT */
+
+    addChatMessage(
+        text,
+        'user',
+        displayName
+    );
+
+    /* BUBBLE TRÊN ĐẦU */
+
+    if (
+        scene &&
+        playerContainer
+    ) {
+
+        showBubbleOnPlayer(
+            text,
+            3000
+        );
+    }
+
+    chatInput.value = '';
+
+    chatInput.blur();
+    }
+    
 function addChatMessage(text, type = 'user', name = '') {
   const msgDiv = document.createElement('div');
   msgDiv.className = 'msg ' + type;
@@ -673,76 +777,367 @@ document.getElementById('btnLogout').onclick = function() {
 };
 
 /* ==========================================================
-   ENSURE PLAYER (tạo nhân vật và bubble)
+   ENSURE PLAYER
+   AVATAR TRÒN + CHAT BUBBLE
 ========================================================== */
+
 function ensurePlayer() {
-  if (!scene || playerContainer || !scene.physics) return;
+    if (!scene || playerContainer || !scene.physics) return;
 
-  const spawn = scene.map2Spawn || {
-    x: scene.cameras.main.centerX,
-    y: scene.cameras.main.centerY
-  };
+    const spawn = scene.map2Spawn || {
+        x: scene.cameras.main.centerX,
+        y: scene.cameras.main.centerY
+    };
 
-  playerContainer = scene.add.container(spawn.x, spawn.y);
-  playerContainer.setDepth(10000);
+    playerContainer = scene.add.container(
+        spawn.x,
+        spawn.y
+    );
 
-  const avatarBg = scene.add.circle(0, 0, 33, 0x0b0e14, 0.9);
-  let avatar;
-  if (scene.textures.exists('p_avatar')) {
-    avatar = scene.add.image(0, 0, 'p_avatar');
-    avatar.setDisplaySize(60, 60);
-    avatar.setOrigin(0.5, 0.5);
-  } else {
-    avatar = scene.add.circle(0, 0, 30, 0x00e5ff);
-    avatar.setStrokeStyle(2, 0xffffff);
-    console.warn('⚠️ Avatar fallback');
-  }
-  const border = scene.add.graphics();
-  border.lineStyle(3, 0x00e5ff, 1);
-  border.strokeCircle(0, 0, 31);
+    playerContainer.setDepth(10000);
 
-  const playerName = currentUser ? (currentUser.global_name || currentUser.username) : 'Khách';
-  const nameText = scene.add.text(0, 45, playerName, {
-    fontFamily: 'Rajdhani',
-    fontSize: '14px',
-    fontStyle: 'bold',
-    color: '#ffffff',
-    stroke: '#000000',
-    strokeThickness: 4
-  }).setOrigin(0.5);
+    /* ======================================================
+       NỀN AVATAR
+    ====================================================== */
 
-  playerContainer.add([avatarBg, avatar, border, nameText]);
+    const avatarBg = scene.add.circle(
+        0,
+        0,
+        33,
+        0x0b0e14,
+        0.95
+    );
 
-    // ----- BUBBLE (sẽ hiển thị khi chat) -----
-  const bubbleBg = scene.add.graphics();
-  const bubbleText = scene.add.text(0, 0, '', {
-    fontFamily: 'Rajdhani',
-    fontSize: '14px',
-    color: '#000000',
-    align: 'center',
-    wordWrap: { width: 180 }
-  }).setOrigin(0.5);
-  bubbleBg.setVisible(false);
-  bubbleText.setVisible(false);
-  speechBubble = scene.add.container(0, -55);  // đặt phía trên đầu
-  speechBubble.add([bubbleBg, bubbleText]);
-  speechBubble.setVisible(false);
-  speechBubble.bubbleBg = bubbleBg;
-  speechBubble.bubbleText = bubbleText;
-  playerContainer.add(speechBubble);
+    /* ======================================================
+       AVATAR
+    ====================================================== */
 
-  // Physics
-  playerBody = scene.physics.add.existing(playerContainer);
-  controlledObject = playerContainer;
-  if (playerContainer.body) {
-    playerContainer.body.setCircle(28, -28, -28);
-    playerContainer.body.setCollideWorldBounds(true);
-    playerContainer.body.setDrag(800, 800);
-  }
+    let avatar;
 
-  scene.cameras.main.startFollow(playerContainer, true, 0.08, 0.08);
-  scene.cameras.main.setZoom(parseFloat(document.getElementById('setZoom').value) || 0.8);
+    if (scene.textures.exists('p_avatar')) {
+
+        avatar = scene.add.image(
+            0,
+            0,
+            'p_avatar'
+        );
+
+        avatar.setDisplaySize(60, 60);
+        avatar.setOrigin(0.5);
+
+        /* MASK TRÒN */
+
+        const maskGraphics = scene.make.graphics({
+            x: 0,
+            y: 0,
+            add: false
+        });
+
+        maskGraphics.fillStyle(0xffffff);
+        maskGraphics.fillCircle(0, 0, 30);
+
+        const avatarMask =
+            new Phaser.Display.Masks.GeometryMask(
+                scene,
+                maskGraphics
+            );
+
+        avatar.setMask(avatarMask);
+
+        avatar.avatarMaskGraphics = maskGraphics;
+
+    } else {
+
+        avatar = scene.add.circle(
+            0,
+            0,
+            30,
+            0x00e5ff
+        );
+
+        avatar.setStrokeStyle(
+            2,
+            0xffffff
+        );
+
+        console.warn('Avatar fallback');
+
+    }
+
+    /* ======================================================
+       VIỀN AVATAR
+    ====================================================== */
+
+    const border = scene.add.graphics();
+
+    border.lineStyle(
+        3,
+        0x00e5ff,
+        1
+    );
+
+    border.strokeCircle(
+        0,
+        0,
+        31
+    );
+
+    /* ======================================================
+       TÊN
+    ====================================================== */
+
+    const playerName =
+        currentUser
+            ? (
+                currentUser.global_name ||
+                currentUser.username
+            )
+            : 'Khách';
+
+    const nameText = scene.add.text(
+        0,
+        45,
+        playerName,
+        {
+            fontFamily: 'Rajdhani',
+            fontSize: '14px',
+            fontStyle: 'bold',
+            color: '#ffffff',
+            stroke: '#000000',
+            strokeThickness: 4
+        }
+    );
+
+    nameText.setOrigin(0.5);
+
+    playerContainer.add([
+        avatarBg,
+        avatar,
+        border,
+        nameText
+    ]);
+
+    /* ======================================================
+       CHAT BUBBLE
+    ====================================================== */
+
+    const bubbleBg =
+        scene.add.graphics();
+
+    const bubbleText =
+        scene.add.text(
+            0,
+            0,
+            '',
+            {
+                fontFamily: 'Rajdhani',
+                fontSize: '14px',
+                color: '#000000',
+                align: 'center',
+                wordWrap: {
+                    width: 180,
+                    useAdvancedWrap: true
+                }
+            }
+        );
+
+    bubbleText.setOrigin(0.5);
+
+    speechBubble =
+        scene.add.container(
+            0,
+            -72
+        );
+
+    speechBubble.add([
+        bubbleBg,
+        bubbleText
+    ]);
+
+    speechBubble.setVisible(false);
+
+    speechBubble.setDepth(10002);
+
+    speechBubble.bubbleBg =
+        bubbleBg;
+
+    speechBubble.bubbleText =
+        bubbleText;
+
+    playerContainer.add(
+        speechBubble
+    );
+
+    /* ======================================================
+       PHYSICS
+    ====================================================== */
+
+    playerBody =
+        scene.physics.add.existing(
+            playerContainer
+        );
+
+    controlledObject =
+        playerContainer;
+
+    if (playerContainer.body) {
+
+        playerContainer.body.setCircle(
+            28,
+            -28,
+            -28
+        );
+
+        playerContainer.body.setCollideWorldBounds(
+            true
+        );
+
+        playerContainer.body.setDrag(
+            800,
+            800
+        );
+    }
+
+    /* ======================================================
+       CAMERA
+    ====================================================== */
+
+    scene.cameras.main.startFollow(
+        playerContainer,
+        true,
+        0.08,
+        0.08
+    );
+
+    scene.cameras.main.setZoom(
+        parseFloat(
+            document.getElementById(
+                'setZoom'
+            ).value
+        ) || 0.8
+    );
 }
+
+
+/* ==========================================================
+   CHAT BUBBLE
+========================================================== */
+
+function showBubbleOnPlayer(
+    text,
+    duration = 3000
+) {
+
+    if (
+        !speechBubble ||
+        !speechBubble.bubbleBg ||
+        !speechBubble.bubbleText
+    ) {
+        return;
+    }
+
+    const bg =
+        speechBubble.bubbleBg;
+
+    const txt =
+        speechBubble.bubbleText;
+
+    txt.setText(text);
+
+    txt.setVisible(true);
+
+    const maxWidth = 220;
+
+    const paddingX = 12;
+    const paddingY = 8;
+
+    txt.setWordWrapWidth(
+        180
+    );
+
+    let w =
+        txt.width +
+        paddingX * 2;
+
+    let h =
+        Math.max(
+            34,
+            txt.height +
+            paddingY * 2
+        );
+
+    if (w > maxWidth) {
+        w = maxWidth;
+    }
+
+    bg.clear();
+
+    /* NỀN */
+
+    bg.fillStyle(
+        0xffffff,
+        0.96
+    );
+
+    bg.fillRoundedRect(
+        -w / 2,
+        -h / 2,
+        w,
+        h,
+        10
+    );
+
+    /* VIỀN */
+
+    bg.lineStyle(
+        2,
+        0x00e5ff,
+        1
+    );
+
+    bg.strokeRoundedRect(
+        -w / 2,
+        -h / 2,
+        w,
+        h,
+        10
+    );
+
+    txt.setPosition(
+        0,
+        0
+    );
+
+    bg.setVisible(true);
+    txt.setVisible(true);
+
+    speechBubble.setVisible(true);
+
+    speechBubble.setDepth(
+        10002
+    );
+
+    if (speechBubbleTimer) {
+        clearTimeout(
+            speechBubbleTimer
+        );
+    }
+
+    speechBubbleTimer =
+        setTimeout(() => {
+
+            if (speechBubble) {
+                speechBubble.setVisible(
+                    false
+                );
+            }
+
+            speechBubbleTimer =
+                null;
+
+        }, duration);
+}
+
 
 /* ==========================================================
    PRELOAD
@@ -791,34 +1186,123 @@ function createGame() {
 /* ==========================================================
    UPDATE
 ========================================================== */
+/* ==========================================================
+   UPDATE
+========================================================== */
+
 function updateScene() {
-  if (!scene) return;
-  if (!playerContainer) ensurePlayer();
-  if (!controlledObject || !controlledObject.body) return;
 
-  const body = controlledObject.body;
-  const speed = 180;
-  let vx = moveVector.x || 0;
-  let vy = moveVector.y || 0;
+    if (!scene) return;
 
-  if (scene.input && scene.input.keyboard) {
-    if (!scene.cursors) scene.cursors = scene.input.keyboard.createCursorKeys();
-    if (scene.cursors.left.isDown) vx = -1;
-    if (scene.cursors.right.isDown) vx = 1;
-    if (scene.cursors.up.isDown) vy = -1;
-    if (scene.cursors.down.isDown) vy = 1;
-  }
+    if (!playerContainer) {
+        ensurePlayer();
+    }
 
-  const length = Math.sqrt(vx * vx + vy * vy);
-  if (length > 1) { vx /= length; vy /= length; }
+    if (
+        !controlledObject ||
+        !controlledObject.body
+    ) {
+        return;
+    }
 
-  body.setVelocity(vx * speed, vy * speed);
+    /* ======================================================
+       CẬP NHẬT MASK AVATAR
+    ====================================================== */
+
+    if (
+        playerContainer &&
+        playerContainer.list
+    ) {
+
+        const avatarObj =
+            playerContainer.list.find(
+                obj =>
+                    obj &&
+                    obj.avatarMaskGraphics
+            );
+
+        if (
+            avatarObj &&
+            avatarObj.avatarMaskGraphics
+        ) {
+
+            avatarObj.avatarMaskGraphics.x =
+                playerContainer.x;
+
+            avatarObj.avatarMaskGraphics.y =
+                playerContainer.y;
+        }
+    }
+
+    /* ======================================================
+       DI CHUYỂN
+    ====================================================== */
+
+    const body =
+        controlledObject.body;
+
+    const speed = 180;
+
+    let vx =
+        moveVector.x || 0;
+
+    let vy =
+        moveVector.y || 0;
+
+    if (
+        scene.input &&
+        scene.input.keyboard
+    ) {
+
+        if (!scene.cursors) {
+
+            scene.cursors =
+                scene.input.keyboard
+                    .createCursorKeys();
+        }
+
+        if (
+            scene.cursors.left.isDown
+        ) {
+            vx = -1;
+        }
+
+        if (
+            scene.cursors.right.isDown
+        ) {
+            vx = 1;
+        }
+
+        if (
+            scene.cursors.up.isDown
+        ) {
+            vy = -1;
+        }
+
+        if (
+            scene.cursors.down.isDown
+        ) {
+            vy = 1;
+        }
+    }
+
+    const length =
+        Math.sqrt(
+            vx * vx +
+            vy * vy
+        );
+
+    if (length > 1) {
+
+        vx /= length;
+        vy /= length;
+    }
+
+    body.setVelocity(
+        vx * speed,
+        vy * speed
+    );
 }
-
-function update(time, delta) {
-  updateScene();
-}
-
 /* ==========================================================
    JOYSTICK
 ========================================================== */
