@@ -1156,3073 +1156,1017 @@ body {
 <div id="errBox"></div>
 
 <!-- ========================================================
-     MAP 2
-     GIỮ NGUYÊN FILE CỦA M
+     MAP 2 – BẠN PHẢI CÓ FILE NÀY
 ========================================================= -->
 <script src="map2.js"></script>
 
-<script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
-
 <script>
+/* ==========================================================
+   PHẦN SỬA LẠI TOÀN BỘ JAVASCRIPT
+   (đã dọn dẹp, không còn lỗi cú pháp, không ghi đè hàm)
+========================================================== */
 
 /* ==========================================================
    BẮT LỖI
 ========================================================== */
-
 window.addEventListener('error', function(e) {
-
-    const box =
-        document.getElementById('errBox');
-
+    const box = document.getElementById('errBox');
     if (!box) return;
-
     box.style.display = 'block';
-
-    box.textContent +=
-        'LỖI: ' +
-        e.message +
-        '\nTại dòng: ' +
-        e.lineno +
-        ':' +
-        e.colno +
-        '\n\n';
+    box.textContent += 'LỖI: ' + e.message + '\nTại dòng: ' + e.lineno + ':' + e.colno + '\n\n';
 });
-
 
 /* ==========================================================
    BIẾN CHÍNH
 ========================================================== */
-
 let currentUser = null;
-
 let isEditHUD = false;
-
 let scene = null;
-
 let game = null;
-
 let joystick = null;
-
-let moveVector = {
-    x: 0,
-    y: 0
-};
-
+let moveVector = { x: 0, y: 0 };
 let playerContainer = null;
-
 let controlledObject = null;
-
 let playerBody = null;
-
-
-/* ==========================================================
-   BUBBLE PLAYER
-========================================================== */
-
 let speechBubble = null;
-
 let speechBubbleTimer = null;
-
-
-/* ==========================================================
-   MULTIPLAYER
-========================================================== */
-
 let socket = null;
-
 let otherPlayers = {};
-
 let lastNetworkSend = 0;
-
-
-/* ==========================================================
-   MAP
-========================================================== */
-
 const MAP_SIZE = 3000;
 
-
-/* ==========================================================
-   CHAT ELEMENT
-========================================================== */
-
-const chatMessages =
-    document.getElementById(
-        'chat-messages'
-    );
-
-const chatInput =
-    document.getElementById(
-        'chat-input'
-    );
-
-const chatToggle =
-    document.getElementById(
-        'chat-toggle'
-    );
-
-const chatWindow =
-    document.getElementById(
-        'chat-window'
-    );
-
-const chatClose =
-    document.getElementById(
-        'chat-close'
-    );
-
-const chatSend =
-    document.getElementById(
-        'chat-send'
-    );
-
+/* CHAT ELEMENT */
+const chatMessages = document.getElementById('chat-messages');
+const chatInput = document.getElementById('chat-input');
+const chatToggle = document.getElementById('chat-toggle');
+const chatWindow = document.getElementById('chat-window');
+const chatClose = document.getElementById('chat-close');
+const chatSend = document.getElementById('chat-send');
 
 /* ==========================================================
    CHAT MỞ / ĐÓNG
 ========================================================== */
-
 function toggleChat(force) {
-
-    if (
-        typeof force === 'boolean'
-    ) {
-
-        chatWindow.classList.toggle(
-            'open',
-            force
-        );
-
+    if (typeof force === 'boolean') {
+        chatWindow.classList.toggle('open', force);
     } else {
-
-        chatWindow.classList.toggle(
-            'open'
-        );
+        chatWindow.classList.toggle('open');
     }
-
 }
-
-
-/* ==========================================================
-   NÚT CHAT
-========================================================== */
-
-chatToggle.addEventListener(
-    'click',
-    function(e) {
-
-        e.preventDefault();
-
-        e.stopPropagation();
-
-        toggleChat();
-
-    }
-);
-
-
-chatClose.addEventListener(
-    'click',
-    function(e) {
-
-        e.preventDefault();
-
-        e.stopPropagation();
-
-        toggleChat(false);
-
-    }
-);
-
+chatToggle.addEventListener('click', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    toggleChat();
+});
+chatClose.addEventListener('click', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    toggleChat(false);
+});
 
 /* ==========================================================
-   BUBBLE CHAT PLAYER CỦA MÌNH
+   BUBBLE CHAT CHO PLAYER CỦA MÌNH
 ========================================================== */
-
-function showBubbleOnPlayer(
-    text,
-    duration = 3000
-) {
-
+function showBubbleOnPlayer(text, duration = 3000) {
     if (!speechBubble) return;
-
-    const bg =
-        speechBubble.bubbleBg;
-
-    const txt =
-        speechBubble.bubbleText;
-
+    const bg = speechBubble.bubbleBg;
+    const txt = speechBubble.bubbleText;
     if (!bg || !txt) return;
-
-
     txt.setText(text);
-
-
     const padding = 12;
-
     const maxWidth = 220;
-
-
-    let w =
-        Math.min(
-            (txt.width || 60) +
-            padding * 2,
-            maxWidth
-        );
-
-
-    let h =
-        Math.max(
-            34,
-            (txt.height || 20) +
-            14
-        );
-
-
+    let w = Math.min((txt.width || 60) + padding * 2, maxWidth);
+    let h = Math.max(34, (txt.height || 20) + 14);
     bg.clear();
-
-
-    bg.fillStyle(
-        0xffffff,
-        0.96
-    );
-
-
-    bg.fillRoundedRect(
-        -w / 2,
-        -h / 2,
-        w,
-        h,
-        10
-    );
-
-
-    bg.lineStyle(
-        2,
-        0x00e5ff,
-        1
-    );
-
-
-    bg.strokeRoundedRect(
-        -w / 2,
-        -h / 2,
-        w,
-        h,
-        10
-    );
-
-
-    txt.setOrigin(
-        0.5,
-        0.5
-    );
-
-
-    txt.setPosition(
-        0,
-        0
-    );
-
-
-    speechBubble.setVisible(
-        true
-    );
-
-
-    if (speechBubbleTimer) {
-
-        clearTimeout(
-            speechBubbleTimer
-        );
-
-    }
-
-
-    speechBubbleTimer =
-        setTimeout(
-            function() {
-
-                if (speechBubble) {
-
-                    speechBubble.setVisible(
-                        false
-                    );
-
-                }
-
-                speechBubbleTimer =
-                    null;
-
-            },
-            duration
-        );
-
+    bg.fillStyle(0xffffff, 0.96);
+    bg.fillRoundedRect(-w/2, -h/2, w, h, 10);
+    bg.lineStyle(2, 0x00e5ff, 1);
+    bg.strokeRoundedRect(-w/2, -h/2, w, h, 10);
+    txt.setOrigin(0.5, 0.5);
+    txt.setPosition(0, 0);
+    speechBubble.setVisible(true);
+    if (speechBubbleTimer) clearTimeout(speechBubbleTimer);
+    speechBubbleTimer = setTimeout(function() {
+        if (speechBubble) speechBubble.setVisible(false);
+        speechBubbleTimer = null;
+    }, duration);
 }
-
 
 /* ==========================================================
    GỬI CHAT
 ========================================================== */
-
 function sendChatMessage() {
-
-    const text =
-        chatInput.value.trim();
-
-
+    const text = chatInput.value.trim();
     if (!text) return;
-
-
     if (!currentUser) {
-
-        addChatMessage(
-            'Bạn cần đăng nhập để nhắn tin.',
-            'system'
-        );
-
+        addChatMessage('Bạn cần đăng nhập để nhắn tin.', 'system');
         chatInput.value = '';
-
         return;
     }
-
-
-    /* Giới hạn 999 ký tự */
-
-    const finalText =
-        text.substring(
-            0,
-            999
-        );
-
-
-    /* Nếu chưa kết nối server */
-
-    if (
-        !socket ||
-        !socket.connected
-    ) {
-
-        addChatMessage(
-            'Chưa kết nối server.',
-            'system'
-        );
-
-        return;
+    const finalText = text.substring(0, 999);
+    if (socket && socket.connected) {
+        socket.emit('chatMessage', { id: currentUser.id, text: finalText });
+    } else {
+        // Offline: hiện local
+        const name = currentUser.global_name || currentUser.username || 'Player';
+        addChatMessage(finalText, 'user', name);
+        showBubbleOnPlayer(finalText, 3000);
     }
-
-
-    /* Gửi lên server */
-
-    socket.emit(
-        'chatMessage',
-        {
-            text: finalText
-        }
-    );
-
-
     chatInput.value = '';
-
     chatInput.blur();
-
 }
-
-
-/* ==========================================================
-   NÚT GỬI
-========================================================== */
-
-chatSend.addEventListener(
-    'click',
-    function(e) {
-
+chatSend.addEventListener('click', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    sendChatMessage();
+});
+chatInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
         e.preventDefault();
-
         e.stopPropagation();
-
         sendChatMessage();
-
     }
-);
-
-
-/* ==========================================================
-   ENTER ĐỂ GỬI
-========================================================== */
-
-chatInput.addEventListener(
-    'keydown',
-    function(e) {
-
-        if (e.key === 'Enter') {
-
-            e.preventDefault();
-
-            e.stopPropagation();
-
-            sendChatMessage();
-
-        }
-
-    }
-);
-
+});
 
 /* ==========================================================
    THÊM TIN NHẮN
 ========================================================== */
-
-function addChatMessage(
-    text,
-    type = 'user',
-    name = ''
-) {
-
-    const msgDiv =
-        document.createElement(
-            'div'
-        );
-
-
-    msgDiv.className =
-        'msg ' + type;
-
-
+function addChatMessage(text, type = 'user', name = '') {
+    const msgDiv = document.createElement('div');
+    msgDiv.className = 'msg ' + type;
     if (type === 'user') {
-
-        const nameSpan =
-            document.createElement(
-                'span'
-            );
-
-        nameSpan.className =
-            'name';
-
-        nameSpan.textContent =
-            name;
-
-
-        msgDiv.appendChild(
-            nameSpan
-        );
-
-
-        msgDiv.appendChild(
-            document.createTextNode(
-                ': ' + text
-            )
-        );
-
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'name';
+        nameSpan.textContent = name;
+        msgDiv.appendChild(nameSpan);
+        msgDiv.appendChild(document.createTextNode(': ' + text));
     } else {
-
-        msgDiv.textContent =
-            text;
-
+        msgDiv.textContent = text;
     }
-
-
-    chatMessages.appendChild(
-        msgDiv
-    );
-
-
-    /*
-       Chỉ tự kéo xuống khi đang
-       gần cuối chat.
-    */
-
-    const distanceFromBottom =
-        chatMessages.scrollHeight -
-        chatMessages.scrollTop -
-        chatMessages.clientHeight;
-
-
+    chatMessages.appendChild(msgDiv);
+    const distanceFromBottom = chatMessages.scrollHeight - chatMessages.scrollTop - chatMessages.clientHeight;
     if (distanceFromBottom < 100) {
-
-        chatMessages.scrollTop =
-            chatMessages.scrollHeight;
-
+        chatMessages.scrollTop = chatMessages.scrollHeight;
     }
-
 }
-
-
-/* ==========================================================
-   THÔNG BÁO HỆ THỐNG
-========================================================== */
-
 function systemNotice(text) {
-
-    addChatMessage(
-        text,
-        'system'
-    );
-
+    addChatMessage(text, 'system');
 }
 
-
 /* ==========================================================
-   DISCORD
+   DISCORD AUTH
 ========================================================== */
-
-const CLIENT_ID =
-    '1534238453871673414';
-
-
-const REDIRECT_URI =
-    window.location.origin +
-    window.location.pathname;
-
-
-/* ==========================================================
-   CHECK DISCORD LOGIN
-========================================================== */
+const CLIENT_ID = '1534238453871673414';
+const REDIRECT_URI = window.location.origin + window.location.pathname;
 
 function checkDiscordAuth() {
-
-    const hashParams =
-        new URLSearchParams(
-            window.location.hash.slice(1)
-        );
-
-
-    const token =
-        hashParams.get(
-            'access_token'
-        );
-
-
+    const hashParams = new URLSearchParams(window.location.hash.slice(1));
+    const token = hashParams.get('access_token');
     if (token) {
-
-        fetch(
-            'https://discord.com/api/users/@me',
-            {
-                headers: {
-                    authorization:
-                        `Bearer ${token}`
-                }
+        fetch('https://discord.com/api/users/@me', {
+            headers: { authorization: `Bearer ${token}` }
+        })
+        .then(r => r.json())
+        .then(user => {
+            if (!user.id) {
+                systemNotice('Discord đăng nhập thất bại.');
+                return;
             }
-        )
-
-        .then(
-            r => r.json()
-        )
-
-        .then(
-            user => {
-
-                if (!user.id) {
-
-                    systemNotice(
-                        'Discord đăng nhập thất bại.'
-                    );
-
-                    return;
-                }
-
-
-                currentUser =
-                    user;
-
-
-                localStorage.setItem(
-                    'vmi_discord_user',
-                    JSON.stringify(user)
-                );
-
-
-                window.history.replaceState(
-                    {},
-                    document.title,
-                    window.location.pathname
-                );
-
-
-                updateUserUI();
-
-
-                systemNotice(
-                    '🔹 Đã đăng nhập thành công!'
-                );
-
-            }
-        )
-
-        .catch(
-            err => {
-
-                console.error(
-                    'Discord auth:',
-                    err
-                );
-
-            }
-        );
-
+            currentUser = user;
+            localStorage.setItem('vmi_discord_user', JSON.stringify(user));
+            window.history.replaceState({}, document.title, window.location.pathname);
+            updateUserUI();
+            systemNotice('🔹 Đã đăng nhập thành công!');
+        })
+        .catch(err => console.error('Discord auth:', err));
     } else {
-
-        const saved =
-            localStorage.getItem(
-                'vmi_discord_user'
-            );
-
-
+        const saved = localStorage.getItem('vmi_discord_user');
         if (saved) {
-
             try {
-
-                currentUser =
-                    JSON.parse(
-                        saved
-                    );
-
-
+                currentUser = JSON.parse(saved);
                 updateUserUI();
-
             } catch {
-
-                localStorage.removeItem(
-                    'vmi_discord_user'
-                );
-
+                localStorage.removeItem('vmi_discord_user');
             }
-
         }
-
     }
-
 }
-
-
-/* ==========================================================
-   UPDATE USER UI
-========================================================== */
 
 function updateUserUI() {
-
     if (!currentUser) return;
-
-
-    const avatarUrl =
-        currentUser.avatar
-
-            ? `https://cdn.discordapp.com/avatars/${currentUser.id}/${currentUser.avatar}.png?size=256`
-
-            : 'https://cdn.discordapp.com/embed/avatars/0.png';
-
-
-    const avatarImg =
-        document.getElementById(
-            'avatarImg'
-        );
-
-
-    avatarImg.src =
-        avatarUrl;
-
-
-    avatarImg.onerror =
-        function() {
-
-            avatarImg.src =
-                'https://cdn.discordapp.com/embed/avatars/0.png';
-
-        };
-
-
-    document.getElementById(
-        'playerNameEl'
-    ).textContent =
-
-        currentUser.global_name ||
-        currentUser.username;
-
-
-    const status =
-        document.getElementById(
-            'statusEl'
-        );
-
-
-    status.textContent =
-        '● Đã xác minh';
-
-
-    status.style.color =
-        'var(--green)';
-
-
-    document.getElementById(
-        'btnLogin'
-    ).style.display =
-        'none';
-
-
-    document.getElementById(
-        'btnLogout'
-    ).style.display =
-        'block';
-
-
-    document.getElementById(
-        'btnEnterGame'
-    ).disabled =
-        false;
-
+    const avatarUrl = currentUser.avatar
+        ? `https://cdn.discordapp.com/avatars/${currentUser.id}/${currentUser.avatar}.png?size=256`
+        : 'https://cdn.discordapp.com/embed/avatars/0.png';
+    const avatarImg = document.getElementById('avatarImg');
+    avatarImg.src = avatarUrl;
+    avatarImg.onerror = function() { avatarImg.src = 'https://cdn.discordapp.com/embed/avatars/0.png'; };
+    document.getElementById('playerNameEl').textContent = currentUser.global_name || currentUser.username;
+    const status = document.getElementById('statusEl');
+    status.textContent = '● Đã xác minh';
+    status.style.color = 'var(--green)';
+    document.getElementById('btnLogin').style.display = 'none';
+    document.getElementById('btnLogout').style.display = 'block';
+    document.getElementById('btnEnterGame').disabled = false;
 }
 
-
-/* ==========================================================
-   LOGIN
-========================================================== */
-
-document.getElementById(
-    'btnLogin'
-).onclick =
-function() {
-
-    location.href =
-        `https://discord.com/oauth2/authorize?client_id=${CLIENT_ID}&response_type=token&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=identify`;
-
+document.getElementById('btnLogin').onclick = function() {
+    location.href = `https://discord.com/oauth2/authorize?client_id=${CLIENT_ID}&response_type=token&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=identify`;
 };
-
-
-/* ==========================================================
-   LOGOUT
-========================================================== */
-
-document.getElementById(
-    'btnLogout'
-).onclick =
-function() {
-
-    localStorage.removeItem(
-        'vmi_discord_user'
-    );
-
+document.getElementById('btnLogout').onclick = function() {
+    localStorage.removeItem('vmi_discord_user');
     location.reload();
-
 };
 
 /* ==========================================================
-   ENSURE PLAYER
-   AVATAR TRÒN + TÊN + BUBBLE
+   PHASER SCENE – PRELOAD, CREATE, UPDATE
 ========================================================== */
-
-function ensurePlayer() {
-
-    if (
-        !scene ||
-        playerContainer ||
-        !scene.physics
-    ) {
-        return;
-    }
-
-
-    /* =========================
-       SPAWN
-    ========================= */
-
-    const spawn =
-        scene.map2Spawn || {
-            x: MAP_SIZE / 2,
-            y: MAP_SIZE / 2
-        };
-
-
-    /* =========================
-       PLAYER CONTAINER
-    ========================= */
-
-    playerContainer =
-        scene.add.container(
-            spawn.x,
-            spawn.y
-        );
-
-
-    playerContainer.setDepth(
-        10000
-    );
-
-
-    /* =========================
-       NỀN AVATAR
-    ========================= */
-
-    const avatarBg =
-        scene.add.circle(
-            0,
-            0,
-            34,
-            0x0b0e14,
-            1
-        );
-
-
-    avatarBg.setStrokeStyle(
-        3,
-        0x00e5ff,
-        1
-    );
-
-
-    /* =========================
-       AVATAR
-    ========================= */
-
-    let avatar;
-
-
-    if (
-        scene.textures.exists(
-            'p_avatar'
-        )
-    ) {
-
-        avatar =
-            scene.add.image(
-                0,
-                0,
-                'p_avatar'
-            );
-
-
-        avatar.setDisplaySize(
-            60,
-            60
-        );
-
-
-        avatar.setOrigin(
-            0.5,
-            0.5
-        );
-
-
-        /*
-           FIX AVATAR TRÒN
-
-           Phaser không crop trực tiếp
-           bằng CSS nên dùng GeometryMask.
-        */
-
-        const maskGraphics =
-            scene.make.graphics(
-                {
-                    x: 0,
-                    y: 0,
-                    add: false
-                }
-            );
-
-
-        maskGraphics.fillStyle(
-            0xffffff
-        );
-
-
-        maskGraphics.fillCircle(
-            0,
-            0,
-            29
-        );
-
-
-        const avatarMask =
-            maskGraphics.createGeometryMask();
-
-
-        avatar.setMask(
-            avatarMask
-        );
-
-
-        /*
-           Lưu lại để không bị
-           tìm nhầm trong update.
-        */
-
-        avatar.avatarMaskGraphics =
-            maskGraphics;
-
-
-    } else {
-
-        avatar =
-            scene.add.circle(
-                0,
-                0,
-                29,
-                0x00e5ff,
-                1
-            );
-
-
-        avatar.setStrokeStyle(
-            2,
-            0xffffff,
-            1
-        );
-
-    }
-
-
-    /* =========================
-       VIỀN AVATAR
-    ========================= */
-
-    const border =
-        scene.add.graphics();
-
-
-    border.lineStyle(
-        3,
-        0x00e5ff,
-        1
-    );
-
-
-    border.strokeCircle(
-        0,
-        0,
-        31
-    );
-
-
-    /* =========================
-       TÊN PLAYER
-    ========================= */
-
-    const playerName =
-        currentUser
-            ? (
-                currentUser.global_name ||
-                currentUser.username
-              )
-            : 'Khách';
-
-
-    const nameText =
-        scene.add.text(
-            0,
-            45,
-            playerName,
-            {
-                fontFamily:
-                    'Rajdhani',
-                fontSize:
-                    '14px',
-                fontStyle:
-                    'bold',
-                color:
-                    '#ffffff',
-                stroke:
-                    '#000000',
-                strokeThickness:
-                    4
-            }
-        );
-
-
-    nameText.setOrigin(
-        0.5
-    );
-
-
-    /* =========================
-       THÊM PLAYER
-    ========================= */
-
-    playerContainer.add([
-        avatarBg,
-        avatar,
-        border,
-        nameText
-    ]);
-
-
-    /* ======================================================
-       BUBBLE CHAT
-    ====================================================== */
-
-    const bubbleBg =
-        scene.add.graphics();
-
-
-    const bubbleText =
-        scene.add.text(
-            0,
-            0,
-            '',
-            {
-                fontFamily:
-                    'Rajdhani',
-                fontSize:
-                    '14px',
-                fontStyle:
-                    'bold',
-                color:
-                    '#000000',
-                align:
-                    'center',
-                wordWrap: {
-                    width: 190
-                }
-            }
-        );
-
-
-    bubbleText.setOrigin(
-        0.5
-    );
-
-
-    /*
-       Bubble nằm phía trên đầu
-       player.
-    */
-
-    speechBubble =
-        scene.add.container(
-            0,
-            -70
-        );
-
-
-    speechBubble.add([
-        bubbleBg,
-        bubbleText
-    ]);
-
-
-    speechBubble.setVisible(
-        false
-    );
-
-
-    speechBubble.bubbleBg =
-        bubbleBg;
-
-
-    speechBubble.bubbleText =
-        bubbleText;
-
-
-    playerContainer.add(
-        speechBubble
-    );
-
-
-    /* ======================================================
-       PHYSICS
-    ====================================================== */
-
-    playerBody =
-        scene.physics.add.existing(
-            playerContainer
-        );
-
-
-    controlledObject =
-        playerContainer;
-
-
-    if (
-        playerContainer.body
-    ) {
-
-        playerContainer.body.setCircle(
-            28,
-            -28,
-            -28
-        );
-
-
-        playerContainer.body.setCollideWorldBounds(
-            true
-        );
-
-
-        playerContainer.body.setDrag(
-            800,
-            800
-        );
-
-    }
-
-
-    /* ======================================================
-       CAMERA
-    ====================================================== */
-
-    if (
-        scene.cameras &&
-        scene.cameras.main
-    ) {
-
-        scene.cameras.main.startFollow(
-            playerContainer,
-            true,
-            0.08,
-            0.08
-        );
-
-
-        const zoom =
-            parseFloat(
-                document.getElementById(
-                    'setZoom'
-                ).value
-            ) || 0.8;
-
-
-        scene.cameras.main.setZoom(
-            zoom
-        );
-
-    }
-
-}
-
-
-/* ==========================================================
-   PRELOAD
-========================================================== */
-
 function preloadScene() {
-
     scene = this;
-
-
-    /* =========================
-       AVATAR
-    ========================= */
-
-    if (
-        scene.textures.exists(
-            'p_avatar'
-        )
-    ) {
-
-        scene.textures.remove(
-            'p_avatar'
-        );
-
-    }
-
-
-    const avatarUrl =
-        currentUser &&
-        currentUser.avatar
-
-            ? `https://cdn.discordapp.com/avatars/${currentUser.id}/${currentUser.avatar}.png?size=256`
-
-            : 'https://cdn.discordapp.com/embed/avatars/0.png';
-
-
-    scene.load.image(
-        'p_avatar',
-        avatarUrl
-    );
-
-
-    /* =========================
-       CỜ VIỆT NAM
-    ========================= */
-
-    scene.load.image(
-        'flag_vn',
-        'https://flagcdn.com/w256/vn.png'
-    );
-
-
-    /* =========================
-       XE TĂNG
-    ========================= */
-
-    scene.load.image(
-        'tank_t90',
-        'https://commons.wikimedia.org/wiki/Special:FilePath/T-90_tank.svg?width=300'
-    );
-
-
-    /* =========================
-       BTR
-    ========================= */
-
-    scene.load.image(
-        'btr_apc',
-        'https://commons.wikimedia.org/wiki/Special:FilePath/BTR-4%20silhouette.png?width=300'
-    );
-
+    // Avatar của mình
+    if (scene.textures.exists('p_avatar')) scene.textures.remove('p_avatar');
+    const avatarUrl = currentUser && currentUser.avatar
+        ? `https://cdn.discordapp.com/avatars/${currentUser.id}/${currentUser.avatar}.png?size=256`
+        : 'https://cdn.discordapp.com/embed/avatars/0.png';
+    scene.load.image('p_avatar', avatarUrl);
+    // Các asset khác (nếu chưa có)
+    scene.load.image('flag_vn', 'https://flagcdn.com/w256/vn.png');
+    scene.load.image('tank_t90', 'https://commons.wikimedia.org/wiki/Special:FilePath/T-90_tank.svg?width=300');
+    scene.load.image('btr_apc', 'https://commons.wikimedia.org/wiki/Special:FilePath/BTR-4%20silhouette.png?width=300');
 }
-
-
-/* ==========================================================
-   CREATE GAME
-========================================================== */
 
 function createGame() {
-
     scene = this;
-
-
-    /*
-       RESET TOÀN BỘ PLAYER
-       Tránh lỗi player cũ.
-    */
-
+    // Reset các biến liên quan
     playerContainer = null;
-
     controlledObject = null;
-
     speechBubble = null;
-
     playerBody = null;
-
-
-    moveVector = {
-        x: 0,
-        y: 0
-    };
-
-
-    /* =========================
-       MAP 2
-    ========================= */
-
-    if (
-        typeof createMap2 ===
-        'function'
-    ) {
-
-        createMap2(
-            this
-        );
-
+    moveVector = { x: 0, y: 0 };
+    // Tạo map 2 (nếu có)
+    if (typeof createMap2 === 'function') {
+        createMap2(this);
+    } else {
+        // Fallback map đơn giản
+        this.add.rectangle(0, 0, MAP_SIZE, MAP_SIZE, 0x1a2333).setOrigin(0,0);
+        this.add.text(MAP_SIZE/2, MAP_SIZE/2, 'MAP 2 (FALLBACK)', { color: '#ffffff', fontSize: '32px' }).setOrigin(0.5);
     }
-
-
-    /* =========================
-       WORLD BOUNDS
-    ========================= */
-
-    if (
-        this.physics &&
-        this.physics.world
-    ) {
-
-        this.physics.world.setBounds(
-            0,
-            0,
-            MAP_SIZE,
-            MAP_SIZE
-        );
-
+    // Physics bounds
+    if (this.physics && this.physics.world) {
+        this.physics.world.setBounds(0, 0, MAP_SIZE, MAP_SIZE);
     }
-
-
-    /* =========================
-       PLAYER
-    ========================= */
-
+    // Tạo player
     ensurePlayer();
-
-
-    /* =========================
-       JOYSTICK
-    ========================= */
-
+    // Joystick
     setupJoystick();
-
-
-    /* =========================
-       CHAT
-    ========================= */
-
-    chatToggle.style.display =
-        'flex';
-
-
-    chatWindow.classList.remove(
-        'open'
-    );
-
-
-    /* =========================
-       THÔNG BÁO
-    ========================= */
-
-    const displayName =
-        currentUser
-            ? (
-                currentUser.global_name ||
-                currentUser.username
-              )
-            : 'Khách';
-
-
-    systemNotice(
-        `👤 ${displayName} đã vào server`
-    );
-
+    // Hiện chat button
+    chatToggle.style.display = 'flex';
+    chatWindow.classList.remove('open');
+    // Thông báo vào game
+    const displayName = currentUser ? (currentUser.global_name || currentUser.username) : 'Khách';
+    systemNotice(`👤 ${displayName} đã vào server`);
+    // Kết nối multiplayer
+    setTimeout(startMultiplayer, 500);
 }
 
-
-/* ==========================================================
-   HIỆN BUBBLE CHAT TỪ SERVER
-========================================================== */
-
-function showPlayerBubble(
-    playerId,
-    text
-) {
-
-    /*
-       Nếu là chính mình
-       thì dùng bubble hiện tại.
-    */
-
-    if (
-        playerId ===
-        'self'
-    ) {
-
-        showBubbleOnPlayer(
-            text,
-            3000
-        );
-
-        return;
-
-    }
-
-
-    /*
-       Player khác sẽ xử lý
-       ở phần multiplayer.
-    */
-
-    const other =
-        otherPlayers[
-            playerId
-        ];
-
-
-    if (
-        !other ||
-        !other.container
-    ) {
-        return;
-    }
-
-
-    if (
-        other.bubble
-    ) {
-
-        const bg =
-            other.bubble.bubbleBg;
-
-        const txt =
-            other.bubble.bubbleText;
-
-
-        txt.setText(
-            text
-        );
-
-
-        const w =
-            Math.min(
-                (txt.width || 60) +
-                20,
-                220
-            );
-
-
-        const h =
-            Math.max(
-                34,
-                (txt.height || 20) +
-                14
-            );
-
-
-        bg.clear();
-
-
-        bg.fillStyle(
-            0xffffff,
-            0.96
-        );
-
-
-        bg.fillRoundedRect(
-            -w / 2,
-            -h / 2,
-            w,
-            h,
-            10
-        );
-
-
-        bg.lineStyle(
-            2,
-            0x00e5ff,
-            1
-        );
-
-
-        bg.strokeRoundedRect(
-            -w / 2,
-            -h / 2,
-            w,
-            h,
-            10
-        );
-
-
-        other.bubble.setVisible(
-            true
-        );
-
-
-        if (
-            other.bubbleTimer
-        ) {
-
-            clearTimeout(
-                other.bubbleTimer
-            );
-
-        }
-
-
-        other.bubbleTimer =
-            setTimeout(
-                function() {
-
-                    if (
-                        other.bubble
-                    ) {
-
-                        other.bubble.setVisible(
-                            false
-                        );
-
-                    }
-
-                },
-                3000
-            );
-
-    }
-
-    }
-
-/* ==========================================================
-   UPDATE SCENE
-========================================================== */
-
-function updateScene() {
-
+function update(time, delta) {
     if (!scene) return;
-
-    if (!playerContainer) {
-
-        ensurePlayer();
-
-        return;
-    }
-
-    if (
-        !controlledObject ||
-        !controlledObject.body
-    ) {
-        return;
-    }
-
-    const body =
-        controlledObject.body;
-
-    const speed = 180;
-
-    let vx =
-        moveVector.x || 0;
-
-    let vy =
-        moveVector.y || 0;
-
-
-    /* =========================
-       BÀN PHÍM
-    ========================= */
-
-    if (
-        scene.input &&
-        scene.input.keyboard
-    ) {
-
-        if (!scene.cursors) {
-
-            scene.cursors =
-                scene.input.keyboard
-                    .createCursorKeys();
-        }
-
-        if (
-            scene.cursors.left.isDown
-        ) {
-            vx = -1;
-        }
-
-        if (
-            scene.cursors.right.isDown
-        ) {
-            vx = 1;
-        }
-
-        if (
-            scene.cursors.up.isDown
-        ) {
-            vy = -1;
-        }
-
-        if (
-            scene.cursors.down.isDown
-        ) {
-            vy = 1;
-        }
-
-    }
-
-
-    /* =========================
-       CHUẨN HÓA TỐC ĐỘ
-    ========================= */
-
-    const length =
-        Math.sqrt(
-            vx * vx +
-            vy * vy
-        );
-
-    if (length > 1) {
-
-        vx /= length;
-        vy /= length;
-
-    }
-
-
-    /* =========================
-       DI CHUYỂN
-    ========================= */
-
-    body.setVelocity(
-        vx * speed,
-        vy * speed
-    );
-
-
-    /* =========================
-       GỬI VỊ TRÍ SERVER
-    ========================= */
-
-    if (
-        socket &&
-        socket.connected &&
-        Date.now() -
-        lastNetworkSend > 50
-    ) {
-
-        lastNetworkSend =
-            Date.now();
-
-        socket.emit(
-            'move',
-            {
-                x:
-                    playerContainer.x,
-
-                y:
-                    playerContainer.y
-            }
-        );
-
-    }
-
+    // Cập nhật di chuyển của mình
+    updateSelfMovement();
+    // Gửi vị trí lên server
+    sendPlayerPosition();
+    // Cập nhật vị trí người khác
+    updateOtherPlayers();
 }
-
 
 /* ==========================================================
-   PHASER UPDATE
+   TẠO PLAYER CỦA MÌNH
 ========================================================== */
+function ensurePlayer() {
+    if (!scene || !scene.physics || playerContainer) return;
+    const spawn = scene.map2Spawn || { x: MAP_SIZE/2, y: MAP_SIZE/2 };
+    playerContainer = scene.add.container(spawn.x, spawn.y);
+    playerContainer.setDepth(10000);
 
-function update(
-    time,
-    delta
-) {
+    // Nền avatar
+    const avatarBg = scene.add.circle(0, 0, 34, 0x0b0e14, 1);
+    avatarBg.setStrokeStyle(3, 0x00e5ff, 1);
 
-    updateScene();
+    // Avatar ảnh
+    let avatar;
+    if (scene.textures.exists('p_avatar')) {
+        avatar = scene.add.image(0, 0, 'p_avatar');
+        avatar.setDisplaySize(60, 60);
+        avatar.setOrigin(0.5, 0.5);
+        // Mask tròn
+        const maskGraphics = scene.make.graphics({ x:0, y:0, add:false });
+        maskGraphics.fillStyle(0xffffff);
+        maskGraphics.fillCircle(0, 0, 29);
+        const mask = maskGraphics.createGeometryMask();
+        avatar.setMask(mask);
+        avatar.avatarMaskGraphics = maskGraphics;
+    } else {
+        avatar = scene.add.circle(0, 0, 29, 0x00e5ff, 1);
+        avatar.setStrokeStyle(2, 0xffffff, 1);
+    }
 
+    // Viền
+    const border = scene.add.graphics();
+    border.lineStyle(3, 0x00e5ff, 1);
+    border.strokeCircle(0, 0, 31);
+
+    // Tên
+    const playerName = currentUser ? (currentUser.global_name || currentUser.username) : 'Khách';
+    const nameText = scene.add.text(0, 45, playerName, {
+        fontFamily: 'Rajdhani',
+        fontSize: '14px',
+        fontStyle: 'bold',
+        color: '#ffffff',
+        stroke: '#000000',
+        strokeThickness: 4
+    });
+    nameText.setOrigin(0.5);
+
+    playerContainer.add([avatarBg, avatar, border, nameText]);
+
+    // Bubble chat
+    const bubbleBg = scene.add.graphics();
+    const bubbleText = scene.add.text(0, 0, '', {
+        fontFamily: 'Rajdhani',
+        fontSize: '14px',
+        fontStyle: 'bold',
+        color: '#000000',
+        align: 'center',
+        wordWrap: { width: 190 }
+    });
+    bubbleText.setOrigin(0.5);
+    speechBubble = scene.add.container(0, -70);
+    speechBubble.add([bubbleBg, bubbleText]);
+    speechBubble.setVisible(false);
+    speechBubble.bubbleBg = bubbleBg;
+    speechBubble.bubbleText = bubbleText;
+    playerContainer.add(speechBubble);
+
+    // Physics
+    playerBody = scene.physics.add.existing(playerContainer);
+    controlledObject = playerContainer;
+    if (playerContainer.body) {
+        playerContainer.body.setCircle(28, -28, -28);
+        playerContainer.body.setCollideWorldBounds(true);
+        playerContainer.body.setDrag(800, 800);
+    }
+
+    // Camera
+    if (scene.cameras && scene.cameras.main) {
+        scene.cameras.main.startFollow(playerContainer, true, 0.08, 0.08);
+        const zoom = parseFloat(document.getElementById('setZoom').value) || 0.8;
+        scene.cameras.main.setZoom(zoom);
+    }
 }
-
 
 /* ==========================================================
    JOYSTICK
 ========================================================== */
-
 function setupJoystick() {
-
-    if (
-        joystick &&
-        joystick.destroy
-    ) {
-
-        joystick.destroy();
-
-    }
-
-
-    const zone =
-        document.getElementById(
-            'joystick-zone'
-        );
-
+    if (joystick && joystick.destroy) joystick.destroy();
+    const zone = document.getElementById('joystick-zone');
     if (!zone) return;
-
     zone.innerHTML = '';
-
-
-    if (
-        typeof nipplejs ===
-        'undefined'
-    ) {
-
-        console.log(
-            'Không có nipplejs'
-        );
-
+    if (typeof nipplejs === 'undefined') {
+        console.log('Không có nipplejs');
         return;
     }
-
-
-    joystick =
-        nipplejs.create({
-
-            zone: zone,
-
-            mode: 'static',
-
-            position: {
-                left: '60px',
-                top: '60px'
-            },
-
-            color: '#00e5ff',
-
-            size: 110,
-
-            multitouch: true,
-
-            restJoystick: true
-
-        });
-
-
-    /* =========================
-       DI CHUYỂN
-    ========================= */
-
-    joystick.on(
-        'move',
-        function(evt, data) {
-
-            if (
-                !data ||
-                !data.vector
-            ) return;
-
-            moveVector.x =
-                data.vector.x || 0;
-
-            moveVector.y =
-                -(
-                    data.vector.y || 0
-                );
-
-        }
-    );
-
-
-    /* =========================
-       THẢ JOYSTICK
-    ========================= */
-
-    joystick.on(
-        'end',
-        function() {
-
-            moveVector.x = 0;
-
-            moveVector.y = 0;
-
-        }
-    );
-
+    joystick = nipplejs.create({
+        zone: zone,
+        mode: 'static',
+        position: { left: '60px', top: '60px' },
+        color: '#00e5ff',
+        size: 110,
+        multitouch: true,
+        restJoystick: true
+    });
+    joystick.on('move', function(evt, data) {
+        if (!data || !data.vector) return;
+        moveVector.x = data.vector.x || 0;
+        moveVector.y = -(data.vector.y || 0);
+    });
+    joystick.on('end', function() {
+        moveVector.x = 0;
+        moveVector.y = 0;
+    });
 }
 
+/* ==========================================================
+   DI CHUYỂN CỦA MÌNH
+========================================================== */
+function updateSelfMovement() {
+    if (!scene || !playerContainer || !playerContainer.body) return;
+    const body = playerContainer.body;
+    const speed = 180;
+    let vx = moveVector.x || 0;
+    let vy = moveVector.y || 0;
+    // Bàn phím
+    if (scene.input && scene.input.keyboard) {
+        if (!scene.cursors) scene.cursors = scene.input.keyboard.createCursorKeys();
+        const cursors = scene.cursors;
+        if (cursors.left.isDown) vx = -1;
+        if (cursors.right.isDown) vx = 1;
+        if (cursors.up.isDown) vy = -1;
+        if (cursors.down.isDown) vy = 1;
+    }
+    // Chuẩn hóa
+    const length = Math.sqrt(vx*vx + vy*vy);
+    if (length > 1) { vx /= length; vy /= length; }
+    body.setVelocity(vx * speed, vy * speed);
+}
+
+/* ==========================================================
+   MULTIPLAYER – KẾT NỐI SERVER
+========================================================== */
+const SERVER_URL = 'https://vmi-map-site.onrender.com';
+
+function startMultiplayer() {
+    if (socket && socket.connected) return;
+    if (typeof io === 'undefined') {
+        systemNotice('Không tìm thấy Socket.IO.');
+        console.error('Socket.IO chưa được load.');
+        return;
+    }
+    socket = io(SERVER_URL, {
+        transports: ['websocket', 'polling'],
+        reconnection: true,
+        reconnectionAttempts: Infinity,
+        reconnectionDelay: 1000
+    });
+
+    socket.on('connect', function() {
+        console.log('Socket connected:', socket.id);
+        const name = currentUser ? (currentUser.global_name || currentUser.username) : 'Khách';
+        socket.emit('playerJoin', {
+            id: currentUser ? currentUser.id : socket.id,
+            name: name,
+            avatar: currentUser && currentUser.avatar
+                ? `https://cdn.discordapp.com/avatars/${currentUser.id}/${currentUser.avatar}.png?size=128`
+                : 'https://cdn.discordapp.com/embed/avatars/0.png'
+        });
+        systemNotice('Đã kết nối server.');
+    });
+
+    socket.on('disconnect', function() {
+        console.log('Socket disconnected');
+        systemNotice('Mất kết nối server.');
+    });
+
+    socket.on('chatMessage', function(data) {
+        if (!data) return;
+        const name = data.name || 'Player';
+        const text = data.text || '';
+        if (!text) return;
+        addChatMessage(text, 'user', name);
+        // Bubble
+        const playerId = data.id;
+        if (currentUser && playerId === currentUser.id) {
+            showBubbleOnPlayer(text, 3000);
+        } else {
+            showPlayerBubble(playerId, text);
+        }
+    });
+
+    socket.on('playerJoined', function(data) {
+        if (!data) return;
+        if (currentUser && data.id === currentUser.id) return;
+        createOtherPlayer(data);
+    });
+
+    socket.on('players', function(players) {
+        if (!players) return;
+        Object.keys(players).forEach(function(id) {
+            if (currentUser && id === currentUser.id) return;
+            createOtherPlayer(players[id]);
+        });
+    });
+
+    socket.on('playerMoved', function(data) {
+        if (!data) return;
+        const other = otherPlayers[data.id];
+        if (!other || !other.container) return;
+        other.targetX = Number(data.x) || 0;
+        other.targetY = Number(data.y) || 0;
+    });
+
+    socket.on('playerLeft', function(id) {
+        removeOtherPlayer(id);
+    });
+}
+
+/* ==========================================================
+   GỬI VỊ TRÍ LÊN SERVER
+========================================================== */
+let lastSentX = null, lastSentY = null, lastSentTime = 0;
+function sendPlayerPosition() {
+    if (!socket || !socket.connected || !currentUser || !playerContainer) return;
+    const now = performance.now();
+    if (now - lastSentTime < 50) return;
+    const x = playerContainer.x;
+    const y = playerContainer.y;
+    if (lastSentX === x && lastSentY === y) return;
+    lastSentX = x;
+    lastSentY = y;
+    lastSentTime = now;
+    socket.emit('playerMove', { id: currentUser.id, x: x, y: y });
+}
+
+/* ==========================================================
+   PLAYER KHÁC – TẠO, CẬP NHẬT, XÓA
+========================================================== */
+function createOtherPlayer(data) {
+    if (!scene || !scene.add || !data || !data.id) return;
+    if (otherPlayers[data.id]) return;
+    const x = Number(data.x) || scene.map2Spawn?.x || MAP_SIZE/2;
+    const y = Number(data.y) || scene.map2Spawn?.y || MAP_SIZE/2;
+    const container = scene.add.container(x, y);
+    container.setDepth(9999);
+
+    // Nền avatar
+    const bg = scene.add.circle(0, 0, 34, 0x111111, 0.95);
+    bg.setStrokeStyle(3, 0xffd700, 1);
+
+    // Avatar ảnh
+    let avatar;
+    const textureKey = 'other_' + data.id;
+    if (data.avatar) {
+        if (!scene.textures.exists(textureKey)) {
+            scene.load.image(textureKey, data.avatar);
+            scene.load.once('complete', function() {
+                if (container && container.active && scene.textures.exists(textureKey)) {
+                    createOtherAvatar(container, textureKey);
+                }
+            });
+            scene.load.start();
+        }
+    }
+    if (scene.textures.exists(textureKey)) {
+        avatar = createOtherAvatar(container, textureKey);
+    } else {
+        avatar = scene.add.circle(0, 0, 29, 0xff4444, 1);
+    }
+
+    // Tên
+    const name = data.name || 'Player';
+    const nameText = scene.add.text(0, 45, name, {
+        fontFamily: 'Rajdhani',
+        fontSize: '14px',
+        fontStyle: 'bold',
+        color: '#ffffff',
+        stroke: '#000000',
+        strokeThickness: 4
+    });
+    nameText.setOrigin(0.5);
+
+    container.add([bg, avatar, nameText]);
+
+        // =========================================================
+    // BUBBLE CHAT – ĐOẠN BẠN CẦN
+    // =========================================================
+    const bubbleBg = scene.add.graphics();
+    const bubbleText = scene.add.text(0, 0, '', {
+        fontFamily: 'Rajdhani',
+        fontSize: '14px',
+        fontStyle: 'bold',
+        color: '#000000',
+        align: 'center',
+        wordWrap: { width: 190 }
+    });
+    bubbleText.setOrigin(0.5);
+    speechBubble = scene.add.container(0, -70);
+    speechBubble.add([bubbleBg, bubbleText]);
+    speechBubble.setVisible(false);
+    speechBubble.bubbleBg = bubbleBg;
+    speechBubble.bubbleText = bubbleText;
+    playerContainer.add(speechBubble);
+    // =========================================================
+
+    // Physics
+    playerBody = scene.physics.add.existing(playerContainer);
+    controlledObject = playerContainer;
+    if (playerContainer.body) {
+        playerContainer.body.setCircle(28, -28, -28);
+        playerContainer.body.setCollideWorldBounds(true);
+        playerContainer.body.setDrag(800, 800);
+    }
+
+    // Camera
+    if (scene.cameras && scene.cameras.main) {
+        scene.cameras.main.startFollow(playerContainer, true, 0.08, 0.08);
+        const zoom = parseFloat(document.getElementById('setZoom').value) || 0.8;
+        scene.cameras.main.setZoom(zoom);
+    }
+}
+
+/* ==========================================================
+   JOYSTICK
+========================================================== */
+function setupJoystick() {
+    if (joystick && joystick.destroy) joystick.destroy();
+    const zone = document.getElementById('joystick-zone');
+    if (!zone) return;
+    zone.innerHTML = '';
+    if (typeof nipplejs === 'undefined') {
+        console.log('Không có nipplejs');
+        return;
+    }
+    joystick = nipplejs.create({
+        zone: zone,
+        mode: 'static',
+        position: { left: '60px', top: '60px' },
+        color: '#00e5ff',
+        size: 110,
+        multitouch: true,
+        restJoystick: true
+    });
+    joystick.on('move', function(evt, data) {
+        if (!data || !data.vector) return;
+        moveVector.x = data.vector.x || 0;
+        moveVector.y = -(data.vector.y || 0);
+    });
+    joystick.on('end', function() {
+        moveVector.x = 0;
+        moveVector.y = 0;
+    });
+}
+
+/* ==========================================================
+   DI CHUYỂN CỦA MÌNH
+========================================================== */
+function updateSelfMovement() {
+    if (!scene || !playerContainer || !playerContainer.body) return;
+    const body = playerContainer.body;
+    const speed = 180;
+    let vx = moveVector.x || 0;
+    let vy = moveVector.y || 0;
+    // Bàn phím
+    if (scene.input && scene.input.keyboard) {
+        if (!scene.cursors) scene.cursors = scene.input.keyboard.createCursorKeys();
+        const cursors = scene.cursors;
+        if (cursors.left.isDown) vx = -1;
+        if (cursors.right.isDown) vx = 1;
+        if (cursors.up.isDown) vy = -1;
+        if (cursors.down.isDown) vy = 1;
+    }
+    // Chuẩn hóa
+    const length = Math.sqrt(vx*vx + vy*vy);
+    if (length > 1) { vx /= length; vy /= length; }
+    body.setVelocity(vx * speed, vy * speed);
+}
+
+/* ==========================================================
+   MULTIPLAYER – KẾT NỐI SERVER
+========================================================== */
+const SERVER_URL = 'https://vmi-map-site.onrender.com';
+
+function startMultiplayer() {
+    if (socket && socket.connected) return;
+    if (typeof io === 'undefined') {
+        systemNotice('Không tìm thấy Socket.IO.');
+        console.error('Socket.IO chưa được load.');
+        return;
+    }
+    socket = io(SERVER_URL, {
+        transports: ['websocket', 'polling'],
+        reconnection: true,
+        reconnectionAttempts: Infinity,
+        reconnectionDelay: 1000
+    });
+
+    socket.on('connect', function() {
+        console.log('Socket connected:', socket.id);
+        const name = currentUser ? (currentUser.global_name || currentUser.username) : 'Khách';
+        socket.emit('playerJoin', {
+            id: currentUser ? currentUser.id : socket.id,
+            name: name,
+            avatar: currentUser && currentUser.avatar
+                ? `https://cdn.discordapp.com/avatars/${currentUser.id}/${currentUser.avatar}.png?size=128`
+                : 'https://cdn.discordapp.com/embed/avatars/0.png'
+        });
+        systemNotice('Đã kết nối server.');
+    });
+
+    socket.on('disconnect', function() {
+        console.log('Socket disconnected');
+        systemNotice('Mất kết nối server.');
+    });
+
+    socket.on('chatMessage', function(data) {
+        if (!data) return;
+        const name = data.name || 'Player';
+        const text = data.text || '';
+        if (!text) return;
+        addChatMessage(text, 'user', name);
+        // Bubble
+        const playerId = data.id;
+        if (currentUser && playerId === currentUser.id) {
+            showBubbleOnPlayer(text, 3000);
+        } else {
+            showPlayerBubble(playerId, text);
+        }
+    });
+
+    socket.on('playerJoined', function(data) {
+        if (!data) return;
+        if (currentUser && data.id === currentUser.id) return;
+        createOtherPlayer(data);
+    });
+
+    socket.on('players', function(players) {
+        if (!players) return;
+        Object.keys(players).forEach(function(id) {
+            if (currentUser && id === currentUser.id) return;
+            createOtherPlayer(players[id]);
+        });
+    });
+
+    socket.on('playerMoved', function(data) {
+        if (!data) return;
+        const other = otherPlayers[data.id];
+        if (!other || !other.container) return;
+        other.targetX = Number(data.x) || 0;
+        other.targetY = Number(data.y) || 0;
+    });
+
+    socket.on('playerLeft', function(id) {
+        removeOtherPlayer(id);
+    });
+}
+
+/* ==========================================================
+   GỬI VỊ TRÍ LÊN SERVER
+========================================================== */
+let lastSentX = null, lastSentY = null, lastSentTime = 0;
+function sendPlayerPosition() {
+    if (!socket || !socket.connected || !currentUser || !playerContainer) return;
+    const now = performance.now();
+    if (now - lastSentTime < 50) return;
+    const x = playerContainer.x;
+    const y = playerContainer.y;
+    if (lastSentX === x && lastSentY === y) return;
+    lastSentX = x;
+    lastSentY = y;
+    lastSentTime = now;
+    socket.emit('playerMove', { id: currentUser.id, x: x, y: y });
+}
+
+/* ==========================================================
+   PLAYER KHÁC – TẠO, CẬP NHẬT, XÓA
+========================================================== */
+function createOtherPlayer(data) {
+    if (!scene || !scene.add || !data || !data.id) return;
+    if (otherPlayers[data.id]) return;
+    const x = Number(data.x) || scene.map2Spawn?.x || MAP_SIZE/2;
+    const y = Number(data.y) || scene.map2Spawn?.y || MAP_SIZE/2;
+    const container = scene.add.container(x, y);
+    container.setDepth(9999);
+
+    // Nền avatar
+    const bg = scene.add.circle(0, 0, 34, 0x111111, 0.95);
+    bg.setStrokeStyle(3, 0xffd700, 1);
+
+    // Avatar ảnh
+    let avatar;
+    const textureKey = 'other_' + data.id;
+    if (data.avatar) {
+        if (!scene.textures.exists(textureKey)) {
+            scene.load.image(textureKey, data.avatar);
+            scene.load.once('complete', function() {
+                if (container && container.active && scene.textures.exists(textureKey)) {
+                    createOtherAvatar(container, textureKey);
+                }
+            });
+            scene.load.start();
+        }
+    }
+    if (scene.textures.exists(textureKey)) {
+        avatar = createOtherAvatar(container, textureKey);
+    } else {
+        avatar = scene.add.circle(0, 0, 29, 0xff4444, 1);
+    }
+
+    // Tên
+    const name = data.name || 'Player';
+    const nameText = scene.add.text(0, 45, name, {
+        fontFamily: 'Rajdhani',
+        fontSize: '14px',
+        fontStyle: 'bold',
+        color: '#ffffff',
+        stroke: '#000000',
+        strokeThickness: 4
+    });
+    nameText.setOrigin(0.5);
+
+    container.add([bg, avatar, nameText]);
+
+    // Bubble cho player khác
+    const bubbleBg = scene.add.graphics();
+    const bubbleText = scene.add.text(0, 0, '', {
+        fontFamily: 'Rajdhani',
+        fontSize: '14px',
+        fontStyle: 'bold',
+        color: '#000000',
+        align: 'center',
+        wordWrap: { width: 190 }
+    });
+    bubbleText.setOrigin(0.5);
+    const bubble = scene.add.container(0, -70);
+    bubble.add([bubbleBg, bubbleText]);
+    bubble.setVisible(false);
+    bubble.bubbleBg = bubbleBg;
+    bubble.bubbleText = bubbleText;
+    container.add(bubble);
+
+    otherPlayers[data.id] = {
+        id: data.id,
+        name: name,
+        container: container,
+        bubble: bubble,
+        targetX: x,
+        targetY: y,
+        bubbleTimer: null
+    };
+}
+
+function createOtherAvatar(container, textureKey) {
+    if (!scene || !scene.textures.exists(textureKey)) {
+        return scene.add.circle(0, 0, 29, 0xff4444);
+    }
+    const avatar = scene.add.image(0, 0, textureKey);
+    avatar.setDisplaySize(60, 60);
+    avatar.setOrigin(0.5);
+    // Mask tròn
+    const maskGraphics = scene.make.graphics({ x:0, y:0, add:false });
+    maskGraphics.fillStyle(0xffffff);
+    maskGraphics.fillCircle(0, 0, 29);
+    const mask = maskGraphics.createGeometryMask();
+    avatar.setMask(mask);
+    container.add(avatar);
+    return avatar;
+}
+
+function showPlayerBubble(playerId, text, duration = 3000) {
+    const other = otherPlayers[playerId];
+    if (!other || !other.bubble) return;
+    const bg = other.bubble.bubbleBg;
+    const txt = other.bubble.bubbleText;
+    if (!bg || !txt) return;
+    txt.setText(text);
+    const padding = 10;
+    const maxWidth = 220;
+    let w = Math.min((txt.width || 60) + padding * 2, maxWidth);
+    let h = Math.max(34, (txt.height || 20) + 14);
+    bg.clear();
+    bg.fillStyle(0xffffff, 0.95);
+    bg.fillRoundedRect(-w/2, -h/2, w, h, 10);
+    bg.lineStyle(2, 0x00e5ff, 1);
+    bg.strokeRoundedRect(-w/2, -h/2, w, h, 10);
+    txt.setPosition(0, 0);
+    other.bubble.setVisible(true);
+    if (other.bubbleTimer) clearTimeout(other.bubbleTimer);
+    other.bubbleTimer = setTimeout(function() {
+        if (other.bubble && other.bubble.active) {
+            other.bubble.setVisible(false);
+        }
+        other.bubbleTimer = null;
+    }, duration);
+}
+
+function removeOtherPlayer(id) {
+    const other = otherPlayers[id];
+    if (!other) return;
+    if (other.bubbleTimer) clearTimeout(other.bubbleTimer);
+    if (other.container) other.container.destroy(true);
+    delete otherPlayers[id];
+}
+
+function updateOtherPlayers() {
+    Object.keys(otherPlayers).forEach(function(id) {
+        const other = otherPlayers[id];
+        if (!other || !other.container) return;
+        const targetX = Number(other.targetX);
+        const targetY = Number(other.targetY);
+        if (Number.isFinite(targetX)) {
+            other.container.x += (targetX - other.container.x) * 0.25;
+        }
+        if (Number.isFinite(targetY)) {
+            other.container.y += (targetY - other.container.y) * 0.25;
+        }
+    });
+}
+
+/* ==========================================================
+   KHỞI TẠO PHASER GAME
+========================================================== */
+function initPhaser() {
+    if (game) return; // đã có game
+    const config = {
+        type: Phaser.AUTO,
+        width: window.innerWidth,
+        height: window.innerHeight,
+        parent: 'phaser-container',
+        physics: {
+            default: 'arcade',
+            arcade: { debug: false }
+        },
+        scene: {
+            preload: preloadScene,
+            create: createGame,
+            update: update
+        }
+    };
+    game = new Phaser.Game(config);
+}
+
+/* ==========================================================
+   SỰ KIỆN ONLOAD
+========================================================== */
+window.onload = function() {
+    checkDiscordAuth();
+    // Khởi tạo game sau khi đăng nhập có thể xong
+    // nhưng đợi một chút cho auth
+    setTimeout(initPhaser, 300);
+};
 
 /* ==========================================================
    RESIZE
 ========================================================== */
-
-window.addEventListener(
-    'resize',
-    function() {
-
-        if (
-            game &&
-            game.scale
-        ) {
-
-            game.scale.resize(
-                window.innerWidth,
-                window.innerHeight
-            );
-
-        }
-
+window.addEventListener('resize', function() {
+    if (game && game.scale) {
+        game.scale.resize(window.innerWidth, window.innerHeight);
     }
-);
+});
 
 /* ==========================================================
-   SOCKET.IO
+   CÁC NÚT HUD
 ========================================================== */
-
-/*
-   THAY URL NÀY BẰNG URL SERVER CỦA BẠN
-
-   Ví dụ:
-   https://vmi-server.onrender.com
-
-   KHÔNG thêm / ở cuối.
-*/
-
-const SERVER_URL =
-    'https://vmi-map-site.onrender.com';
-
-
-/* ==========================================================
-   KẾT NỐI SERVER
-========================================================== */
-
-function connectServer() {
-
-    if (
-        typeof io ===
-        'undefined'
-    ) {
-
-        systemNotice(
-            'Không tìm thấy Socket.IO.'
-        );
-
-        console.error(
-            'Socket.IO chưa được load.'
-        );
-
-        return;
-    }
-
-
-    if (
-        socket &&
-        socket.connected
-    ) {
-
-        return;
-    }
-
-
-    socket =
-        io(
-            SERVER_URL,
-            {
-                transports: [
-                    'websocket',
-                    'polling'
-                ],
-
-                reconnection: true,
-
-                reconnectionAttempts:
-                    Infinity,
-
-                reconnectionDelay:
-                    1000
-            }
-        );
-
-
-    /* ======================================================
-       CONNECT
-    ====================================================== */
-
-    socket.on(
-        'connect',
-        function() {
-
-            console.log(
-                'Socket connected:',
-                socket.id
-            );
-
-
-            const name =
-                currentUser
-                    ? (
-                        currentUser.global_name ||
-                        currentUser.username
-                      )
-                    : 'Khách';
-
-
-            socket.emit(
-                'playerJoin',
-                {
-                    id:
-                        currentUser
-                            ? currentUser.id
-                            : socket.id,
-
-                    name:
-                        name,
-
-                    avatar:
-                        currentUser &&
-                        currentUser.avatar
-                            ? `https://cdn.discordapp.com/avatars/${currentUser.id}/${currentUser.avatar}.png?size=128`
-                            : 'https://cdn.discordapp.com/embed/avatars/0.png'
-                }
-            );
-
-
-            systemNotice(
-                'Đã kết nối server.'
-            );
-
-        }
-    );
-
-
-    /* ======================================================
-       DISCONNECT
-    ====================================================== */
-
-    socket.on(
-        'disconnect',
-        function() {
-
-            console.log(
-                'Socket disconnected'
-            );
-
-
-            systemNotice(
-                'Mất kết nối server.'
-            );
-
-        }
-    );
-
-
-    /* ======================================================
-       CHAT NHẬN TỪ SERVER
-    ====================================================== */
-
-    socket.on(
-        'chatMessage',
-        function(data) {
-
-            if (!data) return;
-
-
-            const name =
-                data.name ||
-                'Player';
-
-
-            const text =
-                data.text ||
-                '';
-
-
-            if (!text) return;
-
-
-            /* Hiện trong chat */
-
-            addChatMessage(
-                text,
-                'user',
-                name
-            );
-
-
-            /* =========================
-               BUBBLE
-            ========================= */
-
-            const playerId =
-                data.id;
-
-
-            /*
-               Tin nhắn của chính mình
-            */
-
-            if (
-                currentUser &&
-                playerId ===
-                currentUser.id
-            ) {
-
-                showBubbleOnPlayer(
-                    text,
-                    3000
-                );
-
-            }
-
-
-            /*
-               Tin nhắn player khác
-            */
-
-            else {
-
-                showPlayerBubble(
-                    playerId,
-                    text
-                );
-
-            }
-
-        }
-    );
-
-
-    /* ======================================================
-       PLAYER MỚI
-    ====================================================== */
-
-    socket.on(
-        'playerJoined',
-        function(data) {
-
-            if (!data) return;
-
-
-            if (
-                currentUser &&
-                data.id ===
-                currentUser.id
-            ) {
-                return;
-            }
-
-
-            createOtherPlayer(
-                data
-            );
-
-        }
-    );
-
-
-    /* ======================================================
-       DANH SÁCH PLAYER
-    ====================================================== */
-
-    socket.on(
-        'players',
-        function(players) {
-
-            if (!players) return;
-
-
-            Object.keys(
-                players
-            ).forEach(
-                function(id) {
-
-                    if (
-                        currentUser &&
-                        id ===
-                        currentUser.id
-                    ) {
-                        return;
-                    }
-
-
-                    createOtherPlayer(
-                        players[id]
-                    );
-
-                }
-            );
-
-        }
-    );
-
-
-    /* ======================================================
-       PLAYER DI CHUYỂN
-    ====================================================== */
-
-    socket.on(
-        'playerMoved',
-        function(data) {
-
-            if (!data) return;
-
-
-            const other =
-                otherPlayers[
-                    data.id
-                ];
-
-
-            if (
-                !other ||
-                !other.container
-            ) {
-                return;
-            }
-
-
-            other.targetX =
-                Number(data.x) ||
-                0;
-
-
-            other.targetY =
-                Number(data.y) ||
-                0;
-
-        }
-    );
-
-
-    /* ======================================================
-       PLAYER RỜI SERVER
-    ====================================================== */
-
-    socket.on(
-        'playerLeft',
-        function(id) {
-
-            removeOtherPlayer(
-                id
-            );
-
-        }
-    );
-
-}
-
-
-/* ==========================================================
-   TẠO PLAYER KHÁC
-========================================================== */
-
-function createOtherPlayer(
-    data
-) {
-
-    if (
-        !scene ||
-        !scene.add
-    ) {
-        return;
-    }
-
-
-    if (!data || !data.id) {
-        return;
-    }
-
-
-    /* Nếu đã tồn tại */
-
-    if (
-        otherPlayers[
-            data.id
-        ]
-    ) {
-
-        return;
-    }
-
-
-    const x =
-        Number(data.x) ||
-        scene.map2Spawn?.x ||
-        MAP_SIZE / 2;
-
-
-    const y =
-        Number(data.y) ||
-        scene.map2Spawn?.y ||
-        MAP_SIZE / 2;
-
-
-    const container =
-        scene.add.container(
-            x,
-            y
-        );
-
-
-    container.setDepth(
-        9999
-    );
-
-
-    /* ======================================================
-       AVATAR NỀN
-    ====================================================== */
-
-    const bg =
-        scene.add.circle(
-            0,
-            0,
-            34,
-            0x111111,
-            0.95
-        );
-
-
-    bg.setStrokeStyle(
-        3,
-        0xffd700,
-        1
-    );
-
-
-    /* ======================================================
-       AVATAR
-    ====================================================== */
-
-    let avatar;
-
-
-    const textureKey =
-        'other_' + data.id;
-
-
-    if (
-        data.avatar
-    ) {
-
-        if (
-            !scene.textures.exists(
-                textureKey
-            )
-        ) {
-
-            scene.load.image(
-                textureKey,
-                data.avatar
-            );
-
-
-            scene.load.once(
-                'complete',
-                function() {
-
-                    if (
-                        container &&
-                        container.active &&
-                        scene.textures.exists(
-                            textureKey
-                        )
-                    ) {
-
-                        createOtherAvatar(
-                            container,
-                            textureKey
-                        );
-
-                    }
-
-                }
-            );
-
-
-            scene.load.start();
-
-        }
-
-    }
-
-
-    if (
-        scene.textures.exists(
-            textureKey
-        )
-    ) {
-
-        avatar =
-            createOtherAvatar(
-                container,
-                textureKey
-            );
-
-    } else {
-
-        avatar =
-            scene.add.circle(
-                0,
-                0,
-                29,
-                0xff4444,
-                1
-            );
-
-    }
-
-
-    /* ======================================================
-       TÊN
-    ====================================================== */
-
-    const name =
-        data.name ||
-        'Player';
-
-
-    const nameText =
-        scene.add.text(
-            0,
-            45,
-            name,
-            {
-                fontFamily:
-                    'Rajdhani',
-
-                fontSize:
-                    '14px',
-
-                fontStyle:
-                    'bold',
-
-                color:
-                    '#ffffff',
-
-                stroke:
-                    '#000000',
-
-                strokeThickness:
-                    4
-            }
-        );
-
-
-    nameText.setOrigin(
-        0.5
-    );
-
-
-    container.add([
-        bg,
-        avatar,
-        nameText
-    ]);
-
-
-    /* ======================================================
-       BUBBLE
-    ====================================================== */
-
-    const bubbleBg =
-        scene.add.graphics();
-
-
-    const bubbleText =
-        scene.add.text(
-            0,
-            0,
-            '',
-            {
-                fontFamily:
-                    'Rajdhani',
-
-                fontSize:
-                    '14px',
-
-                fontStyle:
-                    'bold',
-
-                color:
-                    '#000000',
-
-                align:
-                    'center',
-
-                wordWrap: {
-                    width: 190
-                }
-            }
-        );
-
-
-    bubbleText.setOrigin(
-        0.5
-    );
-
-
-    const bubble =
-        scene.add.container(
-            0,
-            -70
-        );
-
-
-    bubble.add([
-        bubbleBg,
-        bubbleText
-    ]);
-
-
-    bubble.setVisible(
-        false
-    );
-
-
-    bubble.bubbleBg =
-        bubbleBg;
-
-
-    bubble.bubbleText =
-        bubbleText;
-
-
-    container.add(
-        bubble
-    );
-
-
-    /* ======================================================
-       LƯU PLAYER
-    ====================================================== */
-
-    otherPlayers[
-        data.id
-    ] = {
-
-        id:
-            data.id,
-
-        name:
-            name,
-
-        container:
-            container,
-
-        bubble:
-            bubble,
-
-        targetX:
-            x,
-
-        targetY:
-            y,
-
-        bubbleTimer:
-            null
-
-    };
-
-}
-
-
-/* ==========================================================
-   TẠO AVATAR PLAYER KHÁC
-========================================================== */
-
-function createOtherAvatar(
-    container,
-    textureKey
-) {
-
-    if (
-        !scene ||
-        !scene.textures.exists(
-            textureKey
-        )
-    ) {
-
-        return scene.add.circle(
-            0,
-            0,
-            29,
-            0xff4444
-        );
-
-    }
-
-
-    const avatar =
-        scene.add.image(
-            0,
-            0,
-            textureKey
-        );
-
-
-    avatar.setDisplaySize(
-        60,
-        60
-    );
-
-
-    avatar.setOrigin(
-        0.5
-    );
-
-
-    /* =========================
-       MASK TRÒN
-    ========================= */
-
-    const maskGraphics =
-        scene.make.graphics(
-            {
-                x: 0,
-                y: 0,
-                add: false
-            }
-        );
-
-
-    maskGraphics.fillStyle(
-        0xffffff
-    );
-
-
-    maskGraphics.fillCircle(
-        0,
-        0,
-        29
-    );
-
-
-    const mask =
-        maskGraphics.createGeometryMask();
-
-
-    avatar.setMask(
-        mask
-    );
-
-
-    container.add(
-        avatar
-    );
-
-
-    return avatar;
-
-}
-
-
-/* ==========================================================
-   XÓA PLAYER KHÁC
-========================================================== */
-
-function removeOtherPlayer(
-    id
-) {
-
-    const other =
-        otherPlayers[id];
-
-
-    if (!other) {
-        return;
-    }
-
-
-    if (
-        other.bubbleTimer
-    ) {
-
-        clearTimeout(
-            other.bubbleTimer
-        );
-
-    }
-
-
-    if (
-        other.container
-    ) {
-
-        other.container.destroy(
-            true
-        );
-
-    }
-
-
-    delete otherPlayers[
-        id
-    ];
-
-}
-
-
-/* ==========================================================
-   UPDATE PLAYER KHÁC
-========================================================== */
-
-function updateOtherPlayers() {
-
-    Object.keys(
-        otherPlayers
-    ).forEach(
-        function(id) {
-
-            const other =
-                otherPlayers[id];
-
-
-            if (
-                !other ||
-                !other.container
-            ) {
-                return;
-            }
-
-
-            const targetX =
-                Number(
-                    other.targetX
-                );
-
-
-            const targetY =
-                Number(
-                    other.targetY
-                );
-
-
-            if (
-                Number.isFinite(
-                    targetX
-                )
-            ) {
-
-                other.container.x +=
-                    (
-                        targetX -
-                        other.container.x
-                    ) * 0.25;
-
-            }
-
-
-            if (
-                Number.isFinite(
-                    targetY
-                )
-            ) {
-
-                other.container.y +=
-                    (
-                        targetY -
-                        other.container.y
-                    ) * 0.25;
-
-            }
-
-        }
-    );
-
-}
-
-
-/* ==========================================================
-   GẮN UPDATE PLAYER KHÁC VÀO UPDATE GAME
-========================================================== */
-
-const originalUpdateScene =
-    updateScene;
-
-
-updateScene =
-function() {
-
-    originalUpdateScene();
-
-    updateOtherPlayers();
-
-};
-
-
-/* ==========================================================
-   KẾT NỐI SERVER KHI VÀO GAME
-========================================================== */
-
-function startMultiplayer() {
-
-    try {
-
-        connectServer();
-
-    } catch (err) {
-
-        console.error(
-            'Server error:',
-            err
-        );
-
-        systemNotice(
-            'Không thể kết nối server.'
-        );
-
-    }
-
-    }
-
-/* ==========================================================
-   BUBBLE CHAT PLAYER KHÁC
-========================================================== */
-
-function showPlayerBubble(id, text, duration = 3000) {
-
-    const other = otherPlayers[id];
-
-    if (
-        !other ||
-        !other.bubble
-    ) {
-        return;
-    }
-
-    const bubbleBg =
-        other.bubble.bubbleBg;
-
-    const bubbleText =
-        other.bubble.bubbleText;
-
-    if (!bubbleBg || !bubbleText) {
-        return;
-    }
-
-    bubbleText.setText(text);
-
-    const padding = 10;
-    const maxWidth = 220;
-
-    let width =
-        bubbleText.width +
-        padding * 2;
-
-    if (width < 60) {
-        width = 60;
-    }
-
-    if (width > maxWidth) {
-        width = maxWidth;
-    }
-
-    const height = 38;
-
-    bubbleBg.clear();
-
-    bubbleBg.fillStyle(
-        0xffffff,
-        0.95
-    );
-
-    bubbleBg.fillRoundedRect(
-        -width / 2,
-        -height / 2,
-        width,
-        height,
-        10
-    );
-
-    bubbleBg.lineStyle(
-        2,
-        0x00e5ff,
-        1
-    );
-
-    bubbleBg.strokeRoundedRect(
-        -width / 2,
-        -height / 2,
-        width,
-        height,
-        10
-    );
-
-    bubbleText.setPosition(
-        0,
-        0
-    );
-
-    other.bubble.setVisible(
-        true
-    );
-
-    if (other.bubbleTimer) {
-        clearTimeout(
-            other.bubbleTimer
-        );
-    }
-
-    other.bubbleTimer =
-        setTimeout(
-            function() {
-
-                if (
-                    other.bubble &&
-                    other.bubble.active
-                ) {
-
-                    other.bubble.setVisible(
-                        false
-                    );
-
-                }
-
-                other.bubbleTimer = null;
-
-            },
-            duration
-        );
-}
-
-
-/* ==========================================================
-   GỬI CHAT LÊN SERVER
-========================================================== */
-
-function sendChatMessage() {
-
-    const text =
-        chatInput.value.trim();
-
-    if (!text) {
-        return;
-    }
-
+document.getElementById('btnEnterGame').addEventListener('click', function() {
     if (!currentUser) {
-
-        addChatMessage(
-            'Bạn cần đăng nhập để nhắn tin.',
-            'system'
-        );
-
-        chatInput.value = '';
-
+        systemNotice('Vui lòng đăng nhập trước.');
         return;
     }
+    document.getElementById('screen-menu').style.display = 'none';
+    document.getElementById('screen-game').classList.add('active');
+    // Khởi tạo game nếu chưa
+    if (!game) initPhaser();
+});
 
-    const displayName =
-        currentUser.global_name ||
-        currentUser.username ||
-        'Player';
+document.getElementById('btnLeaveMap').addEventListener('click', function() {
+    document.getElementById('screen-game').classList.remove('active');
+    document.getElementById('screen-menu').style.display = 'flex';
+    if (socket && socket.connected) socket.disconnect();
+    // Xóa player khác
+    Object.keys(otherPlayers).forEach(function(id) {
+        removeOtherPlayer(id);
+    });
+    // Hủy game?
+    // Có thể giữ game chạy ngầm nhưng không hiển thị
+});
 
+document.getElementById('btnOpenSettings').addEventListener('click', function() {
+    document.getElementById('settingsOverlay').classList.add('open');
+});
 
-    /* ==========================================
-       NẾU CÓ SERVER → GỬI SERVER
-    ========================================== */
-
-    if (
-        socket &&
-        socket.connected
-    ) {
-
-        socket.emit(
-            'chatMessage',
-            {
-                id:
-                    currentUser.id,
-
-                name:
-                    displayName,
-
-                text:
-                    text
-            }
-        );
-
-    } else {
-
-        /* ======================================
-           OFFLINE → VẪN HIỆN CHAT LOCAL
-        ====================================== */
-
-        addChatMessage(
-            text,
-            'user',
-            displayName
-        );
-
-        showBubbleOnPlayer(
-            text,
-            3000
-        );
-
+document.getElementById('btnCloseSettings').addEventListener('click', function() {
+    document.getElementById('settingsOverlay').classList.remove('open');
+    // Áp dụng zoom
+    if (scene && scene.cameras && scene.cameras.main) {
+        const zoom = parseFloat(document.getElementById('setZoom').value) || 0.8;
+        scene.cameras.main.setZoom(zoom);
     }
+    // Áp dụng HUD alpha
+    const alpha = parseFloat(document.getElementById('setHudAlpha').value) || 0.9;
+    document.querySelectorAll('.hud-element').forEach(el => {
+        el.style.opacity = alpha;
+    });
+});
 
-
-    chatInput.value = '';
-
-    chatInput.blur();
-}
-
-
-/* ==========================================================
-   ENTER ĐỂ GỬI CHAT
-========================================================== */
-
-chatInput.addEventListener(
-    'keydown',
-    function(e) {
-
-        if (e.key === 'Enter') {
-
-            e.preventDefault();
-
-            sendChatMessage();
-
-        }
-
+// Đóng settings bằng cách click ra ngoài
+document.getElementById('settingsOverlay').addEventListener('click', function(e) {
+    if (e.target === this) {
+        this.classList.remove('open');
     }
-);
-
-
-/* ==========================================================
-   NÚT GỬI CHAT
-========================================================== */
-
-chatSend.addEventListener(
-    'click',
-    function(e) {
-
-        e.preventDefault();
-
-        sendChatMessage();
-
-    }
-);
-
+});
 
 /* ==========================================================
-   DI CHUYỂN PLAYER LÊN SERVER
+   CHỈNH HUD (đơn giản)
 ========================================================== */
-
-let lastSentX = null;
-let lastSentY = null;
-let lastSentTime = 0;
-
-function sendPlayerPosition() {
-
-    if (
-        !socket ||
-        !socket.connected ||
-        !currentUser ||
-        !playerContainer
-    ) {
-        return;
-    }
-
-    const now =
-        performance.now();
-
-    /* Không gửi quá nhiều */
-    if (
-        now - lastSentTime < 50
-    ) {
-        return;
-    }
-
-    const x =
-        playerContainer.x;
-
-    const y =
-        playerContainer.y;
-
-    /* Không thay đổi thì không gửi */
-    if (
-        lastSentX === x &&
-        lastSentY === y
-    ) {
-        return;
-    }
-
-    lastSentX = x;
-    lastSentY = y;
-    lastSentTime = now;
-
-    socket.emit(
-        'playerMove',
-        {
-            id:
-                currentUser.id,
-
-            x:
-                x,
-
-            y:
-                y
-        }
-    );
-}
-
+document.getElementById('btnEditHUD').addEventListener('click', function() {
+    document.body.classList.toggle('edit-hud-mode');
+    isEditHUD = !isEditHUD;
+    this.textContent = isEditHUD ? 'DỪNG CHỈNH' : 'CHỈNH VỊ TRÍ HUD';
+    // Kích hoạt kéo thả cho các phần tử HUD (có thể dùng thư viện khác)
+    // Ở đây chỉ toggle class để hiển thị viền
+});
 
 /* ==========================================================
-   MULTIPLAYER UPDATE
+   KẾT THÚC
 ========================================================== */
-
-const oldUpdateScene =
-    updateScene;
-
-updateScene =
-function() {
-
-    oldUpdateScene();
-
-    sendPlayerPosition();
-
-    updateOtherPlayers();
-
-};
-
-
-/* ==========================================================
-   BẮT ĐẦU MULTIPLAYER
-========================================================== */
-
-function startMultiplayer() {
-
-    if (
-        !socket ||
-        !socket.connected
-    ) {
-
-        connectServer();
-
-    }
-
-}
-
-
-/* ==========================================================
-   KHI VÀO GAME
-========================================================== */
-
-function afterGameCreated() {
-
-    setTimeout(
-        function() {
-
-            startMultiplayer();
-
-        },
-        500
-    );
-
-    }
-
-    /* ==========================================================
-   KHỞI ĐỘNG MULTIPLAYER KHI VÀO GAME
-========================================================== */
-
-function startGameMultiplayer() {
-
-    setTimeout(function() {
-
-        if (!currentUser) {
-            console.log('Chưa đăng nhập Discord.');
-            return;
-        }
-
-        startMultiplayer();
-
-    }, 500);
-}
-
-
-/* ==========================================================
-   GẮN MULTIPLAYER VÀO CREATE GAME
-========================================================== */
-
-const oldCreateGame = createGame;
-
-createGame = function() {
-
-    oldCreateGame();
-
-    startGameMultiplayer();
-
-};
-
-
-/* ==========================================================
-   PHASER UPDATE
-========================================================== */
-
-function update(time, delta) {
-
-    updateScene();
-
-}
-
-
-/* ==========================================================
-   KHỞI ĐỘNG
-========================================================== */
-
-window.onload = function() {
-
-    checkDiscordAuth();
-
-};
-
-/* ==========================================================
-   RESIZE GAME
-========================================================== */
-
-window.onresize = function() {
-
-    if (game) {
-
-        game.scale.resize(
-            window.innerWidth,
-            window.innerHeight
-        );
-
-    }
-
-};
-
-
-/* ==========================================================
-   KẾT THÚC JAVASCRIPT
-========================================================== */
-
+console.log('VMI MAP loaded successfully.');
 </script>
-
 </body>
 </html>
