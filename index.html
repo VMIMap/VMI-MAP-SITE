@@ -1304,14 +1304,7 @@ function updateScene() {
     );
 }
 
-/* ==========================================================
-   PHASER UPDATE
-========================================================== */
 
-function update(time, delta) {
-    updateScene();
-}
-    
 /* ==========================================================
    JOYSTICK
 ========================================================== */
@@ -1348,35 +1341,68 @@ function setupJoystick() {
 /* ==========================================================
    VÀO GAME
 ========================================================== */
+/* ==========================================================
+   VÀO GAME
+========================================================== */
+
 document.getElementById('btnEnterGame').onclick = function() {
-  if (!currentUser) return;
-  document.getElementById('screen-menu').style.display = 'none';
-  document.getElementById('screen-game').classList.add('active');
 
-  if (game) { game.destroy(true); game = null; }
+    if (!currentUser) return;
 
-  game = new Phaser.Game({
-    type: Phaser.AUTO,
-    parent: 'phaser-container',
-    width: window.innerWidth,
-    height: window.innerHeight,
-    backgroundColor: '#111111',
-    physics: {
-      default: 'arcade',
-      arcade: { gravity: { y: 0 }, debug: false }
-    },
-    scale: {
-      mode: Phaser.Scale.RESIZE,
-      autoCenter: Phaser.Scale.CENTER_BOTH
-    },
-    scene: {
-      preload: preloadScene,
-      create: createGame,
-      update: update
+    document.getElementById('screen-menu').style.display = 'none';
+
+    document.getElementById('screen-game').classList.add('active');
+
+    if (game) {
+        game.destroy(true);
+        game = null;
     }
-  });
-};
 
+    game = new Phaser.Game({
+
+        type: Phaser.AUTO,
+
+        parent: 'phaser-container',
+
+        width: window.innerWidth,
+
+        height: window.innerHeight,
+
+        backgroundColor: '#111111',
+
+        physics: {
+            default: 'arcade',
+
+            arcade: {
+                gravity: {
+                    y: 0
+                },
+
+                debug: false
+            }
+        },
+
+        scale: {
+            mode: Phaser.Scale.RESIZE,
+
+            autoCenter: Phaser.Scale.CENTER_BOTH
+        },
+
+        scene: {
+
+            preload: preloadScene,
+
+            create: createGame,
+
+            update: function(time, delta) {
+                updateScene();
+            }
+
+        }
+
+    });
+};
+    
 /* ==========================================================
    SETTINGS
 ========================================================== */
