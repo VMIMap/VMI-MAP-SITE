@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
-<title>SEVER VMI - BETA 1.2</title>
+<title>VMI - DIỄU BINH</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 
@@ -186,20 +186,20 @@ body {
 }
 
 /* =========================
-   CHAT – VỊ TRÍ TRÁI
+   CHAT – VỊ TRÍ GÓC TRÊN TRÁI
 ========================= */
 #chat-toggle {
     position: fixed;
-    bottom: 150px;        /* cao hơn joystick */
+    top: 70px;           /* dưới nút cài đặt (nếu có) */
     left: 20px;
     z-index: 50;
-    width: 56px;
-    height: 56px;
+    width: 50px;
+    height: 50px;
     border-radius: 50%;
     background: var(--panel);
     border: 2px solid var(--cyan);
     color: var(--cyan);
-    font-size: 24px;
+    font-size: 22px;
     display: none;        /* ẩn mặc định, chỉ hiện khi trong game */
     align-items: center;
     justify-content: center;
@@ -213,10 +213,10 @@ body {
 
 #chat-window {
     position: fixed;
-    bottom: 210px;
+    top: 130px;          /* dưới nút chat */
     left: 20px;
     width: 280px;
-    max-height: 340px;
+    max-height: 320px;
     background: rgba(11,14,20,.92);
     border: 1px solid var(--cyan);
     border-radius: 12px;
@@ -235,7 +235,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 8px 12px;
+    padding: 6px 12px;
     background: rgba(0,229,255,.1);
     border-bottom: 1px solid var(--line);
     font-family: Orbitron;
@@ -253,9 +253,9 @@ body {
 
 .chat-messages {
     flex: 1;
-    padding: 8px 10px;
+    padding: 6px 10px;
     overflow-y: auto;
-    max-height: 220px;
+    max-height: 210px;
     font-size: 13px;
     line-height: 1.4;
     display: flex;
@@ -280,7 +280,7 @@ body {
 
 .chat-input-area {
     display: flex;
-    padding: 6px 8px;
+    padding: 4px 6px;
     border-top: 1px solid var(--line);
     gap: 4px;
     background: rgba(0,0,0,.3);
@@ -426,7 +426,7 @@ body {
     </div>
 
     <!-- =========================
-         CHAT TOGGLE & WINDOW (ẨN MẶC ĐỊNH)
+         CHAT TOGGLE & WINDOW (GÓC TRÊN TRÁI)
     ========================== -->
     <div id="chat-toggle" title="Mở chat">💬</div>
 
@@ -504,7 +504,8 @@ let joystick = null;
 let moveVector = { x: 0, y: 0 };
 let playerContainer = null;
 let controlledObject = null;
-let speechBubble = null;
+let speechBubble = null;       // container chứa bubble
+let speechBubbleTimer = null;  // timer để ẩn bubble
 let playerBody = null;
 const MAP_SIZE = 16000;
 
@@ -528,6 +529,43 @@ function toggleChat(force) {
 chatToggle.addEventListener('click', () => toggleChat());
 chatClose.addEventListener('click', () => toggleChat(false));
 
+/* ----- BUBBLE TRÊN ĐẦU NHÂN VẬT (giống Roblox) ----- */
+function showBubbleOnPlayer(text, duration = 3000) {
+  if (!speechBubble) return;
+  // Lấy các phần tử con
+  const bg = speechBubble.bubbleBg;
+  const txt = speechBubble.bubbleText;
+  if (!bg || !txt) return;
+
+  txt.setText(text);
+  // Vẽ background hình chữ nhật bo tròn
+  bg.clear();
+  const padding = 10;
+  const maxWidth = 200;
+  const style = { fontSize: '14px', fontFamily: 'Rajdhani', color: '#000', align: 'center' };
+  // Tính chiều rộng
+  const metrics = txt.getTextMetrics ? txt.getTextMetrics() : { width: txt.width };
+  let w = (txt.width || 60) + padding * 2;
+  if (w > maxWidth) w = maxWidth;
+  const h = 32;
+  bg.fillStyle(0xffffff, 0.95);
+  bg.fillRoundedRect(-w/2, -h/2, w, h, 10);
+  bg.lineStyle(2, 0x00e5ff, 1);
+  bg.strokeRoundedRect(-w/2, -h/2, w, h, 10);
+  // Cập nhật lại vị trí text
+  txt.setOrigin(0.5, 0.5);
+  txt.setPosition(0, 0);
+  // Hiển thị
+  speechBubble.setVisible(true);
+  // Ẩn sau duration
+  if (speechBubbleTimer) clearTimeout(speechBubbleTimer);
+  speechBubbleTimer = setTimeout(() => {
+    speechBubble.setVisible(false);
+    speechBubbleTimer = null;
+  }, duration);
+}
+
+/* ----- Gửi tin nhắn (thêm vào khung chat + hiển thị bubble) ----- */
 function sendChatMessage() {
   const text = chatInput.value.trim();
   if (!text) return;
@@ -537,8 +575,15 @@ function sendChatMessage() {
     return;
   }
   const displayName = currentUser.global_name || currentUser.username;
+  // Thêm vào khung chat
   addChatMessage(text, 'user', displayName);
+  // Hiển thị bubble trên đầu nhân vật
+  if (scene && playerContainer) {
+    showBubbleOnPlayer(`${displayName}: ${text}`, 3000);
+  }
   chatInput.value = '';
+  // Tự động đóng chat window sau khi gửi (tuỳ chọn)
+  // toggleChat(false);
 }
 chatSend.addEventListener('click', sendChatMessage);
 chatInput.addEventListener('keydown', (e) => {
@@ -628,7 +673,7 @@ document.getElementById('btnLogout').onclick = function() {
 };
 
 /* ==========================================================
-   ENSURE PLAYER
+   ENSURE PLAYER (tạo nhân vật và bubble)
 ========================================================== */
 function ensurePlayer() {
   if (!scene || playerContainer || !scene.physics) return;
@@ -668,24 +713,25 @@ function ensurePlayer() {
 
   playerContainer.add([avatarBg, avatar, border, nameText]);
 
-  // Bubble
+    // ----- BUBBLE (sẽ hiển thị khi chat) -----
   const bubbleBg = scene.add.graphics();
-  const bubbleText = scene.add.text(0, -70, '', {
+  const bubbleText = scene.add.text(0, 0, '', {
     fontFamily: 'Rajdhani',
-    fontSize: '13px',
+    fontSize: '14px',
     color: '#000000',
     align: 'center',
     wordWrap: { width: 180 }
   }).setOrigin(0.5);
   bubbleBg.setVisible(false);
   bubbleText.setVisible(false);
-  speechBubble = scene.add.container(0, 0);
+  speechBubble = scene.add.container(0, -55);  // đặt phía trên đầu
   speechBubble.add([bubbleBg, bubbleText]);
   speechBubble.setVisible(false);
   speechBubble.bubbleBg = bubbleBg;
   speechBubble.bubbleText = bubbleText;
   playerContainer.add(speechBubble);
 
+  // Physics
   playerBody = scene.physics.add.existing(playerContainer);
   controlledObject = playerContainer;
   if (playerContainer.body) {
