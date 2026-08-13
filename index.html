@@ -122,44 +122,6 @@ body {
     max-width: 400px;
 }
 
-/* BẢNG THÔNG BÁO */
-.board-panel {
-    width: 100%;
-    max-width: 400px;
-    padding: 12px 16px;
-    background: var(--panel);
-    border: 1px solid var(--gold);
-    border-radius: 8px;
-    margin: 5px 0;
-}
-
-.board-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-family: Orbitron, sans-serif;
-    font-size: 13px;
-    color: var(--gold);
-    border-bottom: 1px solid var(--line);
-    padding-bottom: 6px;
-    margin-bottom: 8px;
-}
-
-.btn-edit-board {
-    font-size: 10px;
-    padding: 4px 10px;
-    border-color: var(--gold);
-    color: var(--gold);
-    background: transparent;
-}
-
-.board-content {
-    font-size: 13px;
-    line-height: 1.5;
-    white-space: pre-wrap;
-    color: var(--text);
-    min-height: 60px;
-}
 
 
 
@@ -389,17 +351,7 @@ body {
 
                 </div>
 
-                <!-- BẢNG THÔNG BÁO -->
-<div class="panel board-panel" id="boardPanel">
-    <div class="board-header">
-        <span>BẢNG THÔNG BÁO</span>
-        <button class="btn btn-edit-board" id="btnEditBoard">✏️ Sửa</button>
-    </div>
-    <div class="board-content" id="boardContent">
-        <!-- Nội dung sẽ được JavaScript cập nhật -->
-    </div>
-</div>
-
+                
                 <button
                     class="btn"
                     id="btnLogin"
@@ -684,14 +636,6 @@ window.addEventListener(
 ========================================================== */
 
 let currentUser = null;
-
-// Nội dung mặc định của bảng thông báo
-const DEFAULT_BOARD_TEXT =
-    '📢 BẢNG THÔNG BÁO!\n\n' +
-    '🆙 Update tiếp theo sẽ có:\n' +
-    '  • Map Sự kiện (BETA)\n' +
-    '  • Xe (BETA)\n' +
-    '  • Súng, Khu vực mới (BETA)';
     
 
 let isEditHUD = false;
@@ -821,47 +765,7 @@ function checkDiscordAuth() {
 
 }
 
-// ==========================================================
-// BẢNG THÔNG BÁO
-// ==========================================================
 
-const BOARD_STORAGE_KEY = 'vmi_board_text';
-
-// Lấy nội dung: ưu tiên localStorage, nếu không có thì dùng mặc định
-function getBoardText() {
-    const saved = localStorage.getItem(BOARD_STORAGE_KEY);
-    if (saved !== null && saved.trim() !== '') {
-        return saved;
-    }
-    return DEFAULT_BOARD_TEXT;
-}
-
-// Cập nhật hiển thị bảng
-function updateBoardDisplay() {
-    const contentEl = document.getElementById('boardContent');
-    if (contentEl) {
-        contentEl.textContent = getBoardText();
-    }
-}
-
-// Lưu nội dung mới và cập nhật hiển thị
-function setBoardText(newText) {
-    localStorage.setItem(BOARD_STORAGE_KEY, newText);
-    updateBoardDisplay();
-}
-
-// Xử lý sự kiện nhấn nút Sửa
-document.getElementById('btnEditBoard')?.addEventListener('click', function() {
-    const currentText = getBoardText();
-    const newText = prompt('Nhập nội dung thông báo mới (có thể xuống dòng):', currentText);
-    if (newText !== null) {
-        setBoardText(newText);
-    }
-});
-
-// Khởi tạo hiển thị khi trang load
-document.addEventListener('DOMContentLoaded', function() {
-    updateBoardDisplay();
 });
 
 /* ==========================================================
