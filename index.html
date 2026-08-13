@@ -324,32 +324,33 @@ body {
 
 .chat-input-area {
     display: flex;
-
-    padding: 4px 6px;
-
+    padding: 6px;
     border-top: 1px solid var(--line);
-
-    gap: 4px;
-
-    background: rgba(0,0,0,.3);
+    gap: 5px;
+    background: rgba(0,0,0,.5);
+    pointer-events: auto;
+    touch-action: auto;
 }
 
 .chat-input-area input {
     flex: 1;
+    min-width: 0;
 
-    background: transparent;
-
+    background: rgba(0,0,0,.4);
     border: 1px solid var(--line);
     border-radius: 6px;
 
-    padding: 4px 8px;
+    padding: 7px 8px;
 
-    color: var(--text);
+    color: #fff;
 
     font-family: Rajdhani;
-    font-size: 13px;
+    font-size: 14px;
 
     outline: none;
+
+    pointer-events: auto;
+    touch-action: auto;
 
     user-select: text;
     -webkit-user-select: text;
@@ -360,26 +361,23 @@ body {
 }
 
 .chat-input-area button {
-    background: var(--cyan);
+    min-width: 55px;
 
+    background: var(--cyan);
     border: none;
     border-radius: 6px;
 
-    padding: 0 12px;
-
     color: #000;
-
     font-weight: bold;
 
     cursor: pointer;
 
     font-family: Orbitron;
     font-size: 10px;
-}
 
-.chat-input-area button:hover {
-    background: #66f0ff;
-}
+    pointer-events: auto;
+    touch-action: manipulation;
+        }
 
 /* ==========================================================
    CHAT BUBBLE TRÊN ĐẦU NHÂN VẬT
@@ -594,6 +592,22 @@ const chatWindow = document.getElementById('chat-window');
 const chatClose = document.getElementById('chat-close');
 const chatSend = document.getElementById('chat-send');
 
+/* ==========================================================
+   FIX CHAT MOBILE
+========================================================== */
+
+chatInput.addEventListener('touchstart', function(e) {
+    e.stopPropagation();
+}, { passive: true });
+
+chatInput.addEventListener('pointerdown', function(e) {
+    e.stopPropagation();
+});
+
+chatSend.addEventListener('pointerdown', function(e) {
+    e.stopPropagation();
+});
+
 function toggleChat(force) {
   if (typeof force === 'boolean') {
     chatWindow.classList.toggle('open', force);
@@ -646,21 +660,17 @@ function showBubbleOnPlayer(text, duration = 3000) {
 ========================================================== */
 
 function sendChatMessage() {
-
-    const text =
-        chatInput.value.trim();
+    const text = chatInput.value.trim();
 
     if (!text) return;
 
     if (!currentUser) {
-
         addChatMessage(
             'Bạn cần đăng nhập để nhắn tin.',
             'system'
         );
 
         chatInput.value = '';
-
         return;
     }
 
@@ -668,46 +678,65 @@ function sendChatMessage() {
         currentUser.global_name ||
         currentUser.username;
 
-    /* CHAT */
-
     addChatMessage(
         text,
         'user',
         displayName
     );
 
-    /* BUBBLE TRÊN ĐẦU */
-
-    if (
-        scene &&
-        playerContainer
-    ) {
-
-        showBubbleOnPlayer(
-            text,
-            3000
-        );
+    if (scene && playerContainer) {
+        showBubbleOnPlayer(text, 3000);
     }
 
     chatInput.value = '';
-
     chatInput.blur();
+}
+
+/* ==========================================================
+   NÚT GỬI + ENTER
+========================================================== */
+
+chatSend.addEventListener('click', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    sendChatMessage();
+});
+
+chatInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        e.stopPropagation();
+        sendChatMessage();
     }
-    
+});
+
+/* ==========================================================
+   CHAT MESSAGE
+========================================================== */
+
 function addChatMessage(text, type = 'user', name = '') {
-  const msgDiv = document.createElement('div');
-  msgDiv.className = 'msg ' + type;
-  if (type === 'user') {
-    msgDiv.innerHTML = `<span class="name">${name}</span>: ${text}`;
-  } else {
-    msgDiv.textContent = text;
-  }
-  chatMessages.appendChild(msgDiv);
-  chatMessages.scrollTop = chatMessages.scrollHeight;
+    const msgDiv = document.createElement('div');
+
+    msgDiv.className = 'msg ' + type;
+
+    if (type === 'user') {
+        msgDiv.innerHTML =
+            `<span class="name">${name}</span>: ${text}`;
+    } else {
+        msgDiv.textContent = text;
+    }
+
+    chatMessages.appendChild(msgDiv);
+
+    chatMessages.scrollTop =
+        chatMessages.scrollHeight;
 }
 
 function systemNotice(text) {
-  addChatMessage(text, 'system');
+    addChatMessage(
+        text,
+        'system'
+    );
 }
 
 /* ==========================================================
