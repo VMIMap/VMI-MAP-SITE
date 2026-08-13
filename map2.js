@@ -459,7 +459,7 @@ function createMap2(scene) {
                 scene.add.text(
                     x,
                     y - padH / 2 - 20,
-                    'CHỈ HUY',
+                    'TEST',
                     {
                         fontSize: '24px',
                         fontFamily:
