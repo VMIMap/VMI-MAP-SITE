@@ -992,6 +992,202 @@ function preloadScene() {
 
 }
 
+function ensurePlayer() {
+    if (!scene || playerContainer) return;
+
+    // =========================
+    // VỊ TRÍ SPAWN
+    // =========================
+    const spawn =
+        scene.map1Spawn ||
+        scene.map2Spawn || {
+            x: scene.cameras.main.centerX,
+            y: scene.cameras.main.centerY
+        };
+
+    // =========================
+    // CONTAINER PLAYER
+    // =========================
+    playerContainer = scene.add.container(
+        spawn.x,
+        spawn.y
+    );
+
+    playerContainer.setDepth(1000);
+
+    // =========================
+    // AVATAR
+    // =========================
+    let avatar;
+
+    if (scene.textures.exists('p_avatar')) {
+        avatar = scene.add.image(
+            0,
+            0,
+            'p_avatar'
+        );
+
+        avatar.setDisplaySize(64, 64);
+        avatar.setOrigin(0.5);
+    } else {
+        avatar = scene.add.circle(
+            0,
+            0,
+            32,
+            0x00e5ff
+        );
+    }
+
+    // =========================
+    // VIỀN TRÒN AVATAR
+    // =========================
+    const border = scene.add.graphics();
+
+    border.lineStyle(
+        3,
+        0x00e5ff,
+        1
+    );
+
+    border.strokeCircle(
+        0,
+        0,
+        33
+    );
+
+    playerContainer.add([
+        avatar,
+        border
+    ]);
+
+    // =========================
+    // TÊN PLAYER
+    // =========================
+    const playerName =
+        currentUser
+            ? (
+                currentUser.global_name ||
+                currentUser.username
+            )
+            : 'Khách';
+
+    const nameText =
+        scene.add.text(
+            0,
+            43,
+            playerName,
+            {
+                fontFamily: 'Rajdhani',
+                fontSize: '14px',
+                fontStyle: 'bold',
+                color: '#ffffff',
+                stroke: '#000000',
+                strokeThickness: 4
+            }
+        );
+
+    nameText.setOrigin(0.5);
+
+    playerContainer.add(nameText);
+
+    // =========================
+    // CHAT BUBBLE
+    // =========================
+    const bubbleBg =
+        scene.add.graphics();
+
+    const bubbleText =
+        scene.add.text(
+            0,
+            -65,
+            '',
+            {
+                fontFamily: 'Rajdhani',
+                fontSize: '13px',
+                color: '#000000',
+                align: 'center',
+                wordWrap: {
+                    width: 180
+                }
+            }
+        );
+
+    bubbleText.setOrigin(0.5);
+
+    bubbleBg.setVisible(false);
+    bubbleText.setVisible(false);
+
+    speechBubble =
+        scene.add.container(
+            0,
+            0
+        );
+
+    speechBubble.add([
+        bubbleBg,
+        bubbleText
+    ]);
+
+    speechBubble.setVisible(false);
+
+    playerContainer.add(
+        speechBubble
+    );
+
+    speechBubble.bubbleBg =
+        bubbleBg;
+
+    speechBubble.bubbleText =
+        bubbleText;
+
+    // =========================
+    // PHYSICS
+    // =========================
+    playerBody =
+        scene.physics.add.existing(
+            playerContainer
+        );
+
+    controlledObject =
+        playerContainer;
+
+    // Kích thước collision
+    if (playerContainer.body) {
+        playerContainer.body.setCircle(
+            28,
+            -28,
+            -28
+        );
+
+        playerContainer.body.setCollideWorldBounds(
+            true
+        );
+
+        playerContainer.body.setDrag(
+            800,
+            800
+        );
+    }
+
+    // =========================
+    // CAMERA THEO PLAYER
+    // =========================
+    if (scene.cameras && scene.cameras.main) {
+        scene.cameras.main.startFollow(
+            playerContainer,
+            true,
+            0.08,
+            0.08
+        );
+
+        scene.cameras.main.setZoom(
+            parseFloat(
+                document.getElementById('setZoom')?.value
+            ) || 0.8
+        );
+    }
+    }
+    
 
 /* ==========================================================
    PHASER: CREATE
@@ -1529,4 +1725,4 @@ window.onresize = () => {
 </script>
 
 </body>
-</html>AA a@
+</html>
