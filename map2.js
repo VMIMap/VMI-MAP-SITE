@@ -1,4 +1,4 @@
-MAP_SIZE = 3000;
+const MAP_SIZE = 3000;
 
 function createMap2(scene) {
 
@@ -19,7 +19,6 @@ function createMap2(scene) {
         scene.physics.world.setBounds(0, 0, W, W);
     }
 
-
     // ==========================================
     // NỀN CỎ
     // ==========================================
@@ -34,14 +33,10 @@ function createMap2(scene) {
 
     scene.map2Group.add(grass);
 
-
     // ==========================================
     // THÔNG SỐ PAD
     // 12 PAD = 4 CỘT × 3 HÀNG
-    //
-    // MỖI PAD:
-    // 8 NGANG × 6 DỌC
-    // Ô TO GIỐNG MAP 1
+    // MỖI PAD = 8 NGANG × 6 DỌC
     // ==========================================
 
     const padGridCols = 4;
@@ -50,7 +45,6 @@ function createMap2(scene) {
     const innerCols = 8;
     const innerRows = 6;
 
-    // Ô đủ lớn cho avatar
     const cellSize = 65;
     const cellGap = 10;
 
@@ -62,11 +56,8 @@ function createMap2(scene) {
         innerRows * cellSize +
         (innerRows - 1) * cellGap;
 
-
-    // Khoảng cách giữa các pad
     const gapX = 120;
     const gapY = 120;
-
 
     const totalW =
         padGridCols * padW +
@@ -76,19 +67,15 @@ function createMap2(scene) {
         padGridRows * padH +
         (padGridRows - 1) * gapY;
 
-
     // ==========================================
-    // KHU SÂN BÊ TÔNG + CỘT CỜ
-    // NẰM PHÍA TRÊN, CHÍNH GIỮA
+    // SÂN BÊ TÔNG
     // ==========================================
 
     const yardW = 1100;
     const yardH = 420;
 
-    // sân bê tông nằm phía trên khu pad
     const yardX = centerX;
     const yardY = 430;
-
 
     const concreteYard = scene.add.rectangle(
         yardX,
@@ -105,12 +92,14 @@ function createMap2(scene) {
 
     scene.map2Group.add(concreteYard);
 
-
     // ==========================================
-    // ĐƯỜNG PHÍA TRÊN SÂN
+    // ĐƯỜNG PHÍA TRÊN
     // ==========================================
 
-    const roadY = yardY - yardH / 2 - 90;
+    const roadY =
+        yardY -
+        yardH / 2 -
+        90;
 
     const road = scene.add.rectangle(
         centerX,
@@ -122,8 +111,6 @@ function createMap2(scene) {
 
     scene.map2Group.add(road);
 
-
-    // vạch đường
     const roadLine = scene.add.rectangle(
         centerX,
         roadY,
@@ -134,16 +121,13 @@ function createMap2(scene) {
 
     scene.map2Group.add(roadLine);
 
-
     // ==========================================
     // CỘT CỜ
-    // CHÍNH GIỮA SÂN BÊ TÔNG
     // ==========================================
 
     const poleX = centerX;
     const poleBaseY = yardY + 100;
     const poleH = 300;
-
 
     const poleShadow = scene.add.rectangle(
         poleX + 4,
@@ -170,7 +154,6 @@ function createMap2(scene) {
         0xffffff
     );
 
-
     const poleBase = scene.add.circle(
         poleX,
         poleBaseY + 5,
@@ -182,7 +165,6 @@ function createMap2(scene) {
         4,
         0x333333
     );
-
 
     const poleTop = scene.add.circle(
         poleX,
@@ -196,7 +178,6 @@ function createMap2(scene) {
         0xb8860b
     );
 
-
     scene.map2Group.addMultiple([
         poleShadow,
         poleBody,
@@ -205,12 +186,30 @@ function createMap2(scene) {
         poleTop
     ]);
 
-
     // ==========================================
     // CỜ VIỆT NAM
     // ==========================================
 
     function attachFlag() {
+
+        if (
+            !scene ||
+            !scene.sys ||
+            !scene.sys.isActive()
+        ) {
+            return;
+        }
+
+        if (!scene.textures.exists('flag_vn')) {
+            console.log('Không có texture flag_vn');
+            return;
+        }
+
+        // Nếu cờ cũ tồn tại thì xóa
+        if (scene.map2Flag) {
+            scene.map2Flag.destroy(true);
+            scene.map2Flag = null;
+        }
 
         const flagImg = scene.add.image(
             0,
@@ -223,47 +222,54 @@ function createMap2(scene) {
             73
         );
 
-
-        const flagGroup = scene.add.container(
-            poleX + 55,
-            poleBaseY - poleH + 40,
-            [flagImg]
+        flagImg.setOrigin(
+            0,
+            0.5
         );
 
+        // Cờ nằm sát bên phải cột
+        const flagGroup = scene.add.container(
+            poleX + 7,
+            poleBaseY - poleH + 42
+        );
+
+        flagGroup.add(flagImg);
+
+        flagGroup.setDepth(500);
 
         scene.map2Group.add(flagGroup);
 
+        scene.map2Flag = flagGroup;
 
         let isFlagUp = true;
 
+        // ======================================
+        // BẤM CHÂN CỘT ĐỂ KÉO/HẠ CỜ
+        // ======================================
 
-        // Bấm cột để kéo/hạ cờ
         poleBase.setInteractive({
-            cursor: 'pointer'
+            useHandCursor: true
         });
 
+        poleBase.removeAllListeners('pointerdown');
 
         poleBase.on(
             'pointerdown',
-            () => {
+            function () {
 
                 isFlagUp = !isFlagUp;
 
-
                 scene.tweens.add({
-
                     targets: flagGroup,
 
                     y: isFlagUp
-                        ? poleBaseY - poleH + 40
+                        ? poleBaseY - poleH + 42
                         : poleBaseY - 80,
 
                     duration: 1000,
 
                     ease: 'Power2'
-
                 });
-
 
                 if (
                     typeof showRobloxBubbleChat ===
@@ -275,54 +281,35 @@ function createMap2(scene) {
                             ? 'Đã kéo cờ!'
                             : 'Đã hạ cờ!'
                     );
-
                 }
-
             }
         );
-
     }
-
 
     // ==========================================
     // LOAD CỜ
     // ==========================================
 
-    if (!scene.textures.exists('flag_vn')) {
+    if (scene.textures.exists('flag_vn')) {
+
+        attachFlag();
+
+    } else {
 
         scene.load.image(
             'flag_vn',
             'https://flagcdn.com/w256/vn.png'
         );
 
-
         scene.load.once(
             'complete',
-            () => {
-
-                if (
-                    scene &&
-                    scene.sys &&
-                    scene.sys.isActive() &&
-                    scene.map2Group
-                ) {
-
-                    attachFlag();
-
-                }
-
+            function () {
+                attachFlag();
             }
         );
 
-
         scene.load.start();
-
-    } else {
-
-        attachFlag();
-
     }
-
 
     // ==========================================
     // SPAWN
@@ -332,12 +319,10 @@ function createMap2(scene) {
     const spawnX = centerX + 150;
     const spawnY = yardY;
 
-
     scene.map2Spawn = {
         x: spawnX,
         y: spawnY
     };
-
 
     const spawnMark = scene.add.circle(
         spawnX,
@@ -347,16 +332,12 @@ function createMap2(scene) {
         0.35
     );
 
-
     scene.map2Group.add(
         spawnMark
     );
 
-
     // ==========================================
     // VỊ TRÍ 12 PAD
-    //
-    // NẰM PHÍA DƯỚI SÂN CỜ
     // ==========================================
 
     const padsStartY =
@@ -365,12 +346,10 @@ function createMap2(scene) {
         120 +
         padH / 2;
 
-
     const startX =
         centerX -
         totalW / 2 +
         padW / 2;
-
 
     // ==========================================
     // VẼ 1 PAD
@@ -401,7 +380,6 @@ function createMap2(scene) {
                     col *
                     (cellSize + cellGap);
 
-
                 const cy =
                     y -
                     padH / 2 +
@@ -409,18 +387,15 @@ function createMap2(scene) {
                     row *
                     (cellSize + cellGap);
 
-
                 const fill =
                     isCommander
                         ? 0xffeeee
                         : 0xffffff;
 
-
                 const stroke =
                     isCommander
                         ? 0xd1a300
                         : 0xc4eef8;
-
 
                 const tile =
                     scene.add.rectangle(
@@ -432,55 +407,23 @@ function createMap2(scene) {
                         1
                     );
 
-
                 tile.setStrokeStyle(
                     2,
                     stroke,
                     1
                 );
 
-
                 scene.map2Group.add(
                     tile
                 );
-
             }
-
         }
-
 
         // ======================================
         // PAD CHỈ HUY
+        // ĐÃ BỎ CHỮ TEST
         // ======================================
-
-        if (isCommander) {
-
-            const commanderLabel =
-                scene.add.text(
-                    x,
-                    y - padH / 2 - 20,
-                    'TEST',
-                    {
-                        fontSize: '24px',
-                        fontFamily:
-                            'Orbitron, sans-serif',
-                        color: '#ffd700',
-                        fontStyle: 'bold',
-                        stroke: '#000000',
-                        strokeThickness: 4
-                    }
-                )
-                .setOrigin(0.5);
-
-
-            scene.map2Group.add(
-                commanderLabel
-            );
-
-        }
-
     }
-
 
     // ==========================================
     // VẼ 12 PAD
@@ -503,20 +446,17 @@ function createMap2(scene) {
                 c *
                 (padW + gapX);
 
-
             const y =
                 padsStartY +
                 r *
                 (padH + gapY);
-
 
             // Cuối hàng 1 = pad chỉ huy
             const isCommander =
                 r === 0 &&
                 c === padGridCols - 1;
 
-
-            // nền đỏ dưới pad chỉ huy
+            // Nền đỏ dưới pad chỉ huy
             if (isCommander) {
 
                 const bg =
@@ -529,22 +469,16 @@ function createMap2(scene) {
                         0.28
                     );
 
-
                 scene.map2Group.add(bg);
-
             }
-
 
             drawTrainingPad(
                 x,
                 y,
                 isCommander
             );
-
         }
-
     }
-
 
     // ==========================================
     // CAMERA
@@ -562,17 +496,13 @@ function createMap2(scene) {
             W
         );
 
-
         scene.cameras.main.centerOn(
             centerX,
             yardY + 500
         );
-
     }
 
-
     console.log(
-        'MAP 2: sân bê tông + cột cờ phía trên, spawn cạnh cột cờ, 12 pad lớn 8x6 phía dưới.'
+        'MAP 2 đã tạo: sân cờ + cột cờ + cờ Việt Nam + 12 pad 8x6.'
     );
-
 }
