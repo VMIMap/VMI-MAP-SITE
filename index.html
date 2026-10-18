@@ -1,920 +1,814 @@
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>VMI - DIỄU BINH</title>
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.10.1/nipplejs.min.js"></script>
-<script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#020914">
+<title>Pi | 20.10 ♡</title>
 
 <style>
-*{margin:0;padding:0;box-sizing:border-box;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
-html,body{width:100vw;height:100vh;overflow:hidden;background:#0b0e14;font-family:Rajdhani,sans-serif;color:#e7edff}
-:root{--bg:#0b0e14;--panel:rgba(16,22,34,.94);--line:rgba(0,229,255,.4);--cyan:#00e5ff;--gold:#e8b84b;--red:#ff3b3b;--green:#39ff88;--text:#e7edff;--hud-alpha:.9}
-.panel{background:var(--panel);border:1px solid var(--line);backdrop-filter:blur(8px)}
-.btn{font-family:Orbitron,sans-serif;font-size:12px;color:#fff;background:rgba(0,229,255,.1);border:1px solid var(--cyan);padding:10px 16px;cursor:pointer;text-align:center;font-weight:bold;transition:.2s;touch-action:manipulation}
-.btn:hover{background:rgba(0,229,255,.25)}
-.btn:active{transform:scale(.96)}
-.btn.gold{border-color:var(--gold);background:var(--gold);color:#000}
-.btn.gold:hover{background:#f0c85a}
-.btn.danger{border-color:var(--red);background:rgba(255,59,59,.2)}
-.btn.danger:hover{background:rgba(255,59,59,.4)}
-.btn:disabled{opacity:.3;cursor:not-allowed}
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
 
-#screen-menu{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10;padding:15px;background:radial-gradient(circle,#1a2333 0%,#0b0e14 100%)}
-.lobby-box{width:100%;max-width:500px;display:flex;flex-direction:column;gap:15px;align-items:center}
-.title{font-family:Orbitron,sans-serif;font-size:28px;color:var(--gold);text-shadow:0 0 10px var(--gold)}
+:root {
+  --cyan: #39f5ff;
+  --blue: #00bfe9;
+  --pink: #ff9ed5;
+  --text: #e7faff;
+}
 
-.profile-card{display:flex;align-items:center;gap:12px;padding:10px 20px;width:100%;max-width:400px}
-.avatar{width:48px;height:48px;min-width:48px;border-radius:50%;border:2px solid var(--cyan);overflow:hidden;background:#000;flex-shrink:0}
-.avatar img{width:100%;height:100%;display:block;object-fit:cover;border-radius:50%}
+body {
+  margin: 0;
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 50% 38%, #09283a 0%, #040c19 48%, #02040a 100%);
+  color: var(--text);
+  font-family: "Courier New", monospace;
+}
 
-#screen-game{position:absolute;inset:0;display:none;z-index:5;background:#000}
-#screen-game.active{display:block}
-#phaser-container{width:100%;height:100%;position:absolute;inset:0}
+.app {
+  width: 100%;
+  max-width: 500px;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 420px;
+  margin: 0 auto;
+  padding: 20px 20px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  isolation: isolate;
+}
 
-.hud-element{position:absolute;z-index:200;opacity:var(--hud-alpha)}
-.hud-top{top:10px;right:10px;display:flex;gap:8px;pointer-events:none}
-.hud-top>*{pointer-events:auto}
+/* Ánh sáng nền */
 
-#joystick-zone{position:fixed;bottom:20px;left:20px;width:120px;height:120px;z-index:300;touch-action:none;pointer-events:auto}
+.ambient {
+  position: absolute;
+  width: 260px;
+  height: 260px;
+  top: 18%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: #00d9ff;
+  filter: blur(110px);
+  opacity: .12;
+  pointer-events: none;
+  z-index: -1;
+}
 
-#chat-toggle{position:fixed;top:70px;left:15px;z-index:500;width:50px;height:50px;border-radius:50%;background:rgba(11,14,20,.95);border:2px solid var(--cyan);color:var(--cyan);font-size:22px;display:none;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 0 15px rgba(0,229,255,.35);touch-action:manipulation}
-#chat-toggle:hover{transform:scale(1.08)}
+.stars {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: -1;
+  background-image:
+    radial-gradient(1px 1px at 12% 17%, #b9faff 90%, transparent),
+    radial-gradient(1.5px 1.5px at 82% 14%, #5ff7ff 90%, transparent),
+    radial-gradient(1px 1px at 72% 39%, #fff 90%, transparent),
+    radial-gradient(1px 1px at 17% 53%, #5ff7ff 90%, transparent),
+    radial-gradient(1.5px 1.5px at 90% 68%, #b9faff 90%, transparent),
+    radial-gradient(1px 1px at 28% 82%, #fff 90%, transparent),
+    radial-gradient(1px 1px at 65% 91%, #5ff7ff 90%, transparent);
+  animation: twinkle 4s ease-in-out infinite alternate;
+}
 
-#chat-window{position:fixed;top:130px;left:15px;width:290px;height:330px;background:rgba(11,14,20,.97);border:1px solid var(--cyan);border-radius:12px;backdrop-filter:blur(10px);display:none;flex-direction:column;z-index:600;box-shadow:0 0 30px rgba(0,0,0,.8);overflow:hidden}
-#chat-window.open{display:flex}
-.chat-header{flex:0 0 35px;display:flex;justify-content:space-between;align-items:center;padding:6px 12px;background:rgba(0,229,255,.1);border-bottom:1px solid var(--line);font-family:Orbitron;font-size:12px;color:var(--gold)}
-.chat-header .close-btn{background:none;border:none;color:var(--red);font-size:18px;cursor:pointer;padding:3px 6px}
-.chat-messages{flex:1;min-height:0;padding:8px 10px;overflow-y:auto;overflow-x:hidden;font-size:13px;line-height:1.4;display:flex;flex-direction:column;gap:3px;scrollbar-width:thin;touch-action:pan-y;overscroll-behavior:contain}
-.chat-messages::-webkit-scrollbar{width:5px}
-.chat-messages::-webkit-scrollbar-thumb{background:var(--cyan);border-radius:10px}
-.chat-messages .msg{padding:3px 0;border-bottom:1px solid rgba(255,255,255,.05);word-break:break-word;flex-shrink:0}
-.chat-messages .msg.system{color:var(--gold);font-style:italic}
-.chat-messages .msg.user{color:var(--text)}
-.chat-messages .msg .name{color:var(--cyan);font-weight:bold}
-.chat-input-area{flex:0 0 43px;display:flex;align-items:center;padding:5px 6px;border-top:1px solid var(--line);gap:5px;background:rgba(0,0,0,.7);z-index:5;pointer-events:auto}
-.chat-input-area input{flex:1;min-width:0;height:32px;background:rgba(0,0,0,.5);border:1px solid var(--line);border-radius:6px;padding:5px 8px;color:#fff;font-family:Rajdhani;font-size:14px;outline:none;user-select:text;-webkit-user-select:text;touch-action:auto}
-.chat-input-area input:focus{border-color:var(--cyan)}
-.chat-input-area button{flex:0 0 55px;height:32px;background:var(--cyan);border:none;border-radius:6px;color:#000;font-weight:bold;cursor:pointer;font-family:Orbitron;font-size:10px;touch-action:manipulation}
+@keyframes twinkle {
+  from { opacity: .4; }
+  to { opacity: 1; }
+}
 
-.overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:1000}
-.overlay.open{display:flex}
-.setting-box{width:90%;max-width:420px;padding:20px;display:flex;flex-direction:column;gap:12px;max-height:90vh;overflow-y:auto}
-.set-row{display:flex;justify-content:space-between;align-items:center;font-size:13px}
-.set-row input[type=range],.set-row select{width:50%}
-.edit-hud-mode .hud-element{border:2px dashed var(--gold)!important;cursor:move}
+/* Thanh trên */
 
-#errBox{display:none;position:fixed;inset:0;z-index:99999;background:#1a0000;color:#ff5555;padding:16px;font-family:monospace;font-size:13px;overflow:auto;white-space:pre-wrap}
+.top {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  z-index: 2;
+}
 
-@media(max-width:600px){
-#chat-window{width:min(290px,calc(100vw - 30px));height:330px}
-#chat-toggle{top:65px;left:12px}
-.hud-top{top:10px;right:10px}
+.brand {
+  color: var(--cyan);
+  font-size: 13px;
+  letter-spacing: 2px;
+  text-shadow: 0 0 12px #00dfff88;
+}
+
+.top-right {
+  display: flex;
+  gap: 7px;
+  align-items: center;
+}
+
+.status {
+  font-size: 10px;
+  color: #9cb8c8;
+  border: 1px solid #263d53;
+  padding: 8px 9px;
+  border-radius: 25px;
+}
+
+.music-btn {
+  padding: 8px 10px;
+  font-size: 10px;
+  border-radius: 25px;
+  letter-spacing: 0;
+}
+
+/* Tiến trình */
+
+.dots {
+  display: flex;
+  gap: 9px;
+  margin-top: 32px;
+}
+
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 20px;
+  background: #27374a;
+  transition: .3s;
+}
+
+.dot.active {
+  width: 25px;
+  background: var(--cyan);
+  box-shadow: 0 0 12px var(--cyan);
+}
+
+/* Robot */
+
+.robot {
+  position: absolute;
+  top: 34%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 32px;
+  padding: 24px;
+  cursor: pointer;
+  user-select: none;
+  touch-action: manipulation;
+}
+
+.robot::before {
+  content: "";
+  position: absolute;
+  width: 230px;
+  height: 150px;
+  border-radius: 50%;
+  background: #00dfff;
+  filter: blur(65px);
+  opacity: .13;
+  pointer-events: none;
+}
+
+.eye {
+  position: relative;
+  width: 75px;
+  height: 88px;
+  border-radius: 26px;
+  background:
+    radial-gradient(ellipse at 35% 25%,
+      #f1ffff 0%,
+      #a5ffff 18%,
+      #38efff 53%,
+      #00a4d0 100%);
+  box-shadow:
+    0 0 13px #19eaff,
+    0 0 35px #00dfff99,
+    0 0 70px #00cfff33;
+  animation: breathe 2.6s infinite ease-in-out;
+  transition:
+    height .12s,
+    transform .2s,
+    border-radius .2s;
+}
+
+.eye::after {
+  content: "";
+  position: absolute;
+  top: 12px;
+  left: 15px;
+  width: 16px;
+  height: 10px;
+  border-radius: 50%;
+  background: #ffffffaa;
+  filter: blur(2px);
+}
+
+@keyframes breathe {
+  0%, 100% {
+    filter: brightness(1);
+    box-shadow:
+      0 0 13px #19eaff,
+      0 0 35px #00dfff99,
+      0 0 70px #00cfff33;
+  }
+  50% {
+    filter: brightness(.82);
+    box-shadow:
+      0 0 22px #19eaff,
+      0 0 55px #00dfff99,
+      0 0 90px #00cfff44;
+  }
+}
+
+.robot:active .eye {
+  transform: scale(.92);
+}
+
+.robot.blink .eye {
+  height: 7px;
+  border-radius: 12px;
+}
+
+/* Hộp thoại */
+
+.dialog {
+  position: absolute;
+  top: 48%;
+  left: 0;
+  width: 100%;
+  padding: 0 25px;
+  text-align: center;
+  z-index: 2;
+}
+
+.message-box {
+  width: 100%;
+  padding: 16px 12px;
+  border: 1px solid #173a50;
+  border-radius: 16px;
+  background: #06111dcc;
+  box-shadow: 0 0 30px #00cfff0b;
+  backdrop-filter: blur(8px);
+}
+
+#text {
+  color: #e7faff;
+  font-size: clamp(14px, 4vw, 17px);
+  line-height: 1.9;
+  letter-spacing: .2px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.cursor {
+  display: inline-block;
+  width: 8px;
+  height: 17px;
+  margin-left: 4px;
+  background: var(--cyan);
+  vertical-align: middle;
+  box-shadow: 0 0 10px var(--cyan);
+  animation: flash .7s infinite;
+}
+
+@keyframes flash {
+  50% { opacity: 0; }
+}
+
+#gift {
+  display: none;
+  margin-top: 18px;
+  animation: appear .6s ease both;
+}
+
+@keyframes appear {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Nút */
+
+button {
+  background: #071522;
+  border: 1px solid #2ce9ff;
+  color: #9bfaff;
+  padding: 12px 17px;
+  border-radius: 30px;
+  font-family: inherit;
+  font-size: 12px;
+  letter-spacing: 1px;
+  box-shadow: 0 0 18px #00cfff22;
+  cursor: pointer;
+  transition: .2s;
+}
+
+button:active {
+  background: #123347;
+  transform: scale(.96);
+}
+
+.gift-btn {
+  color: #ffb7e1;
+  border-color: #ff91d0;
+  box-shadow: 0 0 22px #ff71c522;
+  animation: giftGlow 1.8s infinite alternate;
+}
+
+@keyframes giftGlow {
+  to {
+    box-shadow: 0 0 25px #ff71c566;
+  }
+}
+
+.green {
+  color: #6effc1;
+  font-weight: bold;
+}
+
+.pink {
+  color: var(--pink);
+}
+
+/* Hướng dẫn dưới */
+
+.hint {
+  position: absolute;
+  bottom: 5%;
+  width: 100%;
+  padding: 0 15px;
+  font-size: 10px;
+  color: #718da1;
+  line-height: 2;
+  text-align: center;
+  letter-spacing: 1px;
+}
+
+.hint span {
+  color: #28dff5;
+}
+
+.footer {
+  position: absolute;
+  bottom: 1.5%;
+  color: #3d5264;
+  font-size: 8px;
+  letter-spacing: 2px;
+}
+
+/* Màn hình nhỏ */
+
+@media (max-height: 650px) {
+  .app {
+    padding-top: 12px;
+  }
+
+  .dots {
+    margin-top: 18px;
+  }
+
+  .robot {
+    top: 31%;
+  }
+
+  .eye {
+    width: 58px;
+    height: 68px;
+    border-radius: 21px;
+  }
+
+  .dialog {
+    top: 43%;
+  }
+
+  .message-box {
+    padding: 10px;
+  }
+
+  #text {
+    font-size: 13px;
+    line-height: 1.65;
+  }
+
+  .hint {
+    bottom: 4%;
+    font-size: 9px;
+  }
+
+  .footer {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 3s !important;
+  }
 }
 </style>
 </head>
 
 <body>
-<div id="app">
+<div class="app">
 
-<div id="screen-menu">
-<div class="lobby-box">
+  <div class="ambient"></div>
+  <div class="stars"></div>
 
-<div class="title">VMI MAP</div>
+  <div class="top">
+    <div class="brand">◈ PI.EXE</div>
 
-<div class="panel profile-card">
-<div class="avatar" id="avatarEl">
-<img id="avatarImg" src="https://cdn.discordapp.com/embed/avatars/0.png" alt="avatar">
-</div>
+    <div class="top-right">
+      <div class="status" id="status">● ONLINE</div>
+      <button class="music-btn" id="musicBtn" type="button">
+        ♫ BẬT NHẠC
+      </button>
+    </div>
+  </div>
 
-<div style="flex:1">
-<div id="playerNameEl" style="font-weight:bold">Chưa đăng nhập</div>
-<div id="statusEl" style="font-size:10px;color:var(--red)">Khách</div>
-</div>
+  <div class="dots" id="dots">
+    <div class="dot active"></div>
+    <div class="dot"></div>
+    <div class="dot"></div>
+    <div class="dot"></div>
+    <div class="dot"></div>
+    <div class="dot"></div>
+    <div class="dot"></div>
+    <div class="dot"></div>
+  </div>
 
-<button class="btn" id="btnLogin">ĐĂNG NHẬP</button>
-<button class="btn danger" id="btnLogout" style="display:none">THOÁT</button>
-</div>
+  <div
+    class="robot"
+    id="robot"
+    role="button"
+    tabindex="0"
+    aria-label="Nhấn mắt Pi để tiếp tục"
+  >
+    <div class="eye"></div>
+    <div class="eye"></div>
+  </div>
 
-<div class="panel" style="width:100%;max-width:400px;padding:14px;text-align:center">
-<div style="font-family:Orbitron;color:var(--gold);font-size:14px">KHU DIỄU BINH</div>
-<div style="font-size:11px;color:#9ca8c0;margin-top:5px">MAP PHASE 3</div>
-</div>
+  <div class="dialog">
+    <div class="message-box">
+      <span id="text"></span><span class="cursor" id="cursor"></span>
 
-<button id="btnEnterGame" class="btn gold" style="width:200px;height:45px" disabled>VÀO GAME</button>
+      <div id="gift">
+        <button class="gift-btn" id="giftBtn" type="button">
+          MỞ QUÀ 20/10 ♡
+        </button>
+      </div>
+    </div>
+  </div>
 
-</div>
-</div>
+  <div class="hint" id="hint">
+    TAP THE EYES TO INTERACT
+    <br>
+    <span>SYSTEM READY // 20.10 ♡</span>
+  </div>
 
-<div id="screen-game">
-<div id="phaser-container"></div>
-
-<div class="hud-top hud-element">
-<button class="btn" id="btnOpenSettings">CÀI ĐẶT</button>
-</div>
-
-<div id="joystick-zone" class="hud-element"></div>
-</div>
-
-<div id="chat-toggle" title="Mở chat">💬</div>
-
-<div id="chat-window">
-<div class="chat-header">
-<span>💬 CHAT</span>
-<button class="close-btn" id="chat-close">✕</button>
-</div>
-
-<div class="chat-messages" id="chat-messages"></div>
-
-<div class="chat-input-area">
-<input type="text" id="chat-input" placeholder="Nhập tin nhắn..." maxlength="999" autocomplete="off">
-<button id="chat-send">GỬI</button>
-</div>
-</div>
-
-<div class="overlay" id="settingsOverlay">
-<div class="panel setting-box">
-
-<div style="font-family:Orbitron;color:var(--gold);font-size:16px;text-align:center">CÀI ĐẶT GAME</div>
-
-<div class="set-row">
-<label>Độ thu phóng:</label>
-<input type="range" id="setZoom" min=".3" max="1.5" step=".05" value=".8">
-</div>
-
-<div class="set-row">
-<label>Âm thanh:</label>
-<input type="range" id="setVolume" min="0" max="1" step=".1" value=".8">
-</div>
-
-<div class="set-row">
-<label>Đồ họa:</label>
-<select id="setGraphics">
-<option value="1">Tiêu chuẩn</option>
-<option value="1.5" selected>Nét</option>
-<option value="2">Siêu nét</option>
-</select>
-</div>
-
-<div class="set-row">
-<label>Độ mờ HUD:</label>
-<input type="range" id="setHudAlpha" min=".2" max="1" step=".1" value=".9">
-</div>
-
-<button class="btn" id="btnEditHUD" style="border-color:var(--gold);color:var(--gold)">CHỈNH VỊ TRÍ HUD</button>
-<button class="btn danger" id="btnLeaveMap">RỜI MAP VỀ SẢNH</button>
-<button class="btn gold" id="btnCloseSettings">LƯU & ĐÓNG</button>
+  <div class="footer">MADE WITH ♡ BY PI</div>
 
 </div>
-</div>
-
-</div>
-
-<div id="errBox"></div>
-
-<script src="map2.js"></script>
 
 <script>
-window.addEventListener('error',function(e){
-const box=document.getElementById('errBox');
-if(!box)return;
-box.style.display='block';
-box.textContent+='LỖI: '+e.message+'\nTại dòng: '+e.lineno+':'+e.colno+'\n\n';
+/* =========================
+   PI.EXE - 20/10
+   ========================= */
+
+const text = document.getElementById("text");
+const robot = document.getElementById("robot");
+const gift = document.getElementById("gift");
+const hint = document.getElementById("hint");
+const status = document.getElementById("status");
+const dots = document.querySelectorAll(".dot");
+const musicBtn = document.getElementById("musicBtn");
+const giftBtn = document.getElementById("giftBtn");
+
+/* Lời thoại của Pi */
+
+const scripts = [
+  "Tớ là Pi, bé robot nhỏ xíu sống trong trang web này nè... ♡",
+
+  "Cậu biết hôm nay là ngày gì không?",
+
+  "Hôm nay là ngày 20/10 đó! 🌷",
+
+  "Tớ có một điều nho nhỏ muốn nói với cậu...",
+
+  "Tớ đã chuẩn bị một món quà đặc biệt dành riêng cho cậu.",
+
+  "Mong cậu luôn vui vẻ, hạnh phúc và cười thật nhiều nhé! 💗",
+
+  "Hy vọng những điều tốt đẹp nhất sẽ luôn đến với cậu.",
+
+  "Và cuối cùng... cậu mở món quà của Pi nhé! ♡"
+];
+
+let step = 0;
+let timer = null;
+let typing = false;
+let finished = false;
+let openingGift = false;
+
+let currentLine = "";
+let currentDone = null;
+
+/* Hiệu ứng gõ chữ */
+
+function typeLine(line, done) {
+  clearInterval(timer);
+
+  currentLine = line;
+  currentDone = done || null;
+
+  text.textContent = "";
+  typing = true;
+
+  let i = 0;
+
+  timer = setInterval(() => {
+    text.textContent += line[i];
+    i++;
+
+    if (i >= line.length) {
+      completeTyping();
+    }
+  }, 42);
+}
+
+/* Hoàn tất câu đang chạy */
+
+function completeTyping() {
+  if (!typing) return;
+
+  clearInterval(timer);
+  timer = null;
+
+  text.textContent = currentLine;
+  typing = false;
+
+  const done = currentDone;
+  currentDone = null;
+
+  if (done) done();
+}
+
+/* Cập nhật chấm tiến trình */
+
+function updateDots(index) {
+  dots.forEach((dot, i) => {
+    dot.classList.toggle("active", i <= index);
+  });
+}
+
+/* Nhấn mắt Pi */
+
+function next() {
+  // Nếu chữ đang chạy, hiện hết câu ngay
+  if (typing) {
+    completeTyping();
+    return;
+  }
+
+  if (finished || openingGift) return;
+
+  // Đã đọc hết lời thoại thì hiện quà
+  if (step >= scripts.length) {
+    finished = true;
+    gift.style.display = "block";
+    hint.innerHTML =
+      'PI HAS A GIFT FOR YOU ♡<br><span>NHẤN NÚT ĐỂ MỞ QUÀ</span>';
+    return;
+  }
+
+  const current = step;
+  const line = scripts[current];
+
+  step++;
+
+  updateDots(current);
+
+  hint.textContent = "PI IS TALKING...";
+
+  typeLine(line, () => {
+    if (step < scripts.length) {
+      hint.innerHTML =
+        'CHẠM VÀO MẮT PI ĐỂ TIẾP TỤC<br>' +
+        '<span>MESSAGE ' + step + ' / ' +
+        scripts.length + '</span>';
+    } else {
+      hint.innerHTML =
+        'CHẠM THÊM LẦN NỮA ĐỂ MỞ QUÀ<br>' +
+        '<span>ALMOST THERE ♡</span>';
+    }
+  });
+}
+
+/* Mở quà */
+
+function wish() {
+  if (openingGift) return;
+
+  clearInterval(timer);
+  typing = false;
+  currentDone = null;
+  openingGift = true;
+
+  gift.style.display = "none";
+
+  status.textContent = "♡ FOR YOU";
+  hint.textContent = "MESSAGE UNLOCKED";
+
+  updateDots(dots.length - 1);
+
+  const message =
+    "Chúc cậu ngày 20/10 thật vui vẻ, " +
+    "luôn hạnh phúc và được yêu thương. " +
+    "Mong rằng mỗi ngày của cậu đều có " +
+    "những niềm vui nho nhỏ, những nụ cười " +
+    "thật tươi và những người luôn quan tâm cậu. " +
+    "Dù hôm nay có chuyện gì xảy ra, " +
+    "hãy nhớ rằng cậu vẫn xứng đáng với " +
+    "những điều tốt đẹp nhất. " +
+    "Cảm ơn cậu vì đã xuất hiện trên thế giới này nhé! ♡";
+
+  typeLine(message, () => {
+    text.innerHTML =
+      message +
+      '<br><br><span class="pink">' +
+      '— Một món quà nhỏ từ Pi — ♡' +
+      '</span>';
+
+    hint.innerHTML =
+      'END OF MESSAGE<br><span>THANK YOU FOR BEING HERE ♡</span>';
+  });
+}
+
+/* =========================
+   NHẠC NỀN TỰ TẠO
+   Không cần tải file nhạc
+   ========================= */
+
+let audioContext = null;
+let musicTimer = null;
+let musicOn = false;
+let musicIndex = 0;
+
+/* Giai điệu nhẹ nhàng do Pi tạo */
+
+const melody = [
+  523.25, 659.25, 783.99, 659.25,
+  587.33, 698.46, 880.00, 698.46,
+  523.25, 659.25, 783.99, 1046.50,
+  880.00, 783.99, 659.25, 587.33
+];
+
+function playNote(frequency, volume, duration, wave) {
+  if (!audioContext || !musicOn) return;
+
+  const now = audioContext.currentTime;
+
+  const oscillator = audioContext.createOscillator();
+  const gain = audioContext.createGain();
+
+  oscillator.type = wave || "sine";
+  oscillator.frequency.setValueAtTime(frequency, now);
+
+  gain.gain.setValueAtTime(0.0001, now);
+  gain.gain.exponentialRampToValueAtTime(
+    volume,
+    now + 0.08
+  );
+  gain.gain.setValueAtTime(
+    volume,
+    now + Math.max(0.1, duration - 0.12)
+  );
+  gain.gain.exponentialRampToValueAtTime(
+    0.0001,
+    now + duration
+  );
+
+  oscillator.connect(gain);
+  gain.connect(audioContext.destination);
+
+  oscillator.start(now);
+  oscillator.stop(now + duration + 0.02);
+}
+
+function playMelody() {
+  if (!musicOn) return;
+
+  const frequency = melody[musicIndex % melody.length];
+
+  playNote(frequency, 0.045, 0.46, "sine");
+
+  // Thỉnh thoảng thêm nốt trầm tạo cảm giác êm dịu
+  if (musicIndex % 4 === 0) {
+    const bassNotes = [261.63, 196.00, 220.00, 174.61];
+    const bass = bassNotes[
+      Math.floor(musicIndex / 4) % bassNotes.length
+    ];
+
+    playNote(bass, 0.018, 1.7, "sine");
+  }
+
+  musicIndex++;
+}
+
+async function toggleMusic() {
+  const AudioEngine =
+    window.AudioContext || window.webkitAudioContext;
+
+  if (!AudioEngine) {
+    hint.textContent = "TRÌNH DUYỆT KHÔNG HỖ TRỢ NHẠC NỀN";
+    return;
+  }
+
+  if (musicOn) {
+    musicOn = false;
+    clearInterval(musicTimer);
+    musicTimer = null;
+
+    musicBtn.textContent = "♫ BẬT NHẠC";
+
+    if (audioContext && audioContext.state === "running") {
+      audioContext.suspend();
+    }
+
+    return;
+  }
+
+  try {
+    if (!audioContext) {
+      audioContext = new AudioEngine();
+    }
+
+    await audioContext.resume();
+
+    musicOn = true;
+    musicIndex = 0;
+
+    musicBtn.textContent = "♫ TẮT NHẠC";
+
+    playMelody();
+    musicTimer = setInterval(playMelody, 520);
+  } catch (error) {
+    musicOn = false;
+    musicBtn.textContent = "♫ THỬ LẠI";
+    hint.textContent = "KHÔNG THỂ KHỞI ĐỘNG NHẠC";
+  }
+}
+
+/* =========================
+   SỰ KIỆN
+   ========================= */
+
+robot.addEventListener("click", next);
+
+robot.addEventListener("keydown", (event) => {
+  if (event.key === "Enter" || event.key === " ") {
+    event.preventDefault();
+    next();
+  }
 });
 
-let currentUser=null;
-let isEditHUD=false;
-let scene=null;
-let game=null;
-let joystick=null;
-let moveVector={x:0,y:0};
-let playerContainer=null;
-let controlledObject=null;
-let playerBody=null;
-let speechBubble=null;
-let speechBubbleTimer=null;
-let socket=null;
-let otherPlayers={};
-const MAP_SIZE=3000;
+musicBtn.addEventListener("click", toggleMusic);
+giftBtn.addEventListener("click", wish);
 
-const chatMessages=document.getElementById('chat-messages');
-const chatInput=document.getElementById('chat-input');
-const chatToggle=document.getElementById('chat-toggle');
-const chatWindow=document.getElementById('chat-window');
-const chatClose=document.getElementById('chat-close');
-const chatSend=document.getElementById('chat-send');
+/* Robot thỉnh thoảng chớp mắt */
 
-function toggleChat(force){
-if(typeof force==='boolean')chatWindow.classList.toggle('open',force);
-else chatWindow.classList.toggle('open');
-}
-chatToggle.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();toggleChat()});
-chatClose.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();toggleChat(false)});
+function blink() {
+  robot.classList.add("blink");
 
-function showBubbleOnPlayer(text,duration=3000){
-if(!speechBubble)return;
-const bg=speechBubble.bubbleBg;
-const txt=speechBubble.bubbleText;
-if(!bg||!txt)return;
-txt.setText(text);
-const padding=12;
-const maxWidth=220;
-let w=Math.min((txt.width||60)+padding*2,maxWidth);
-let h=Math.max(34,(txt.height||20)+14);
-bg.clear();
-bg.fillStyle(0xffffff,.96);
-bg.fillRoundedRect(-w/2,-h/2,w,h,10);
-bg.lineStyle(2,0x00e5ff,1);
-bg.strokeRoundedRect(-w/2,-h/2,w,h,10);
-txt.setOrigin(.5,.5);
-txt.setPosition(0,0);
-speechBubble.setVisible(true);
-if(speechBubbleTimer)clearTimeout(speechBubbleTimer);
-speechBubbleTimer=setTimeout(()=>{
-if(speechBubble)speechBubble.setVisible(false);
-speechBubbleTimer=null;
-},duration);
+  setTimeout(() => {
+    robot.classList.remove("blink");
+  }, 160);
 }
 
-function sendChatMessage(){
-const text=chatInput.value.trim();
-if(!text)return;
-if(!currentUser){
-addChatMessage('Bạn cần đăng nhập để nhắn tin.','system');
-chatInput.value='';
-return;
-}
-const finalText=text.substring(0,999);
-if(socket&&socket.connected){
-socket.emit('chatMessage',{id:currentUser.id,text:finalText});
-}else{
-const name=currentUser.global_name||currentUser.username||'Player';
-addChatMessage(finalText,'user',name);
-showBubbleOnPlayer(finalText,3000);
-}
-chatInput.value='';
-chatInput.blur();
+function scheduleBlink() {
+  setTimeout(() => {
+    blink();
+    scheduleBlink();
+  }, 2500 + Math.random() * 3500);
 }
 
-chatSend.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();sendChatMessage()});
-chatInput.addEventListener('keydown',e=>{
-if(e.key==='Enter'){
-e.preventDefault();
-e.stopPropagation();
-sendChatMessage();
-}
-});
+scheduleBlink();
 
-function addChatMessage(text,type='user',name=''){
-const msgDiv=document.createElement('div');
-msgDiv.className='msg '+type;
-if(type==='user'){
-const nameSpan=document.createElement('span');
-nameSpan.className='name';
-nameSpan.textContent=name;
-msgDiv.appendChild(nameSpan);
-msgDiv.appendChild(document.createTextNode(': '+text));
-}else msgDiv.textContent=text;
-chatMessages.appendChild(msgDiv);
-chatMessages.scrollTop=chatMessages.scrollHeight;
-}
+/* Bắt đầu cuộc hội thoại */
 
-function systemNotice(text){addChatMessage(text,'system')}
-
-const CLIENT_ID='1534238453871673414';
-const REDIRECT_URI=window.location.origin+window.location.pathname;
-
-function checkDiscordAuth(){
-const hashParams=new URLSearchParams(window.location.hash.slice(1));
-const token=hashParams.get('access_token');
-
-if(token){
-fetch('https://discord.com/api/users/@me',{headers:{authorization:`Bearer ${token}`}})
-.then(r=>r.json())
-.then(user=>{
-if(!user.id){
-systemNotice('Discord đăng nhập thất bại.');
-return;
-}
-currentUser=user;
-localStorage.setItem('vmi_discord_user',JSON.stringify(user));
-window.history.replaceState({},document.title,window.location.pathname);
-updateUserUI();
-systemNotice('🔹 Đã đăng nhập thành công!');
-})
-.catch(err=>console.error('Discord auth:',err));
-}else{
-const saved=localStorage.getItem('vmi_discord_user');
-if(saved){
-try{
-currentUser=JSON.parse(saved);
-updateUserUI();
-}catch{
-localStorage.removeItem('vmi_discord_user');
-}
-}
-}
-}
-
-function updateUserUI(){
-if(!currentUser)return;
-
-const avatarUrl=currentUser.avatar
-?`https://cdn.discordapp.com/avatars/${currentUser.id}/${currentUser.avatar}.png?size=256`
-:'https://cdn.discordapp.com/embed/avatars/0.png';
-
-const avatarImg=document.getElementById('avatarImg');
-avatarImg.src=avatarUrl;
-avatarImg.onerror=function(){
-avatarImg.src='https://cdn.discordapp.com/embed/avatars/0.png';
-};
-
-document.getElementById('playerNameEl').textContent=currentUser.global_name||currentUser.username;
-
-const status=document.getElementById('statusEl');
-status.textContent='● Đã xác minh';
-status.style.color='var(--green)';
-
-document.getElementById('btnLogin').style.display='none';
-document.getElementById('btnLogout').style.display='block';
-document.getElementById('btnEnterGame').disabled=false;
-}
-
-const btnLogin=document.getElementById('btnLogin');
-
-function doLogin(){
-const url=`https://discord.com/oauth2/authorize?client_id=${CLIENT_ID}&response_type=token&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=identify`;
-window.location.href=url;
-}
-
-btnLogin.addEventListener('click',doLogin);
-btnLogin.addEventListener('touchstart',doLogin);
-
-document.getElementById('btnLogout').onclick=function(){
-localStorage.removeItem('vmi_discord_user');
-location.reload();
-};
-
-function preloadScene(){
-scene=this;
-
-if(scene.textures.exists('p_avatar'))
-scene.textures.remove('p_avatar');
-
-const avatarUrl=currentUser&&currentUser.avatar
-?`https://cdn.discordapp.com/avatars/${currentUser.id}/${currentUser.avatar}.png?size=256`
-:'https://cdn.discordapp.com/embed/avatars/0.png';
-
-scene.load.image('p_avatar',avatarUrl);
-scene.load.image('flag_vn','https://flagcdn.com/w256/vn.png');
-scene.load.image('tank_t90','https://commons.wikimedia.org/wiki/Special:FilePath/T-90_tank.svg?width=300');
-scene.load.image('btr_apc','https://commons.wikimedia.org/wiki/Special:FilePath/BTR-4%20silhouette.png?width=300');
-}
-
-function createGame(){
-scene=this;
-
-playerContainer=null;
-controlledObject=null;
-speechBubble=null;
-playerBody=null;
-moveVector={x:0,y:0};
-
-if(typeof createMap2==='function'){
-createMap2(this);
-}else{
-this.add.rectangle(0,0,MAP_SIZE,MAP_SIZE,0x1a2333).setOrigin(0,0);
-this.add.text(MAP_SIZE/2,MAP_SIZE/2,'MAP 2 (FALLBACK)',{color:'#ffffff',fontSize:'32px'}).setOrigin(.5);
-}
-
-if(this.physics&&this.physics.world)
-this.physics.world.setBounds(0,0,MAP_SIZE,MAP_SIZE);
-
-ensurePlayer();
-setupJoystick();
-chatToggle.style.display='flex';
-chatWindow.classList.remove('open');
-
-const displayName=currentUser?(currentUser.global_name||currentUser.username):'Khách';
-systemNotice(`👤 ${displayName} đã vào server`);
-
-setTimeout(startMultiplayer,500);
-}
-
-function update(){
-if(!scene)return;
-updateSelfMovement();
-sendPlayerPosition();
-updateOtherPlayers();
-}
-
-function ensurePlayer(){
-if(!scene||!scene.physics||playerContainer)return;
-
-const spawn=scene.map2Spawn||{x:MAP_SIZE/2,y:MAP_SIZE/2};
-
-playerContainer=scene.add.container(spawn.x,spawn.y);
-playerContainer.setDepth(10000);
-
-const avatarBg=scene.add.circle(0,0,34,0x0b0e14,1);
-avatarBg.setStrokeStyle(3,0x00e5ff,1);
-
-let avatar;
-
-if(scene.textures.exists('p_avatar')){
-avatar=scene.add.image(0,0,'p_avatar');
-avatar.setDisplaySize(60,60);
-avatar.setOrigin(.5,.5);
-}else{
-avatar=scene.add.circle(0,0,29,0x00e5ff,1);
-avatar.setStrokeStyle(2,0xffffff,1);
-}
-
-const border=scene.add.graphics();
-border.lineStyle(3,0x00e5ff,1);
-border.strokeCircle(0,0,31);
-
-const playerName=currentUser?(currentUser.global_name||currentUser.username):'Khách';
-
-const nameText=scene.add.text(0,45,playerName,{
-fontFamily:'Rajdhani',
-fontSize:'14px',
-fontStyle:'bold',
-color:'#ffffff',
-stroke:'#000000',
-strokeThickness:4
-});
-
-nameText.setOrigin(.5);
-
-playerContainer.add([avatarBg,avatar,border,nameText]);
-
-const bubbleBg=scene.add.graphics();
-
-const bubbleText=scene.add.text(0,0,'',{
-fontFamily:'Rajdhani',
-fontSize:'14px',
-fontStyle:'bold',
-color:'#000000',
-align:'center',
-wordWrap:{width:190}
-});
-
-bubbleText.setOrigin(.5);
-
-speechBubble=scene.add.container(0,-70);
-speechBubble.add([bubbleBg,bubbleText]);
-speechBubble.setVisible(false);
-speechBubble.bubbleBg=bubbleBg;
-speechBubble.bubbleText=bubbleText;
-playerContainer.add(speechBubble);
-
-playerBody=scene.physics.add.existing(playerContainer);
-controlledObject=playerContainer;
-
-if(playerContainer.body){
-playerContainer.body.setCircle(28,-28,-28);
-playerContainer.body.setCollideWorldBounds(true);
-playerContainer.body.setDrag(800,800);
-}
-
-if(scene.cameras&&scene.cameras.main){
-scene.cameras.main.startFollow(playerContainer,true,.08,.08);
-const zoom=parseFloat(document.getElementById('setZoom').value)||.8;
-scene.cameras.main.setZoom(zoom);
-}
-}
-
-function setupJoystick(){
-if(joystick&&joystick.destroy)joystick.destroy();
-
-const zone=document.getElementById('joystick-zone');
-if(!zone)return;
-
-zone.innerHTML='';
-
-if(typeof nipplejs==='undefined'){
-console.log('Không có nipplejs');
-return;
-}
-
-joystick=nipplejs.create({
-zone:zone,
-mode:'static',
-position:{left:'60px',top:'60px'},
-color:'#00e5ff',
-size:110,
-multitouch:true,
-restJoystick:true
-});
-
-joystick.on('move',function(evt,data){
-if(!data||!data.vector)return;
-moveVector.x=data.vector.x||0;
-moveVector.y=-(data.vector.y||0);
-});
-
-joystick.on('end',function(){
-moveVector.x=0;
-moveVector.y=0;
-});
-}
-
-function updateSelfMovement(){
-if(!scene||!playerContainer||!playerContainer.body)return;
-
-const body=playerContainer.body;
-const speed=180;
-
-let vx=moveVector.x||0;
-let vy=moveVector.y||0;
-
-if(scene.input&&scene.input.keyboard){
-if(!scene.cursors)
-scene.cursors=scene.input.keyboard.createCursorKeys();
-
-const cursors=scene.cursors;
-
-if(cursors.left.isDown)vx=-1;
-if(cursors.right.isDown)vx=1;
-if(cursors.up.isDown)vy=-1;
-if(cursors.down.isDown)vy=1;
-}
-
-const length=Math.sqrt(vx*vx+vy*vy);
-
-if(length>1){
-vx/=length;
-vy/=length;
-}
-
-body.setVelocity(vx*speed,vy*speed);
-}
-
-const SERVER_URL='https://vmi-map-site.onrender.com';
-
-function startMultiplayer(){
-if(socket&&socket.connected)return;
-
-if(typeof io==='undefined'){
-systemNotice('Không tìm thấy Socket.IO.');
-return;
-}
-
-socket=io(SERVER_URL,{
-transports:['websocket','polling'],
-reconnection:true,
-reconnectionAttempts:Infinity,
-reconnectionDelay:1000
-});
-
-socket.on('connect',function(){
-const name=currentUser?(currentUser.global_name||currentUser.username):'Khách';
-
-socket.emit('playerJoin',{
-id:currentUser?currentUser.id:socket.id,
-name:name,
-avatar:currentUser&&currentUser.avatar
-?`https://cdn.discordapp.com/avatars/${currentUser.id}/${currentUser.avatar}.png?size=128`
-:'https://cdn.discordapp.com/embed/avatars/0.png'
-});
-
-systemNotice('Đã kết nối server.');
-});
-
-socket.on('disconnect',function(){
-systemNotice('Mất kết nối server.');
-});
-
-socket.on('chatMessage',function(data){
-if(!data)return;
-
-const name=data.name||'Player';
-const text=data.text||'';
-
-if(!text)return;
-
-addChatMessage(text,'user',name);
-
-const playerId=data.id;
-
-if(currentUser&&playerId===currentUser.id)
-showBubbleOnPlayer(text,3000);
-else
-showPlayerBubble(playerId,text);
-});
-
-socket.on('playerJoined',function(data){
-if(!data)return;
-if(currentUser&&data.id===currentUser.id)return;
-createOtherPlayer(data);
-});
-
-socket.on('players',function(players){
-if(!players)return;
-
-Object.keys(players).forEach(function(id){
-if(currentUser&&id===currentUser.id)return;
-createOtherPlayer(players[id]);
-});
-});
-
-socket.on('playerMoved',function(data){
-if(!data)return;
-
-const other=otherPlayers[data.id];
-
-if(!other||!other.container)return;
-
-other.targetX=Number(data.x)||0;
-other.targetY=Number(data.y)||0;
-});
-
-socket.on('playerLeft',function(id){
-removeOtherPlayer(id);
-});
-}
-
-let lastSentX=null;
-let lastSentY=null;
-let lastSentTime=0;
-
-function sendPlayerPosition(){
-if(!socket||!socket.connected||!currentUser||!playerContainer)return;
-
-const now=performance.now();
-
-if(now-lastSentTime<50)return;
-
-const x=playerContainer.x;
-const y=playerContainer.y;
-
-if(lastSentX===x&&lastSentY===y)return;
-
-lastSentX=x;
-lastSentY=y;
-lastSentTime=now;
-
-socket.emit('playerMove',{
-id:currentUser.id,
-x:x,
-y:y
-});
-}
-
-function createOtherPlayer(data){
-if(!scene||!scene.add||!data||!data.id)return;
-if(otherPlayers[data.id])return;
-
-const x=Number(data.x)||scene.map2Spawn?.x||MAP_SIZE/2;
-const y=Number(data.y)||scene.map2Spawn?.y||MAP_SIZE/2;
-
-const container=scene.add.container(x,y);
-container.setDepth(9999);
-
-const bg=scene.add.circle(0,0,34,0x111111,.95);
-bg.setStrokeStyle(3,0xffd700,1);
-
-let avatar;
-const textureKey='other_'+data.id;
-
-if(data.avatar){
-if(!scene.textures.exists(textureKey)){
-scene.load.image(textureKey,data.avatar);
-
-scene.load.once('complete',function(){
-if(container&&container.active&&scene.textures.exists(textureKey))
-createOtherAvatar(container,textureKey);
-});
-
-scene.load.start();
-}
-}
-
-if(scene.textures.exists(textureKey)){
-avatar=createOtherAvatar(container,textureKey);
-}else{
-avatar=scene.add.circle(0,0,29,0xff4444,1);
-}
-
-const name=data.name||'Player';
-
-const nameText=scene.add.text(0,45,name,{
-fontFamily:'Rajdhani',
-fontSize:'14px',
-fontStyle:'bold',
-color:'#ffffff',
-stroke:'#000000',
-strokeThickness:4
-});
-
-nameText.setOrigin(.5);
-
-container.add([bg,avatar,nameText]);
-
-const bubbleBg=scene.add.graphics();
-
-const bubbleText=scene.add.text(0,0,'',{
-fontFamily:'Rajdhani',
-fontSize:'14px',
-fontStyle:'bold',
-color:'#000000',
-align:'center',
-wordWrap:{width:190}
-});
-
-bubbleText.setOrigin(.5);
-
-const bubble=scene.add.container(0,-70);
-bubble.add([bubbleBg,bubbleText]);
-bubble.setVisible(false);
-bubble.bubbleBg=bubbleBg;
-bubble.bubbleText=bubbleText;
-
-container.add(bubble);
-
-otherPlayers[data.id]={
-id:data.id,
-name:name,
-container:container,
-bubble:bubble,
-targetX:x,
-targetY:y,
-bubbleTimer:null
-};
-}
-
-function createOtherAvatar(container,textureKey){
-if(!scene||!scene.textures.exists(textureKey))
-return scene.add.circle(0,0,29,0xff4444);
-
-const avatar=scene.add.image(0,0,textureKey);
-avatar.setDisplaySize(60,60);
-avatar.setOrigin(.5);
-
-container.add(avatar);
-
-return avatar;
-}
-
-function showPlayerBubble(playerId,text,duration=3000){
-const other=otherPlayers[playerId];
-
-if(!other||!other.bubble)return;
-
-const bg=other.bubble.bubbleBg;
-const txt=other.bubble.bubbleText;
-
-if(!bg||!txt)return;
-
-txt.setText(text);
-
-const padding=10;
-const maxWidth=220;
-
-let w=Math.min((txt.width||60)+padding*2,maxWidth);
-let h=Math.max(34,(txt.height||20)+14);
-
-bg.clear();
-bg.fillStyle(0xffffff,.95);
-bg.fillRoundedRect(-w/2,-h/2,w,h,10);
-bg.lineStyle(2,0x00e5ff,1);
-bg.strokeRoundedRect(-w/2,-h/2,w,h,10);
-
-txt.setPosition(0,0);
-other.bubble.setVisible(true);
-
-if(other.bubbleTimer)clearTimeout(other.bubbleTimer);
-
-other.bubbleTimer=setTimeout(function(){
-if(other.bubble&&other.bubble.active)
-other.bubble.setVisible(false);
-
-other.bubbleTimer=null;
-},duration);
-}
-
-function removeOtherPlayer(id){
-const other=otherPlayers[id];
-
-if(!other)return;
-
-if(other.bubbleTimer)
-clearTimeout(other.bubbleTimer);
-
-if(other.container)
-other.container.destroy(true);
-
-delete otherPlayers[id];
-}
-
-function updateOtherPlayers(){
-Object.keys(otherPlayers).forEach(function(id){
-const other=otherPlayers[id];
-
-if(!other||!other.container)return;
-
-const targetX=Number(other.targetX);
-const targetY=Number(other.targetY);
-
-if(Number.isFinite(targetX))
-other.container.x+=(targetX-other.container.x)*.25;
-
-if(Number.isFinite(targetY))
-other.container.y+=(targetY-other.container.y)*.25;
-});
-}
-
-function initPhaser(){
-if(game)return;
-
-const config={
-type:Phaser.AUTO,
-width:window.innerWidth,
-height:window.innerHeight,
-parent:'phaser-container',
-physics:{
-default:'arcade',
-arcade:{debug:false}
-},
-scene:{
-preload:preloadScene,
-create:createGame,
-update:update
-}
-};
-
-game=new Phaser.Game(config);
-}
-
-window.onload=function(){
-checkDiscordAuth();
-setTimeout(initPhaser,300);
-};
-
-window.addEventListener('resize',function(){
-if(game&&game.scale)
-game.scale.resize(window.innerWidth,window.innerHeight);
-});
-
-document.getElementById('btnEnterGame').addEventListener('click',function(){
-if(!currentUser){
-systemNotice('Vui lòng đăng nhập trước.');
-return;
-}
-
-document.getElementById('screen-menu').style.display='none';
-document.getElementById('screen-game').classList.add('active');
-
-if(!game)initPhaser();
-});
-
-document.getElementById('btnLeaveMap').addEventListener('click',function(){
-document.getElementById('screen-game').classList.remove('active');
-document.getElementById('screen-menu').style.display='flex';
-
-if(socket&&socket.connected)
-socket.disconnect();
-
-Object.keys(otherPlayers).forEach(function(id){
-removeOtherPlayer(id);
-});
-});
-
-document.getElementById('btnOpenSettings').addEventListener('click',function(){
-document.getElementById('settingsOverlay').classList.add('open');
-});
-
-document.getElementById('btnCloseSettings').addEventListener('click',function(){
-document.getElementById('settingsOverlay').classList.remove('open');
-
-if(scene&&scene.cameras&&scene.cameras.main){
-const zoom=parseFloat(document.getElementById('setZoom').value)||.8;
-scene.cameras.main.setZoom(zoom);
-}
-
-const alpha=parseFloat(document.getElementById('setHudAlpha').value)||.9;
-
-document.querySelectorAll('.hud-element').forEach(el=>{
-el.style.opacity=alpha;
-});
-});
-
-document.getElementById('settingsOverlay').addEventListener('click',function(e){
-if(e.target===this)
-this.classList.remove('open');
-});
-
-document.getElementById('btnEditHUD').addEventListener('click',function(){
-document.body.classList.toggle('edit-hud-mode');
-isEditHUD=!isEditHUD;
-this.textContent=isEditHUD?'DỪNG CHỈNH':'CHỈNH VỊ TRÍ HUD';
-});
-
-console.log('VMI MAP loaded successfully.');
+setTimeout(next, 900);
 </script>
+
 </body>
 </html>
